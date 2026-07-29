@@ -13,6 +13,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider } from '../../../shared/contexts/ThemeContext'
+import { I18nProvider, en } from '../../../shared/i18n'
 
 // ---------------------------------------------------------------------------
 // Mock API client — declared BEFORE vi.mock() factory so they are in scope
@@ -109,9 +110,11 @@ function makeContributedProjects() {
 
 function renderPage(props: Partial<React.ComponentProps<typeof ProfilePage>> = {}) {
   return render(
-    <ThemeProvider>
-      <ProfilePage {...props} />
-    </ThemeProvider>
+    <I18nProvider messages={en}>
+      <ThemeProvider>
+        <ProfilePage {...props} />
+      </ThemeProvider>
+    </I18nProvider>
   )
 }
 
@@ -177,9 +180,7 @@ describe('ProfilePage — contributed projects', () => {
   it('shows the empty state when no projects are returned', async () => {
     mockGetProjectsContributed.mockResolvedValue([])
     renderPage()
-    await waitFor(() =>
-      expect(screen.getByText('No projects contributed yet')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('No projects contributed yet')).toBeInTheDocument())
   })
 
   it('shows an error + retry state when the projects request fails', async () => {
