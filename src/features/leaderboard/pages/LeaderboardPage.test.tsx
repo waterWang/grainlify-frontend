@@ -81,3 +81,20 @@ test.skip('shows empty state when filter excludes all', () => {
 
 // Keep mockData referenced to avoid unused variable warning
 void mockData
+
+// Issue #708: LeaderboardStyles keyframes are never mounted, silently
+// disabling podium/hero animations. This test asserts that the
+// <LeaderboardStyles /> component's <style> block is rendered on the
+// leaderboard page, so the keyframes referenced by LeaderboardHero,
+// ContributorsPodium, and ProjectsPodium actually take effect.
+test('renders LeaderboardStyles keyframes on the leaderboard page', async () => {
+  renderPage()
+
+  // The page should contain a <style> element with the glow-pulse keyframes
+  // that are used by LeaderboardHero, ContributorsPodium, and ProjectsPodium.
+  const styleTag = document.querySelector('style')
+  expect(styleTag).not.toBeNull()
+  expect(styleTag!.textContent).toContain('@keyframes glow-pulse')
+  expect(styleTag!.textContent).toContain('.animate-float')
+  expect(styleTag!.textContent).toContain('.animate-twinkle-slow')
+})

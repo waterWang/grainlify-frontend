@@ -14,6 +14,7 @@ import { FiltersSection } from '../components/FiltersSection'
 import { ContributorsTable } from '../components/ContributorsTable'
 import { ContributorsTableSkeleton } from '../components/ContributorsTableSkeleton'
 import { ProjectsTable } from '../components/ProjectsTable'
+import { LeaderboardStyles } from '../components/LeaderboardStyles'
 
 /** Number of contributors fetched per page. */
 const LEADERBOARD_PAGE_SIZE = 20
@@ -257,6 +258,7 @@ export function LeaderboardPage() {
       }`}
     >
       <FallingPetals petals={petals} />
+      <LeaderboardStyles />
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-4 py-8 space-y-6">
         {/* Type Toggle */}
