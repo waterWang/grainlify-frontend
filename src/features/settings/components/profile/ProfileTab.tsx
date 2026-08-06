@@ -182,13 +182,15 @@ export function ProfileTab() {
     // Validate file type
     const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg', 'image/gif']
     if (!validTypes.includes(file.type)) {
-      alert('Please select a valid image file (SVG, PNG, JPG, or GIF)')
+      toast.error('Please select a valid image file (SVG, PNG, JPG, or GIF)')
+      e.target.value = ''
       return
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB')
+      toast.error('File size must be less than 5MB')
+      e.target.value = ''
       return
     }
 

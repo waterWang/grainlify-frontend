@@ -231,4 +231,56 @@ describe('ProfileTab', () => {
 
     openSpy.mockRestore()
   })
+
+  it('shows toast.error for invalid file type on avatar upload', async () => {
+    const user = userEvent.setup()
+    mockGetCurrentUser.mockResolvedValue(mockUser)
+    const { container } = renderWithTheme(<ProfileTab />)
+
+    await waitFor(() => expect(screen.getByDisplayValue('John')).toBeInTheDocument())
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+    const badFile = new File(['not-an-image'], 'bad.txt', { type: 'text/plain' })
+    await user.upload(fileInput, badFile)
+
+    expect(toast.error).toHaveBeenCalledWith(
+      'Please select a valid image file (SVG, PNG, JPG, or GIF)'
+    )
+  })
+
+  it('shows toast.error for oversized file on avatar upload', async () => {
+    const user = userEvent.setup()
+    mockGetCurrentUser.mockResolvedValue(mockUser)
+    const { container } = renderWithTheme(<ProfileTab />)
+
+    await waitFor(() => expect(screen.getByDisplayValue('John')).toBeInTheDocument())
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+    // Create a file larger than 5MB
+    const bigFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'big.png', { type: 'image/png' })
+    await user.upload(fileInput, bigFile)
+
+    expect(toast.error).toHaveBeenCalledWith('File size must be less than 5MB')
+  })
+
+  it('resets file input value after validation failure so same file can be re-selected', async () => {
+    const user = userEvent.setup()
+    mockGetCurrentUser.mockResolvedValue(mockUser)
+    const { container } = renderWithTheme(<ProfileTab />)
+
+    await waitFor(() => expect(screen.getByDisplayValue('John')).toBeInTheDocument())
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+
+    // Upload an invalid file type
+    const badFile = new File(['bad'], 'bad.xyz', { type: 'text/plain' })
+    await user.upload(fileInput, badFile)
+    expect(toast.error).toHaveBeenCalledWith(
+      'Please select a valid image file (SVG, PNG, JPG, or GIF)'
+    )
+
+    // Upload the same invalid file again — should re-trigger because value was reset
+    await user.upload(fileInput, badFile)
+    expect(toast.error).toHaveBeenCalledTimes(2)
+  })
 })
