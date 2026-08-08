@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Filter,
   Clock,
@@ -10,7 +10,53 @@ import {
   Check,
   ChevronDown,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
+import { getMyIssueApplications, type IssueApplicationSummary } from "../../../shared/api/client";
+import { SkeletonLoader } from "../../../shared/components/SkeletonLoader";
+
+type ColumnKey = "applied" | "assigned" | "pending_review" | "complete";
+
+function formatTimeAgo(dateString: string | null | undefined): string {
+  if (!dateString) return "Unknown";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Unknown";
+  return formatDistanceToNow(date, { addSuffix: true });
+}
+
+// Applied/Assigned show when that event happened; Pending review/Complete
+// show PR activity when there's a matched PR to reflect, falling back to the
+// assignment time otherwise (e.g. a maintainer just assigned this and no PR
+// exists yet, but a column bug elsewhere put it in the wrong bucket).
+function timeFor(item: IssueApplicationSummary, column: ColumnKey): string {
+  switch (column) {
+    case "applied":
+      return formatTimeAgo(item.applied_at);
+    case "assigned":
+      return formatTimeAgo(item.assigned_at);
+    case "pending_review":
+      return formatTimeAgo(item.pr_created_at || item.assigned_at);
+    case "complete":
+      return formatTimeAgo(item.pr_merged_at || item.assigned_at);
+  }
+}
+
+// A real issue can carry zero, one, or many labels; the card layout only has
+// room for one pill, so the first label stands in for "the tag".
+function primaryTag(item: IssueApplicationSummary): string | null {
+  return item.labels[0] ?? null;
+}
+
+function isBugTag(item: IssueApplicationSummary): boolean {
+  return item.labels.some((l) => l.toLowerCase() === "bug");
+}
+
+// "See application"/"See detail" open the underlying GitHub thread - the PR
+// if one has been matched, otherwise the issue itself.
+function actionUrl(item: IssueApplicationSummary): string {
+  return item.pr_url || item.issue_url;
+}
 
 export function ContributionsTab() {
   const { theme } = useTheme();
@@ -25,112 +71,31 @@ export function ContributionsTab() {
   const [isProjectSectionOpen, setIsProjectSectionOpen] = useState(true);
   const [isRewardedSectionOpen, setIsRewardedSectionOpen] = useState(true);
 
-  const contributions = {
-    applied: [
-      {
-        id: 1,
-        title: "Add dark mode support to the dashboard",
-        badge: "2001",
-        time: "1 day ago",
-        contributor: "contributor1",
-        tag: "enhancement",
-        tagType: "enhancement" as const,
-      },
-      {
-        id: 2,
-        title: "Improve accessibility in form components",
-        badge: "1002",
-        time: "1 day ago",
-        contributor: "contributor1",
-        tag: "good first issue",
-        tagType: "enhancement" as const,
-      },
-      {
-        id: 3,
-        title: "Refactor authentication logic",
-        badge: "2001",
-        time: "2 days ago",
-        contributor: "contributor1",
-        tag: "refactor",
-        tagType: "enhancement" as const,
-      },
-    ],
-    assigned: [
-      {
-        id: 1,
-        title: "Implement user profile page",
-        badge: "2001",
-        time: "1 day ago",
-        project: "React",
-        tag: "feature",
-        tagType: "feature" as const,
-      },
-      {
-        id: 2,
-        title: "Add unit tests for API endpoints",
-        badge: "2002",
-        time: "2 days ago",
-        project: "Next.js",
-        tag: "testing",
-        tagType: "enhancement" as const,
-      },
-    ],
-    pending: [
-      {
-        id: 1,
-        title: "Optimize database queries",
-        badge: "3001",
-        time: "1 day ago",
-        project: "React",
-        tag: "performance",
-        tagType: "enhancement" as const,
-      },
-      {
-        id: 2,
-        title: "Add error boundary component",
-        badge: "3002",
-        time: "1 day ago",
-        project: "Next.js",
-        tag: "enhancement",
-        tagType: "enhancement" as const,
-      },
-      {
-        id: 3,
-        title: "Refactor state management",
-        badge: "3003",
-        time: "1 day ago",
-        project: "Modus",
-        tag: "refactor",
-        tagType: "enhancement" as const,
-      },
-    ],
-    complete: [
-      {
-        id: 1,
-        title: "Fix memory leak in event listeners",
-        time: "20 days ago",
-        project: "React",
-        tag: "bug",
-        tagType: "bug" as const,
-      },
-      {
-        id: 2,
-        title: "Implement caching layer",
-        time: "10 days ago",
-        project: "Next.js",
-        tag: "enhancement",
-        tagType: "enhancement" as const,
-      },
-      {
-        id: 3,
-        title: "Code review API reflections",
-        time: "12 days ago",
-        project: "Modus",
-        tag: "enhancement",
-        tagType: "enhancement" as const,
-      },
-    ],
-  };
+  const [allItems, setAllItems] = useState<IssueApplicationSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMyIssueApplications()
+      .then((res) => {
+        if (!cancelled) setAllItems(res.issue_applications);
+      })
+      .catch((error) => {
+        console.error("Failed to load issue applications:", error);
+        if (!cancelled) toast.error("Failed to load your contributions.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const applied = allItems.filter((i) => i.status === "applied");
+  const assigned = allItems.filter((i) => i.status === "assigned");
+  const pendingReview = allItems.filter((i) => i.status === "pending_review");
+  const complete = allItems.filter((i) => i.status === "complete");
 
   return (
     <>
@@ -190,72 +155,75 @@ export function ContributionsTab() {
                         theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }
                     >
-                      3
+                      {applied.length}
                     </span>
                   </h3>
                 </div>
-                <div className="space-y-3">
-                  {contributions.applied.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-[12px] border p-4 transition-all ${
-                        theme === "dark"
-                          ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                          : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <h4
-                          className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
-                            theme === "dark"
-                              ? "text-[#f5f5f5]"
-                              : "text-[#2d2820]"
-                          }`}
-                        >
-                          {item.title}
-                        </h4>
-                        <span className="px-2 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[6px] text-[10px] font-semibold text-green-800">
-                          {item.badge}
-                        </span>
-                      </div>
+                {isLoading ? (
+                  <DesktopColumnSkeleton isDark={theme === "dark"} />
+                ) : applied.length === 0 ? (
+                  <EmptyColumnMessage isDark={theme === "dark"} />
+                ) : (
+                  <div className="space-y-3">
+                    {applied.map((item) => (
                       <div
-                        className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                        key={item.id}
+                        className={`rounded-[12px] border p-4 transition-all ${
+                          theme === "dark"
+                            ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                            : "bg-white/[0.2] border-white/30 hover:border-white/40"
                         }`}
                       >
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{item.time}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
-                        <span
-                          className={`text-[12px] transition-colors ${
-                            theme === "dark"
-                              ? "text-[#d4d4d4]"
-                              : "text-[#7a6b5a]"
+                        <div className="flex items-start justify-between mb-3">
+                          <h4
+                            className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
+                              theme === "dark"
+                                ? "text-[#f5f5f5]"
+                                : "text-[#2d2820]"
+                            }`}
+                          >
+                            {item.issue_title}
+                          </h4>
+                          <span className="px-2 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[6px] text-[10px] font-semibold text-green-800">
+                            #{item.issue_number}
+                          </span>
+                        </div>
+                        <div
+                          className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
+                            theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                           }`}
                         >
-                          {item.contributor}
-                        </span>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{timeFor(item, "applied")}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mb-3">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
+                          <span
+                            className={`text-[12px] transition-colors ${
+                              theme === "dark"
+                                ? "text-[#d4d4d4]"
+                                : "text-[#7a6b5a]"
+                            }`}
+                          >
+                            {item.project_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <TagPill label={primaryTag(item)} isBug={false} isDark={theme === "dark"} />
+                          <a
+                            href={actionUrl(item)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1"
+                          >
+                            <span>See application</span>
+                            <GitFork className="w-3 h-3" />
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`px-2 py-1 rounded-[6px] text-[11px] font-medium transition-colors ${
-                            theme === "dark"
-                              ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                              : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
-                          }`}
-                        >
-                          {item.tag}
-                        </span>
-                        <button className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1">
-                          <span>See application</span>
-                          <GitFork className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -280,72 +248,75 @@ export function ContributionsTab() {
                         theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }
                     >
-                      2
+                      {assigned.length}
                     </span>
                   </h3>
                 </div>
-                <div className="space-y-3">
-                  {contributions.assigned.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-[12px] border p-4 transition-all ${
-                        theme === "dark"
-                          ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                          : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <h4
-                          className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
-                            theme === "dark"
-                              ? "text-[#f5f5f5]"
-                              : "text-[#2d2820]"
-                          }`}
-                        >
-                          {item.title}
-                        </h4>
-                        <span className="px-2 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[6px] text-[10px] font-semibold text-green-800">
-                          {item.badge}
-                        </span>
-                      </div>
+                {isLoading ? (
+                  <DesktopColumnSkeleton isDark={theme === "dark"} />
+                ) : assigned.length === 0 ? (
+                  <EmptyColumnMessage isDark={theme === "dark"} />
+                ) : (
+                  <div className="space-y-3">
+                    {assigned.map((item) => (
                       <div
-                        className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                        key={item.id}
+                        className={`rounded-[12px] border p-4 transition-all ${
+                          theme === "dark"
+                            ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                            : "bg-white/[0.2] border-white/30 hover:border-white/40"
                         }`}
                       >
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{item.time}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500" />
-                        <span
-                          className={`text-[12px] transition-colors ${
-                            theme === "dark"
-                              ? "text-[#d4d4d4]"
-                              : "text-[#7a6b5a]"
+                        <div className="flex items-start justify-between mb-3">
+                          <h4
+                            className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
+                              theme === "dark"
+                                ? "text-[#f5f5f5]"
+                                : "text-[#2d2820]"
+                            }`}
+                          >
+                            {item.issue_title}
+                          </h4>
+                          <span className="px-2 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[6px] text-[10px] font-semibold text-green-800">
+                            #{item.issue_number}
+                          </span>
+                        </div>
+                        <div
+                          className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
+                            theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                           }`}
                         >
-                          {item.project}
-                        </span>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{timeFor(item, "assigned")}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mb-3">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500" />
+                          <span
+                            className={`text-[12px] transition-colors ${
+                              theme === "dark"
+                                ? "text-[#d4d4d4]"
+                                : "text-[#7a6b5a]"
+                            }`}
+                          >
+                            {item.project_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <TagPill label={primaryTag(item)} isBug={false} isDark={theme === "dark"} />
+                          <a
+                            href={actionUrl(item)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1"
+                          >
+                            <span>See application</span>
+                            <GitFork className="w-3 h-3" />
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`px-2 py-1 rounded-[6px] text-[11px] font-medium transition-colors ${
-                            theme === "dark"
-                              ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                              : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
-                          }`}
-                        >
-                          {item.tag}
-                        </span>
-                        <button className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1">
-                          <span>See application</span>
-                          <GitFork className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -370,72 +341,75 @@ export function ContributionsTab() {
                         theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }
                     >
-                      3
+                      {pendingReview.length}
                     </span>
                   </h3>
                 </div>
-                <div className="space-y-3">
-                  {contributions.pending.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-[12px] border p-4 transition-all ${
-                        theme === "dark"
-                          ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                          : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <h4
-                          className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
-                            theme === "dark"
-                              ? "text-[#f5f5f5]"
-                              : "text-[#2d2820]"
-                          }`}
-                        >
-                          {item.title}
-                        </h4>
-                        <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-600/30 rounded-[6px] text-[10px] font-semibold text-purple-800">
-                          {item.badge}
-                        </span>
-                      </div>
+                {isLoading ? (
+                  <DesktopColumnSkeleton isDark={theme === "dark"} />
+                ) : pendingReview.length === 0 ? (
+                  <EmptyColumnMessage isDark={theme === "dark"} />
+                ) : (
+                  <div className="space-y-3">
+                    {pendingReview.map((item) => (
                       <div
-                        className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                        key={item.id}
+                        className={`rounded-[12px] border p-4 transition-all ${
+                          theme === "dark"
+                            ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                            : "bg-white/[0.2] border-white/30 hover:border-white/40"
                         }`}
                       >
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{item.time}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500" />
-                        <span
-                          className={`text-[12px] transition-colors ${
-                            theme === "dark"
-                              ? "text-[#d4d4d4]"
-                              : "text-[#7a6b5a]"
+                        <div className="flex items-start justify-between mb-3">
+                          <h4
+                            className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
+                              theme === "dark"
+                                ? "text-[#f5f5f5]"
+                                : "text-[#2d2820]"
+                            }`}
+                          >
+                            {item.issue_title}
+                          </h4>
+                          <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-600/30 rounded-[6px] text-[10px] font-semibold text-purple-800">
+                            #{item.issue_number}
+                          </span>
+                        </div>
+                        <div
+                          className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
+                            theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                           }`}
                         >
-                          {item.project}
-                        </span>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{timeFor(item, "pending_review")}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mb-3">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500" />
+                          <span
+                            className={`text-[12px] transition-colors ${
+                              theme === "dark"
+                                ? "text-[#d4d4d4]"
+                                : "text-[#7a6b5a]"
+                            }`}
+                          >
+                            {item.project_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <TagPill label={primaryTag(item)} isBug={false} isDark={theme === "dark"} />
+                          <a
+                            href={actionUrl(item)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1"
+                          >
+                            <span>See detail</span>
+                            <Star className="w-3 h-3" />
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`px-2 py-1 rounded-[6px] text-[11px] font-medium transition-colors ${
-                            theme === "dark"
-                              ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                              : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
-                          }`}
-                        >
-                          {item.tag}
-                        </span>
-                        <button className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1">
-                          <span>See detail</span>
-                          <Star className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -460,71 +434,72 @@ export function ContributionsTab() {
                         theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }
                     >
-                      3
+                      {complete.length}
                     </span>
                   </h3>
                 </div>
-                <div className="space-y-3">
-                  {contributions.complete.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-[12px] border p-4 transition-all ${
-                        theme === "dark"
-                          ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                          : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <h4
-                          className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
-                            theme === "dark"
-                              ? "text-[#f5f5f5]"
-                              : "text-[#2d2820]"
-                          }`}
-                        >
-                          {item.title}
-                        </h4>
-                      </div>
+                {isLoading ? (
+                  <DesktopColumnSkeleton isDark={theme === "dark"} />
+                ) : complete.length === 0 ? (
+                  <EmptyColumnMessage isDark={theme === "dark"} />
+                ) : (
+                  <div className="space-y-3">
+                    {complete.map((item) => (
                       <div
-                        className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                        key={item.id}
+                        className={`rounded-[12px] border p-4 transition-all ${
+                          theme === "dark"
+                            ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                            : "bg-white/[0.2] border-white/30 hover:border-white/40"
                         }`}
                       >
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{item.time}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-500 to-red-500" />
-                        <span
-                          className={`text-[12px] transition-colors ${
-                            theme === "dark"
-                              ? "text-[#d4d4d4]"
-                              : "text-[#7a6b5a]"
+                        <div className="flex items-start justify-between mb-3">
+                          <h4
+                            className={`text-[14px] font-semibold flex-1 pr-2 transition-colors ${
+                              theme === "dark"
+                                ? "text-[#f5f5f5]"
+                                : "text-[#2d2820]"
+                            }`}
+                          >
+                            {item.issue_title}
+                          </h4>
+                        </div>
+                        <div
+                          className={`flex items-center space-x-2 mb-3 text-[12px] transition-colors ${
+                            theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                           }`}
                         >
-                          {item.project}
-                        </span>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{timeFor(item, "complete")}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mb-3">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-500 to-red-500" />
+                          <span
+                            className={`text-[12px] transition-colors ${
+                              theme === "dark"
+                                ? "text-[#d4d4d4]"
+                                : "text-[#7a6b5a]"
+                            }`}
+                          >
+                            {item.project_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <TagPill label={primaryTag(item)} isBug={isBugTag(item)} isDark={theme === "dark"} />
+                          <a
+                            href={actionUrl(item)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1"
+                          >
+                            <span>See detail</span>
+                            <Star className="w-3 h-3" />
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`px-2 py-1 rounded-[6px] text-[11px] font-medium transition-colors ${
-                            item.tagType === "bug"
-                              ? "bg-red-500/15 border border-red-600/25 text-red-800"
-                              : theme === "dark"
-                                ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                                : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
-                          }`}
-                        >
-                          {item.tag}
-                        </span>
-                        <button className="text-[12px] text-[#c9983a] hover:text-[#a67c2e] font-medium flex items-center space-x-1">
-                          <span>See detail</span>
-                          <Star className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -551,56 +526,59 @@ export function ContributionsTab() {
                   theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                 }
               >
-                ({contributions.applied.length})
+                ({applied.length})
               </span>
             </h3>
-            <div className="space-y-2">
-              {contributions.applied.map((item) => (
-                <div
-                  key={item.id}
-                  className={`rounded-[10px] border p-3 transition-all ${
-                    theme === "dark"
-                      ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                      : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4
-                      className={`text-[13px] font-semibold flex-1 transition-colors ${
-                        theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                      }`}
-                    >
-                      {item.title}
-                    </h4>
-                    <span className="px-1.5 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[4px] text-[9px] font-semibold text-green-800 flex-shrink-0">
-                      {item.badge}
-                    </span>
-                  </div>
+            {isLoading ? (
+              <MobileSectionSkeleton isDark={theme === "dark"} />
+            ) : applied.length === 0 ? (
+              <EmptyColumnMessage isDark={theme === "dark"} />
+            ) : (
+              <div className="space-y-2">
+                {applied.map((item) => (
                   <div
-                    className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                    key={item.id}
+                    className={`rounded-[10px] border p-3 transition-all ${
+                      theme === "dark"
+                        ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                        : "bg-white/[0.2] border-white/30 hover:border-white/40"
                     }`}
                   >
-                    <Clock className="w-3 h-3" />
-                    <span>{item.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span
-                      className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium transition-colors ${
-                        theme === "dark"
-                          ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                          : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4
+                        className={`text-[13px] font-semibold flex-1 transition-colors ${
+                          theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
+                        }`}
+                      >
+                        {item.issue_title}
+                      </h4>
+                      <span className="px-1.5 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[4px] text-[9px] font-semibold text-green-800 flex-shrink-0">
+                        #{item.issue_number}
+                      </span>
+                    </div>
+                    <div
+                      className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
+                        theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }`}
                     >
-                      {item.tag}
-                    </span>
+                      <Clock className="w-3 h-3" />
+                      <span>{timeFor(item, "applied")}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <TagPill label={primaryTag(item)} isBug={false} isDark={theme === "dark"} compact />
+                    </div>
+                    <a
+                      href={actionUrl(item)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-center text-[11px] text-[#c9983a] hover:text-[#a67c2e] font-medium w-full py-1.5"
+                    >
+                      See application
+                    </a>
                   </div>
-                  <button className="text-[11px] text-[#c9983a] hover:text-[#a67c2e] font-medium w-full py-1.5">
-                    See application
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Assigned Issue Section */}
@@ -622,56 +600,59 @@ export function ContributionsTab() {
                   theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                 }
               >
-                ({contributions.assigned.length})
+                ({assigned.length})
               </span>
             </h3>
-            <div className="space-y-2">
-              {contributions.assigned.map((item) => (
-                <div
-                  key={item.id}
-                  className={`rounded-[10px] border p-3 transition-all ${
-                    theme === "dark"
-                      ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                      : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4
-                      className={`text-[13px] font-semibold flex-1 transition-colors ${
-                        theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                      }`}
-                    >
-                      {item.title}
-                    </h4>
-                    <span className="px-1.5 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[4px] text-[9px] font-semibold text-green-800 flex-shrink-0">
-                      {item.badge}
-                    </span>
-                  </div>
+            {isLoading ? (
+              <MobileSectionSkeleton isDark={theme === "dark"} />
+            ) : assigned.length === 0 ? (
+              <EmptyColumnMessage isDark={theme === "dark"} />
+            ) : (
+              <div className="space-y-2">
+                {assigned.map((item) => (
                   <div
-                    className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                    key={item.id}
+                    className={`rounded-[10px] border p-3 transition-all ${
+                      theme === "dark"
+                        ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                        : "bg-white/[0.2] border-white/30 hover:border-white/40"
                     }`}
                   >
-                    <Clock className="w-3 h-3" />
-                    <span>{item.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span
-                      className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium transition-colors ${
-                        theme === "dark"
-                          ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                          : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4
+                        className={`text-[13px] font-semibold flex-1 transition-colors ${
+                          theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
+                        }`}
+                      >
+                        {item.issue_title}
+                      </h4>
+                      <span className="px-1.5 py-0.5 bg-green-500/20 border border-green-600/30 rounded-[4px] text-[9px] font-semibold text-green-800 flex-shrink-0">
+                        #{item.issue_number}
+                      </span>
+                    </div>
+                    <div
+                      className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
+                        theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }`}
                     >
-                      {item.tag}
-                    </span>
+                      <Clock className="w-3 h-3" />
+                      <span>{timeFor(item, "assigned")}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <TagPill label={primaryTag(item)} isBug={false} isDark={theme === "dark"} compact />
+                    </div>
+                    <a
+                      href={actionUrl(item)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-center text-[11px] text-[#c9983a] hover:text-[#a67c2e] font-medium w-full py-1.5"
+                    >
+                      See application
+                    </a>
                   </div>
-                  <button className="text-[11px] text-[#c9983a] hover:text-[#a67c2e] font-medium w-full py-1.5">
-                    See application
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Pending Review Section */}
@@ -693,56 +674,59 @@ export function ContributionsTab() {
                   theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                 }
               >
-                ({contributions.pending.length})
+                ({pendingReview.length})
               </span>
             </h3>
-            <div className="space-y-2">
-              {contributions.pending.map((item) => (
-                <div
-                  key={item.id}
-                  className={`rounded-[10px] border p-3 transition-all ${
-                    theme === "dark"
-                      ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                      : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4
-                      className={`text-[13px] font-semibold flex-1 transition-colors ${
-                        theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                      }`}
-                    >
-                      {item.title}
-                    </h4>
-                    <span className="px-1.5 py-0.5 bg-purple-500/20 border border-purple-600/30 rounded-[4px] text-[9px] font-semibold text-purple-800 flex-shrink-0">
-                      {item.badge}
-                    </span>
-                  </div>
+            {isLoading ? (
+              <MobileSectionSkeleton isDark={theme === "dark"} />
+            ) : pendingReview.length === 0 ? (
+              <EmptyColumnMessage isDark={theme === "dark"} />
+            ) : (
+              <div className="space-y-2">
+                {pendingReview.map((item) => (
                   <div
-                    className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                    key={item.id}
+                    className={`rounded-[10px] border p-3 transition-all ${
+                      theme === "dark"
+                        ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                        : "bg-white/[0.2] border-white/30 hover:border-white/40"
                     }`}
                   >
-                    <Clock className="w-3 h-3" />
-                    <span>{item.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span
-                      className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium transition-colors ${
-                        theme === "dark"
-                          ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                          : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4
+                        className={`text-[13px] font-semibold flex-1 transition-colors ${
+                          theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
+                        }`}
+                      >
+                        {item.issue_title}
+                      </h4>
+                      <span className="px-1.5 py-0.5 bg-purple-500/20 border border-purple-600/30 rounded-[4px] text-[9px] font-semibold text-purple-800 flex-shrink-0">
+                        #{item.issue_number}
+                      </span>
+                    </div>
+                    <div
+                      className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
+                        theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }`}
                     >
-                      {item.tag}
-                    </span>
+                      <Clock className="w-3 h-3" />
+                      <span>{timeFor(item, "pending_review")}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <TagPill label={primaryTag(item)} isBug={false} isDark={theme === "dark"} compact />
+                    </div>
+                    <a
+                      href={actionUrl(item)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-center text-[11px] text-[#c9983a] hover:text-[#a67c2e] font-medium w-full py-1.5"
+                    >
+                      See detail
+                    </a>
                   </div>
-                  <button className="text-[11px] text-[#c9983a] hover:text-[#a67c2e] font-medium w-full py-1.5">
-                    See detail
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Complete Section */}
@@ -764,53 +748,49 @@ export function ContributionsTab() {
                   theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                 }
               >
-                ({contributions.complete.length})
+                ({complete.length})
               </span>
             </h3>
-            <div className="space-y-2">
-              {contributions.complete.map((item) => (
-                <div
-                  key={item.id}
-                  className={`rounded-[10px] border p-3 transition-all ${
-                    theme === "dark"
-                      ? "bg-white/[0.08] border-white/15 hover:border-white/25"
-                      : "bg-white/[0.2] border-white/30 hover:border-white/40"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4
-                      className={`text-[13px] font-semibold flex-1 transition-colors ${
-                        theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                      }`}
-                    >
-                      {item.title}
-                    </h4>
-                    <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
-                  </div>
+            {isLoading ? (
+              <MobileSectionSkeleton isDark={theme === "dark"} />
+            ) : complete.length === 0 ? (
+              <EmptyColumnMessage isDark={theme === "dark"} />
+            ) : (
+              <div className="space-y-2">
+                {complete.map((item) => (
                   <div
-                    className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
+                    key={item.id}
+                    className={`rounded-[10px] border p-3 transition-all ${
+                      theme === "dark"
+                        ? "bg-white/[0.08] border-white/15 hover:border-white/25"
+                        : "bg-white/[0.2] border-white/30 hover:border-white/40"
                     }`}
                   >
-                    <Clock className="w-3 h-3" />
-                    <span>{item.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-medium transition-colors ${
-                        item.tagType === "bug"
-                          ? "bg-red-500/15 border border-red-600/25 text-red-800"
-                          : theme === "dark"
-                            ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                            : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4
+                        className={`text-[13px] font-semibold flex-1 transition-colors ${
+                          theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
+                        }`}
+                      >
+                        {item.issue_title}
+                      </h4>
+                      <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    </div>
+                    <div
+                      className={`flex items-center space-x-1.5 mb-2 text-[11px] transition-colors ${
+                        theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                       }`}
                     >
-                      {item.tag}
-                    </span>
+                      <Clock className="w-3 h-3" />
+                      <span>{timeFor(item, "complete")}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <TagPill label={primaryTag(item)} isBug={isBugTag(item)} isDark={theme === "dark"} compact />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1029,5 +1009,73 @@ export function ContributionsTab() {
         </>
       )}
     </>
+  );
+}
+
+function TagPill({
+  label,
+  isBug,
+  isDark,
+  compact,
+}: {
+  label: string | null;
+  isBug: boolean;
+  isDark: boolean;
+  compact?: boolean;
+}) {
+  if (!label) return <span />;
+  return (
+    <span
+      className={`${compact ? "px-1.5 py-0.5 rounded-[4px] text-[10px]" : "px-2 py-1 rounded-[6px] text-[11px]"} font-medium transition-colors ${
+        isBug
+          ? "bg-red-500/15 border border-red-600/25 text-red-800"
+          : isDark
+            ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
+            : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function EmptyColumnMessage({ isDark }: { isDark: boolean }) {
+  return (
+    <p className={`text-[12px] text-center py-6 ${isDark ? "text-[#8a7c6c]" : "text-[#9a8d7c]"}`}>
+      No applications yet
+    </p>
+  );
+}
+
+function DesktopColumnSkeleton({ isDark }: { isDark: boolean }) {
+  return (
+    <div className="space-y-3">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className={`rounded-[12px] border p-4 ${isDark ? "bg-white/[0.08] border-white/15" : "bg-white/[0.2] border-white/30"}`}
+        >
+          <SkeletonLoader variant="text" height="14px" className="mb-3" />
+          <SkeletonLoader variant="text" height="12px" width="60%" className="mb-3" />
+          <SkeletonLoader variant="text" height="12px" width="40%" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MobileSectionSkeleton({ isDark }: { isDark: boolean }) {
+  return (
+    <div className="space-y-2">
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className={`rounded-[10px] border p-3 ${isDark ? "bg-white/[0.08] border-white/15" : "bg-white/[0.2] border-white/30"}`}
+        >
+          <SkeletonLoader variant="text" height="13px" className="mb-2" />
+          <SkeletonLoader variant="text" height="11px" width="50%" />
+        </div>
+      ))}
+    </div>
   );
 }

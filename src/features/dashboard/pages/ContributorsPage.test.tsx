@@ -1,30 +1,54 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '../../../test/renderWithProviders'
 import { ContributorsPage } from './ContributorsPage'
 
 // ContributorsPage itself fetches nothing and takes no props - it is a pure tab
-// shell around three fully static children (ContributionsTab, ProjectsTab,
-// RewardsTab), each of which renders its own hardcoded mock data with zero API
-// calls (confirmed by reading ContributorsPage.tsx, ContributionsTab.tsx,
-// ProjectsTab.tsx, and RewardsTab.tsx in full - none of them import anything from
-// shared/api/client or useAuth). So there is no fetch to mock, and no
-// loading/empty/failure state tied to a network call; these tests instead cover
-// the page's real behavior: which static tab content renders by default and on tab
-// switch.
+// shell around three children (ContributionsTab, ProjectsTab, RewardsTab).
+// ContributionsTab fetches the current user's issue applications on mount
+// (getMyIssueApplications), so it's mocked below the same way RedeemPage.test.tsx
+// mocks getMyRedemptions; ProjectsTab/RewardsTab still render their own
+// hardcoded mock data with no API calls (confirmed by reading both in full).
+const mockGetMyIssueApplications = vi.fn()
+
+vi.mock('../../../shared/api/client', async () => {
+  const actual = await vi.importActual<typeof import('../../../shared/api/client')>('../../../shared/api/client')
+  return {
+    ...actual,
+    getMyIssueApplications: (...args: unknown[]) => mockGetMyIssueApplications(...args),
+  }
+})
+
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
+
+const SAMPLE_APPLICATION = {
+  id: 'app-1',
+  status: 'applied' as const,
+  project_id: 'proj-1',
+  project_name: 'test-owner/test-repo',
+  issue_number: 42,
+  issue_title: 'Add dark mode support to settings page',
+  issue_url: 'https://github.com/test-owner/test-repo/issues/42',
+  labels: ['enhancement'],
+  applied_at: '2026-01-01T00:00:00Z',
+}
+
 describe('ContributorsPage', () => {
-  it('renders the Contributions tab by default', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetMyIssueApplications.mockResolvedValue({ issue_applications: [SAMPLE_APPLICATION] })
+  })
+
+  it('renders the Contributions tab by default', async () => {
     renderWithProviders(<ContributorsPage />)
 
     expect(screen.getByRole('button', { name: 'Contributions' })).toBeInTheDocument()
-    // Static content owned by ContributionsTab. It renders twice (once in the
+    // Real content fetched by ContributionsTab. It renders twice (once in the
     // desktop kanban layout, once in the mobile stacked layout - both are always
     // present in jsdom since there's no real viewport to apply the Tailwind
     // `hidden md:block` / `md:hidden` breakpoint classes).
-    expect(
-      screen.getAllByText('Add dark mode support to the dashboard').length,
-    ).toBeGreaterThan(0)
+    expect((await screen.findAllByText('Add dark mode support to settings page')).length).toBeGreaterThan(0)
     // Rewards-only action buttons are not shown on the Contributions tab.
     expect(screen.queryByText('Request payment')).not.toBeInTheDocument()
   })
@@ -38,7 +62,7 @@ describe('ContributorsPage', () => {
     expect(screen.getByText('Project name')).toBeInTheDocument()
     expect(screen.getAllByText('React Ecosystem').length).toBeGreaterThan(0)
     expect(
-      screen.queryByText('Add dark mode support to the dashboard'),
+      screen.queryByText('Add dark mode support to settings page'),
     ).not.toBeInTheDocument()
   })
 
@@ -54,16 +78,12 @@ describe('ContributorsPage', () => {
     expect(screen.getAllByText('Pending request').length).toBeGreaterThan(0)
   })
 
-  it('renders in both light and dark theme without crashing', () => {
+  it('renders in both light and dark theme without crashing', async () => {
     const { unmount } = renderWithProviders(<ContributorsPage />, { theme: 'light' })
-    expect(
-      screen.getAllByText('Add dark mode support to the dashboard').length,
-    ).toBeGreaterThan(0)
+    expect((await screen.findAllByText('Add dark mode support to settings page')).length).toBeGreaterThan(0)
     unmount()
 
     renderWithProviders(<ContributorsPage />, { theme: 'dark' })
-    expect(
-      screen.getAllByText('Add dark mode support to the dashboard').length,
-    ).toBeGreaterThan(0)
+    expect((await screen.findAllByText('Add dark mode support to settings page')).length).toBeGreaterThan(0)
   })
 })

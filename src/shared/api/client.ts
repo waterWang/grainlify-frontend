@@ -917,6 +917,31 @@ export const createRedemption = (points: number, stellarWalletAddress: string) =
 export const getMyRedemptions = () =>
   apiRequest<{ redemptions: Redemption[] }>("/redemptions/me", { requiresAuth: true });
 
+// The caller's own issue applications, bucketed server-side into
+// applied/assigned/pending_review/complete - pending_review/complete are
+// derived at read time from a PR<->issue match, not stored, so they're only
+// ever present alongside a pr_* field when that match exists.
+export interface IssueApplicationSummary {
+  id: string;
+  status: "applied" | "assigned" | "pending_review" | "complete";
+  project_id: string;
+  project_name: string;
+  issue_number: number;
+  issue_title: string;
+  issue_url: string;
+  labels: string[];
+  applied_at?: string;
+  assigned_at?: string;
+  pr_number?: number;
+  pr_url?: string;
+  pr_title?: string;
+  pr_created_at?: string;
+  pr_merged_at?: string;
+}
+
+export const getMyIssueApplications = () =>
+  apiRequest<{ issue_applications: IssueApplicationSummary[] }>("/issue-applications/me", { requiresAuth: true });
+
 export interface AdminRedemption extends Redemption {
   user_id: string;
   login?: string;
