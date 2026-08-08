@@ -102,21 +102,6 @@ select:disabled,
   animation: shimmer 2s infinite;
 }
 
-/* Gentle drift for the Hero's floating ecosystem badges */
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-14px) rotate(2deg);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
 /* Infinite horizontal scroll for the testimonials marquee */
 @keyframes marquee {
   from {

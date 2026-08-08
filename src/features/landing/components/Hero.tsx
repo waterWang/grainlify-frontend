@@ -4,60 +4,6 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { useLandingStats } from "../../../shared/hooks/useLandingStats";
 import { HoverBorderGradient } from "./HoverBorderGradient";
-import { ECOSYSTEMS } from "../../../shared/data/ecosystems";
-
-interface BadgePlacement {
-  top: string;
-  left: string;
-  size: number;
-  delay: number;
-}
-
-const BADGE_PLACEMENTS: BadgePlacement[] = [
-  { top: "18%", left: "10%", size: 72, delay: 0 },
-  { top: "22%", left: "86%", size: 64, delay: 1.5 },
-  { top: "70%", left: "8%", size: 64, delay: 3 },
-  { top: "72%", left: "88%", size: 72, delay: 4.5 },
-];
-
-// The chains Grainlify runs on, floating gently behind the hero content -
-// each a small glass badge in the platform's own gold palette (not a literal
-// brand-logo grid) rather than the earlier flickering-lights treatment.
-function FloatingEcosystemBadges({ isDark }: { isDark: boolean }) {
-  return (
-    <div aria-hidden="true" className="hidden md:block absolute inset-0 overflow-hidden">
-      {ECOSYSTEMS.map((eco, i) => {
-        const placement = BADGE_PLACEMENTS[i % BADGE_PLACEMENTS.length];
-        return (
-          <div
-            key={eco.key}
-            className="animate-float absolute rounded-full"
-            style={{
-              top: placement.top,
-              left: placement.left,
-              width: placement.size,
-              height: placement.size,
-              animationDelay: `${placement.delay}s`,
-            }}
-          >
-            <div
-              className={`relative w-full h-full rounded-full flex items-center justify-center border backdrop-blur-[20px] bg-gradient-to-br ${eco.gradient} shadow-[0_8px_24px_rgba(0,0,0,0.18)] ${
-                isDark ? "border-white/20" : "border-white/40"
-              }`}
-            >
-              <span className="text-white font-bold text-xs tracking-wide">{eco.symbol}</span>
-              <span
-                className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ${
-                  isDark ? "ring-[#1a1512]" : "ring-[#e8dfd0]"
-                } ${eco.status === "live" ? "bg-emerald-400" : "bg-white/50"}`}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export function Hero() {
   const { theme } = useTheme();
@@ -68,7 +14,19 @@ export function Hero() {
       {/* Golden Glassmorphism Orbs (hidden on very small screens to avoid overflow) */}
       <div className="hidden sm:block absolute top-1/4 left-1/4 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-[#c9983a]/30 blur-3xl animate-pulse" />
       <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-[#d4af37]/20 blur-3xl animate-pulse delay-1000" />
-      <FloatingEcosystemBadges isDark={theme === "dark"} />
+      {/* Subtle grid texture for depth */}
+      <div
+        aria-hidden="true"
+        className={`absolute inset-0 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,black,transparent)] ${
+          theme === "dark" ? "opacity-[0.05]" : "opacity-[0.06]"
+        }`}
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          color: theme === "dark" ? "#e8dfd0" : "#2d2820",
+        }}
+      />
 
       {/* Content */}
       <div className="relative z-10 max-w-6xl mx-auto text-center">

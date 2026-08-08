@@ -46,7 +46,7 @@ describe('LandingPage', () => {
     renderWithProviders(<LandingPage />, { withAuth: true })
 
     expect(screen.getByText(/Grainlify bridges the gap/i)).toBeInTheDocument()
-    expect(screen.getByText('Built for a Multi-Chain Future')).toBeInTheDocument()
+    expect(screen.getByText('Built for Every Blockchain Ecosystem')).toBeInTheDocument()
     expect(screen.getByText('Everything You Need to Succeed')).toBeInTheDocument()
     expect(screen.getByText('How It Works')).toBeInTheDocument()
     expect(screen.getByText('Why Choose Grainlify?')).toBeInTheDocument()

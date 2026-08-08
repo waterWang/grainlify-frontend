@@ -1,14 +1,14 @@
 import { motion } from "motion/react";
-import { CalendarDays, Globe2 } from "lucide-react";
+import { Blocks, Boxes, CalendarDays, Globe2, Layers, Link2 } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
-import { ECOSYSTEMS } from "../../../shared/data/ecosystems";
 
 const ORBIT_ANGLES = [-90, 0, 90, 180];
+const NODE_ICONS = [Blocks, Link2, Layers, Boxes];
 
-// A hub-and-spoke visual: Grainlify at the center, connected to every chain
-// it runs on - a literal picture of "one platform, every network" that
-// doubles as the section's own illustration instead of a stock image or logo
-// grid.
+// A hub-and-spoke visual: Grainlify at the center, connected to generic
+// network nodes rather than any named chain - Grainlify isn't limited to a
+// fixed list of ecosystems, so the illustration (and copy) stays deliberately
+// chain-agnostic instead of naming specific networks.
 export function EcosystemNetwork() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -52,35 +52,28 @@ export function EcosystemNetwork() {
               <span className="text-white font-bold text-sm sm:text-base">Grainlify</span>
             </motion.div>
 
-            {/* Orbiting ecosystem badges */}
-            {ECOSYSTEMS.map((eco, i) => {
+            {/* Orbiting network nodes - generic icons, not named chains */}
+            {NODE_ICONS.map((Icon, i) => {
               const angle = ORBIT_ANGLES[i % ORBIT_ANGLES.length];
               const rad = (angle * Math.PI) / 180;
               const xPct = 50 + Math.cos(rad) * 37.5;
               const yPct = 50 + Math.sin(rad) * 37.5;
               return (
                 <motion.div
-                  key={eco.key}
+                  key={i}
                   initial={{ scale: 0, opacity: 0 }}
                   whileInView={{ scale: 1, opacity: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: 0.2 + i * 0.1 }}
-                  className="absolute w-16 h-16 sm:w-[4.5rem] sm:h-[4.5rem] -translate-x-1/2 -translate-y-1/2"
+                  className="absolute w-14 h-14 sm:w-16 sm:h-16 -translate-x-1/2 -translate-y-1/2"
                   style={{ top: `${yPct}%`, left: `${xPct}%` }}
                 >
                   <div
-                    className={`group relative w-full h-full rounded-full flex flex-col items-center justify-center border backdrop-blur-[20px] bg-gradient-to-br ${eco.gradient} shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-transform hover:scale-110 ${
-                      isDark ? "border-white/20" : "border-white/40"
+                    className={`w-full h-full rounded-full flex items-center justify-center border backdrop-blur-[20px] transition-transform hover:scale-110 ${
+                      isDark ? "bg-white/[0.08] border-white/15" : "bg-white/[0.25] border-white/40"
                     }`}
                   >
-                    <span className="text-white font-bold text-[11px] sm:text-xs">{eco.symbol}</span>
-                    <span
-                      className={`absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${
-                        isDark ? "bg-[#1a1512] text-[#e8dfd0]" : "bg-white text-[#2d2820]"
-                      } shadow-md`}
-                    >
-                      {eco.name} · {eco.status === "live" ? "Live" : "Coming Soon"}
-                    </span>
+                    <Icon className="w-6 h-6 text-[#c9983a]" />
                   </div>
                 </motion.div>
               );
@@ -95,14 +88,14 @@ export function EcosystemNetwork() {
             transition={{ duration: 0.6 }}
           >
             <span className="inline-block text-sm font-semibold tracking-wide text-[#c9983a] mb-3 uppercase">
-              One Platform, Every Chain
+              Chain-Agnostic by Design
             </span>
             <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors ${isDark ? "text-[#e8dfd0]" : "text-[#2d2820]"}`}>
-              Built for a Multi-Chain Future
+              Built for Every Blockchain Ecosystem
             </h2>
             <p className={`text-xl mb-10 transition-colors ${isDark ? "text-[#b8a898]" : "text-[#7a6b5a]"}`}>
-              Grainlify already connects contributors and maintainers on Stellar and Starknet, with Flare and Solana
-              coming soon - one profile, one points balance, no matter which chain your project builds on.
+              Grainlify isn't tied to a single network. Wherever your project lives, contributors get one profile,
+              one points balance, and a clear path to real payouts.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -114,10 +107,10 @@ export function EcosystemNetwork() {
                 <Globe2 className="w-5 h-5 text-[#c9983a] flex-shrink-0 mt-0.5" />
                 <div>
                   <div className={`font-semibold text-sm mb-1 ${isDark ? "text-[#e8dfd0]" : "text-[#2d2820]"}`}>
-                    Growing Ecosystem
+                    Any Blockchain
                   </div>
                   <div className={`text-sm ${isDark ? "text-[#b8a898]" : "text-[#7a6b5a]"}`}>
-                    More chains added as the community grows.
+                    Not limited to one network or ecosystem.
                   </div>
                 </div>
               </div>
