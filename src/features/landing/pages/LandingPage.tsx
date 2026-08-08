@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navbar } from "../components/Navbar";
 import { Hero } from "../components/Hero";
+import { EcosystemNetwork } from "../components/EcosystemNetwork";
 import { BentoGrid, BentoGridItem } from "../components/BentoGrid";
 import { TestimonialsMarquee, type MarqueeTestimonial } from "../components/TestimonialsMarquee";
 import { FAQAccordion } from "../components/FAQAccordion";
@@ -53,7 +54,7 @@ export function LandingPage() {
     >
       <Navbar />
       <Hero />
-      <MissionStatement />
+      <EcosystemNetwork />
       <Features />
       <HowItWorks />
       <WhyChooseUs />
@@ -112,57 +113,6 @@ function SectionHeader({ eyebrow, title, subtitle }: { eyebrow?: string; title: 
         {subtitle}
       </p>
     </Reveal>
-  );
-}
-
-interface MissionWord {
-  text: string;
-  emphasis?: boolean;
-}
-
-const splitWords = (str: string, emphasis = false): MissionWord[] =>
-  str.split(" ").map((text) => ({ text, emphasis }));
-
-const MISSION_WORDS: MissionWord[] = [
-  ...splitWords("Millions of pull requests ship every day."),
-  ...splitWords("Almost none of them pay.", true),
-  ...splitWords("Grainlify turns your contributions into"),
-  ...splitWords("real, on-chain earnings", true),
-  ...splitWords("- no matter what you build or where you build it."),
-];
-
-// A bold, text-only statement of intent between Hero and Features - no
-// images or logos, just Grainlify's own mission, with each word blurring
-// into focus as the section scrolls into view.
-function MissionStatement() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
-  return (
-    <section className="relative py-20 sm:py-28 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto text-center">
-        <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-snug">
-          {MISSION_WORDS.map((w, i) => (
-            <motion.span
-              key={i}
-              initial={{ opacity: 0, filter: "blur(6px)" }}
-              whileInView={{ opacity: 1, filter: "blur(0px)" }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.4, delay: i * 0.025 }}
-              className={`inline-block mr-[0.28em] ${
-                w.emphasis
-                  ? "bg-gradient-to-r from-[#c9983a] to-[#d4af37] bg-clip-text text-transparent"
-                  : isDark
-                    ? "text-[#e8dfd0]"
-                    : "text-[#2d2820]"
-              }`}
-            >
-              {w.text}
-            </motion.span>
-          ))}
-        </p>
-      </div>
-    </section>
   );
 }
 

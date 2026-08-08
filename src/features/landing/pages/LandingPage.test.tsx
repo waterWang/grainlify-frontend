@@ -46,9 +46,7 @@ describe('LandingPage', () => {
     renderWithProviders(<LandingPage />, { withAuth: true })
 
     expect(screen.getByText(/Grainlify bridges the gap/i)).toBeInTheDocument()
-    // MissionStatement renders each word as its own span, so the sentence
-    // isn't one text node - assert on a single distinctive word instead.
-    expect(screen.getByText('on-chain')).toBeInTheDocument()
+    expect(screen.getByText('Built for a Multi-Chain Future')).toBeInTheDocument()
     expect(screen.getByText('Everything You Need to Succeed')).toBeInTheDocument()
     expect(screen.getByText('How It Works')).toBeInTheDocument()
     expect(screen.getByText('Why Choose Grainlify?')).toBeInTheDocument()

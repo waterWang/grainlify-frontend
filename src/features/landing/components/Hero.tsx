@@ -4,69 +4,57 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { useLandingStats } from "../../../shared/hooks/useLandingStats";
 import { HoverBorderGradient } from "./HoverBorderGradient";
+import { ECOSYSTEMS } from "../../../shared/data/ecosystems";
 
-interface LightStrand {
+interface BadgePlacement {
   top: string;
   left: string;
-  width: number;
-  rotate: number;
-  nodes: number[];
+  size: number;
+  delay: number;
 }
 
-// Two longer "string light" staircases climbing toward the center from
-// opposite corners, each with evenly spaced glowing nodes that flicker on
-// their own staggered timer - reads as one clear ascending motif per side
-// (matching the reference's climbing-lights look) rather than scattered
-// fragments. Adapted from Aceternity UI's Hero Section With Flickering
-// Lights, whose original is a single right-side panel; mirrored here across
-// both sides since this hero centers its content instead of splitting it
-// two-column.
-const LIGHT_STRANDS: LightStrand[] = [
-  { top: "62%", left: "2%", width: 420, rotate: -22, nodes: [0.08, 0.32, 0.56, 0.8] },
-  { top: "30%", left: "72%", width: 420, rotate: -22, nodes: [0.08, 0.32, 0.56, 0.8] },
+const BADGE_PLACEMENTS: BadgePlacement[] = [
+  { top: "18%", left: "10%", size: 72, delay: 0 },
+  { top: "22%", left: "86%", size: 64, delay: 1.5 },
+  { top: "70%", left: "8%", size: 64, delay: 3 },
+  { top: "72%", left: "88%", size: 72, delay: 4.5 },
 ];
 
-const FLICKER_DELAYS = [0, 0.7, 1.4, 2.1, 0.5, 1.9, 1.1, 0.3];
-
-function FlickeringLights({ isDark }: { isDark: boolean }) {
+// The chains Grainlify runs on, floating gently behind the hero content -
+// each a small glass badge in the platform's own gold palette (not a literal
+// brand-logo grid) rather than the earlier flickering-lights treatment.
+function FloatingEcosystemBadges({ isDark }: { isDark: boolean }) {
   return (
     <div aria-hidden="true" className="hidden md:block absolute inset-0 overflow-hidden">
-      {LIGHT_STRANDS.map((strand, sIdx) => (
-        <div
-          key={sIdx}
-          className="absolute"
-          style={{
-            top: strand.top,
-            left: strand.left,
-            width: strand.width,
-            transform: `rotate(${strand.rotate}deg)`,
-            transformOrigin: "left center",
-          }}
-        >
+      {ECOSYSTEMS.map((eco, i) => {
+        const placement = BADGE_PLACEMENTS[i % BADGE_PLACEMENTS.length];
+        return (
           <div
-            className="h-px w-full"
+            key={eco.key}
+            className="animate-float absolute rounded-full"
             style={{
-              background: `linear-gradient(to right, transparent, ${isDark ? "rgba(212,175,55,0.7)" : "rgba(166,124,46,0.55)"}, transparent)`,
+              top: placement.top,
+              left: placement.left,
+              width: placement.size,
+              height: placement.size,
+              animationDelay: `${placement.delay}s`,
             }}
-          />
-          {strand.nodes.map((t, nIdx) => (
-            <span
-              key={nIdx}
-              className="animate-flicker absolute rounded-full"
-              style={{
-                left: `${t * 100}%`,
-                top: -5,
-                width: 10,
-                height: 10,
-                marginLeft: -5,
-                background: "radial-gradient(circle, #f9e4ae 0%, #d4af37 55%, transparent 100%)",
-                boxShadow: "0 0 18px 6px rgba(212,175,55,0.65)",
-                animationDelay: `${FLICKER_DELAYS[(sIdx * 4 + nIdx) % FLICKER_DELAYS.length]}s`,
-              }}
-            />
-          ))}
-        </div>
-      ))}
+          >
+            <div
+              className={`relative w-full h-full rounded-full flex items-center justify-center border backdrop-blur-[20px] bg-gradient-to-br ${eco.gradient} shadow-[0_8px_24px_rgba(0,0,0,0.18)] ${
+                isDark ? "border-white/20" : "border-white/40"
+              }`}
+            >
+              <span className="text-white font-bold text-xs tracking-wide">{eco.symbol}</span>
+              <span
+                className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ${
+                  isDark ? "ring-[#1a1512]" : "ring-[#e8dfd0]"
+                } ${eco.status === "live" ? "bg-emerald-400" : "bg-white/50"}`}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -80,18 +68,7 @@ export function Hero() {
       {/* Golden Glassmorphism Orbs (hidden on very small screens to avoid overflow) */}
       <div className="hidden sm:block absolute top-1/4 left-1/4 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-[#c9983a]/30 blur-3xl animate-pulse" />
       <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-[#d4af37]/20 blur-3xl animate-pulse delay-1000" />
-      {/* Circuit-grid texture, gold-tinted so it reads as part of the light
-          strands' motif rather than a neutral background pattern */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 [mask-image:radial-gradient(ellipse_75%_65%_at_50%_35%,black,transparent)]"
-        style={{
-          backgroundImage:
-            `linear-gradient(to right, ${theme === "dark" ? "rgba(212,175,55,0.16)" : "rgba(166,124,46,0.14)"} 1px, transparent 1px), linear-gradient(to bottom, ${theme === "dark" ? "rgba(212,175,55,0.16)" : "rgba(166,124,46,0.14)"} 1px, transparent 1px)`,
-          backgroundSize: "40px 40px",
-        }}
-      />
-      <FlickeringLights isDark={theme === "dark"} />
+      <FloatingEcosystemBadges isDark={theme === "dark"} />
 
       {/* Content */}
       <div className="relative z-10 max-w-6xl mx-auto text-center">

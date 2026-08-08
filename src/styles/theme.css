@@ -102,21 +102,19 @@ select:disabled,
   animation: shimmer 2s infinite;
 }
 
-/* Ambient flicker for the Hero's decorative light nodes */
-@keyframes flicker {
+/* Gentle drift for the Hero's floating ecosystem badges */
+@keyframes float {
   0%,
   100% {
-    opacity: 0.2;
-    transform: scale(0.85);
+    transform: translateY(0) rotate(0deg);
   }
   50% {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateY(-14px) rotate(2deg);
   }
 }
 
-.animate-flicker {
-  animation: flicker 3s ease-in-out infinite;
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
 /* Infinite horizontal scroll for the testimonials marquee */
