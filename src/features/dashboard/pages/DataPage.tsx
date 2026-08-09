@@ -170,7 +170,7 @@ export function DataPage() {
       const data = payload[0].payload
       return (
         <div className="backdrop-blur-[30px] bg-[#1a1410]/95 border-2 border-white/20 rounded-[12px] px-5 py-4 min-w-[200px]">
-          <p className="text-[13px] font-bold text-white mb-3">{data.month} 2025</p>
+          <p className="text-[13px] font-bold text-white mb-3">{data.month}</p>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

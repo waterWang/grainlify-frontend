@@ -252,4 +252,27 @@ describe('DataPage', () => {
       expect(apiClient.getProjectActivity).toHaveBeenCalledWith('Weekly interval')
     })
   })
+
+  // ------------- Hardcoded year removal (Issue #761) -----------------------
+
+  describe('chart tooltip label', () => {
+    it('never renders a hardcoded year literal in the tooltip label', async () => {
+      // File-level guard: the CustomTooltip month label must not contain a
+      // hardcoded year literal (was "2025", now wrong for every other year).
+      // Reading the source guards against the literal reappearing regardless
+      // of how the heavy chart libs render in jsdom.
+      const fs = await import('fs')
+      const path = await import('path')
+      const src = fs.readFileSync(
+        path.resolve(__dirname, './DataPage.tsx'),
+        'utf8'
+      )
+
+      // The tooltip label renders the data point's month via {data.month}.
+      expect(src).toContain('{data.month}</p>')
+      // No hardcoded year literal may be concatenated after the month.
+      expect(src).not.toMatch(/\{data\.month\}\s*(19|20)\d\d/)
+      expect(src).toMatch(/data\.month/)
+    })
+  })
 })
