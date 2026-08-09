@@ -177,7 +177,7 @@ export function DiscoverPage({
 }: DiscoverPageProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const prefersReducedMotion = useReducedMotion();
   const [searchParams, setSearchParams] = useSearchParams();
   // Derived directly from ?dIssue=/?dProject= (not local state) so this
@@ -366,6 +366,7 @@ export function DiscoverPage({
       <IssueDetailPage
         issueId={selectedIssue.issueId}
         projectId={selectedIssue.projectId}
+        userRole={userRole}
         onClose={() => {
           const next = new URLSearchParams(searchParams);
           next.delete('dIssue');

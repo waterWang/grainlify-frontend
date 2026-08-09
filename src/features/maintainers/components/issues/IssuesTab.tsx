@@ -520,7 +520,12 @@ Only applications submitted via the apply link above will be considered. Please 
         )
       );
     } catch (e: any) {
-      setApplicationError(e?.message || 'Failed to assign');
+      const msg = e?.message ?? '';
+      if (msg.includes('assignee_has_not_applied')) {
+        setApplicationError("This person hasn't applied to this issue on Grainlify yet.");
+      } else {
+        setApplicationError(msg || 'Failed to assign');
+      }
     } finally {
       setActionInProgress(null);
     }

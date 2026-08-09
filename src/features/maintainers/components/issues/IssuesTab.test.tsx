@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useLocation } from 'react-router-dom'
 import { renderWithProviders, screen, waitFor } from '../../../../test/renderWithProviders'
 import { IssuesTab } from './IssuesTab'
-import { getProjectIssues } from '../../../../shared/api/client'
+import { getProjectIssues, assignApplicant } from '../../../../shared/api/client'
 
 function LocationSpy() {
   const location = useLocation()
@@ -93,5 +93,79 @@ describe('IssuesTab - selected issue URL persistence', () => {
     await waitFor(() => expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument())
     expect(screen.getByText('Issue 101')).toBeInTheDocument()
     expect(screen.getByText('Issue 102')).toBeInTheDocument()
+  })
+})
+
+describe('IssuesTab - assign error messaging', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    mockedGetProjectIssues.mockResolvedValue({
+      issues: [
+        makeApiIssue({
+          github_issue_id: 201,
+          comments_count: 1,
+          comments: [
+            {
+              id: 555,
+              user: { login: 'applicant-1' },
+              created_at: '2026-01-01T00:00:00Z',
+              // Mirrors the exact bot comment format Apply() posts (backend
+              // issue_applications.go) so this matches isApplicationComment()
+              // and the applicant-login regex, rendering a real application
+              // card with a working Assign button, not just a discussion
+              // comment.
+              body: '**@applicant-1 has applied to work on this issue as part of the Grainlify program.**\n\n> I would like to help',
+            },
+          ],
+        }),
+      ],
+    })
+  })
+
+  // Application cards start collapsed (expandedApplications state) - the
+  // dropdown toggle is an icon-only button with no accessible name, so it
+  // has to be targeted by its lucide icon class rather than role/name.
+  async function expandFirstApplicationCard(user: ReturnType<typeof userEvent.setup>) {
+    await waitFor(() => expect(screen.getByText('Issue 201')).toBeInTheDocument())
+    await user.click(screen.getByText('Issue 201'))
+
+    const chevron = await waitFor(() => {
+      const el = document.querySelector('.lucide-chevron-down')
+      if (!el) throw new Error('chevron-down toggle not found yet')
+      return el
+    })
+    await user.click(chevron.closest('button')!)
+  }
+
+  it('shows a friendly message when assigning a non-applicant is rejected by the backend', async () => {
+    const user = userEvent.setup()
+    vi.mocked(assignApplicant).mockRejectedValue(new Error('assignee_has_not_applied'))
+
+    renderWithProviders(
+      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} />,
+      { route: '/dashboard?tab=maintainers&subtab=Issues' },
+    )
+    await expandFirstApplicationCard(user)
+
+    const assignButton = await screen.findByRole('button', { name: 'Assign' })
+    await user.click(assignButton)
+
+    expect(await screen.findByText("This person hasn't applied to this issue on Grainlify yet.")).toBeInTheDocument()
+  })
+
+  it('falls back to the raw error message for a different failure', async () => {
+    const user = userEvent.setup()
+    vi.mocked(assignApplicant).mockRejectedValue(new Error('installation_token_failed'))
+
+    renderWithProviders(
+      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} />,
+      { route: '/dashboard?tab=maintainers&subtab=Issues' },
+    )
+    await expandFirstApplicationCard(user)
+
+    const assignButton = await screen.findByRole('button', { name: 'Assign' })
+    await user.click(assignButton)
+
+    expect(await screen.findByText('installation_token_failed')).toBeInTheDocument()
   })
 })

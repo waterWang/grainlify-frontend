@@ -60,7 +60,7 @@ const SearchPage = lazy(() => import("./pages/SearchPage").then((m) => ({ defaul
 const RedeemPage = lazy(() => import("./pages/RedeemPage").then((m) => ({ default: m.RedeemPage })));
 
 export function Dashboard() {
-  const { logout, login, user, userId } = useAuth();
+  const { logout, login, user, userId, userRole } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const { ref: themeToggleRef, toggleWithAnimation: toggleSwitchTheme } =
@@ -792,6 +792,7 @@ export function Dashboard() {
                 issueId={selectedIssue.issueId}
                 projectId={selectedIssue.projectId}
                 onClose={() => setSelectedIssue(null)}
+                userRole={userRole}
               />
             ) : selectedProjectId ? (
               <ProjectDetailPage

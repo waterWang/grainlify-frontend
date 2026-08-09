@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 import { useTheme } from '../../../shared/contexts/ThemeContext';
+import type { UserRole } from '../../../shared/contexts/AuthContext';
 import { getMyProjects, getPublicProject } from '../../../shared/api/client';
 import { IssuesTab } from '../../maintainers/components/issues/IssuesTab';
 import { SkeletonLoader } from '../../../shared/components/SkeletonLoader';
@@ -17,9 +18,10 @@ interface IssueDetailPageProps {
   issueId?: string;
   projectId?: string;
   onClose: () => void;
+  userRole?: UserRole;
 }
 
-export function IssueDetailPage({ issueId, projectId, onClose }: IssueDetailPageProps) {
+export function IssueDetailPage({ issueId, projectId, onClose, userRole }: IssueDetailPageProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -66,6 +68,14 @@ export function IssueDetailPage({ issueId, projectId, onClose }: IssueDetailPage
     const others = myProjects.filter((m) => !current || m.id !== current.id);
     return current ? [current, ...others] : others;
   }, [project, myProjects]);
+
+  // myProjects comes from GET /projects/mine, which is strictly
+  // owner_user_id = caller - real per-project ownership, not generic "my
+  // activity". The backend's own Assign/Reject/Unassign authz is
+  // owner-or-admin, so mirror that here rather than gating only on
+  // ownership.
+  const isOwner = !!project && myProjects.some((m) => m.id === project.id);
+  const viewMode: 'contributor' | 'maintainer' = isOwner || userRole === 'admin' ? 'maintainer' : 'contributor';
 
   return (
     // Same viewport budget as MaintainersPage (see its comment): 84px covers the
@@ -114,7 +124,7 @@ export function IssueDetailPage({ issueId, projectId, onClose }: IssueDetailPage
             selectedProjects={selectedProjects}
             initialSelectedIssueId={issueId}
             initialSelectedProjectId={projectId}
-            viewMode="contributor"
+            viewMode={viewMode}
           />
         )}
       </div>

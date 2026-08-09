@@ -111,6 +111,36 @@ describe('IssueDetailPage', () => {
     expect(props.viewMode).toBe('contributor')
   })
 
+  it('passes viewMode="maintainer" when the current project is one of myProjects', async () => {
+    vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
+    vi.mocked(getMyProjects).mockResolvedValue([buildMyProject({ id: 'p1' })])
+
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} />)
+
+    await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
+    expect(getIssuesTabProps().viewMode).toBe('maintainer')
+  })
+
+  it('passes viewMode="contributor" when the current project is not owned, even with other myProjects', async () => {
+    vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
+    vi.mocked(getMyProjects).mockResolvedValue([buildMyProject({ id: 'p2' })])
+
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} />)
+
+    await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
+    expect(getIssuesTabProps().viewMode).toBe('contributor')
+  })
+
+  it('passes viewMode="maintainer" for an admin viewer regardless of ownership', async () => {
+    vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
+    vi.mocked(getMyProjects).mockResolvedValue([])
+
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} userRole="admin" />)
+
+    await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
+    expect(getIssuesTabProps().viewMode).toBe('maintainer')
+  })
+
   it('de-duplicates the current project so it appears exactly once, ordered first, in selectedProjects', async () => {
     vi.mocked(getPublicProject).mockResolvedValue(
       buildPublicProject({ id: 'p1', github_full_name: 'acme/current' })
