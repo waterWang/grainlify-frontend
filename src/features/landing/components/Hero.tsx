@@ -100,7 +100,7 @@ export function Hero() {
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </HoverBorderGradient>
           <a
-            href="https://grainlify-docs.vercel.app/"
+            href="https://docs.grainlify.com"
             target="_blank"
             rel="noopener noreferrer"
             className={`w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-[16px] backdrop-blur-[30px] border font-medium transition-all inline-flex items-center justify-center ${

@@ -1,7 +1,17 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, ArrowRight, Github } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Github, Linkedin } from "lucide-react";
+import { siX, siTelegram } from "simple-icons";
+import grainlifyLogo from "../../../assets/grainlify_log.svg";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
+
+function SimpleIconGlyph({ path, className }: { path: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d={path} />
+    </svg>
+  );
+}
 
 interface FooterLink {
   label: string;
@@ -17,8 +27,23 @@ const PRODUCT_LINKS: FooterLink[] = [
 ];
 
 const COMMUNITY_LINKS: FooterLink[] = [
-  { label: "Documentation", href: "https://grainlify-docs.vercel.app/", external: true },
+  { label: "Documentation", href: "https://docs.grainlify.com", external: true },
   { label: "GitHub", href: "https://github.com/Grainlify", external: true },
+];
+
+const SOCIAL_LINKS: { label: string; href: string; icon: ReactNode }[] = [
+  { label: "Grainlify on GitHub", href: "https://github.com/Grainlify", icon: <Github className="w-4 h-4" /> },
+  {
+    label: "Grainlify on LinkedIn",
+    href: "https://www.linkedin.com/company/grainlify",
+    icon: <Linkedin className="w-4 h-4" />,
+  },
+  { label: "Grainlify on X", href: "https://x.com/Grainlify", icon: <SimpleIconGlyph path={siX.path} className="w-4 h-4" /> },
+  {
+    label: "Grainlify on Telegram",
+    href: "https://t.me/+DQ_WdQSwynFiYjZl",
+    icon: <SimpleIconGlyph path={siTelegram.path} className="w-4 h-4" />,
+  },
 ];
 
 // Adapted from Aceternity UI's "Footer With Big Text" block
@@ -38,7 +63,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c9983a] to-[#d4af37] shadow-[0_2px_8px_rgba(201,152,58,0.4)]" />
+              <img src={grainlifyLogo} alt="Grainlify" className="w-8 h-8 grainlify-logo" />
               <span className={`text-xl font-semibold transition-colors ${isDark ? "text-[#e8dfd0]" : "text-[#2d2820]"}`}>
                 Grainlify
               </span>
@@ -46,19 +71,24 @@ export function Footer() {
             <p className={`max-w-xs mb-6 transition-colors ${isDark ? "text-[#b8a898]" : "text-[#7a6b5a]"}`}>
               Connecting talent with opportunity in the open-source ecosystem - contribute, get matched, get paid.
             </p>
-            <a
-              href="https://github.com/Grainlify"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Grainlify on GitHub"
-              className={`inline-flex items-center justify-center w-10 h-10 rounded-full border backdrop-blur-[30px] transition-all ${
-                isDark
-                  ? "bg-white/[0.08] border-white/15 text-[#e8dfd0] hover:bg-white/[0.14] hover:border-[#c9983a]/40"
-                  : "bg-white/[0.18] border-white/30 text-[#2d2820] hover:bg-white/[0.28] hover:border-[#c9983a]/40"
-              }`}
-            >
-              <Github className="w-4 h-4" />
-            </a>
+            <div className="flex items-center gap-3">
+              {SOCIAL_LINKS.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  className={`inline-flex items-center justify-center w-10 h-10 rounded-full border backdrop-blur-[30px] transition-all ${
+                    isDark
+                      ? "bg-white/[0.08] border-white/15 text-[#e8dfd0] hover:bg-white/[0.14] hover:border-[#c9983a]/40"
+                      : "bg-white/[0.18] border-white/30 text-[#2d2820] hover:bg-white/[0.28] hover:border-[#c9983a]/40"
+                  }`}
+                >
+                  {social.icon}
+                </a>
+              ))}
+            </div>
           </div>
 
           <FooterColumn title="Product" links={PRODUCT_LINKS} isDark={isDark} />
