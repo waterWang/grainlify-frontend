@@ -31,6 +31,7 @@ describe('Hero component layout shift prevention', () => {
       display: { activeProjects: '—', contributors: '—', grantsDistributed: '—' },
       isLoading: true,
       error: null,
+      refetch: vi.fn(),
     })
     renderHero()
     // Image placeholder should be present
@@ -46,6 +47,7 @@ describe('Hero component layout shift prevention', () => {
       display: { activeProjects: '10', contributors: '200', grantsDistributed: '5000' },
       isLoading: false,
       error: null,
+      refetch: vi.fn(),
     })
     renderHero()
     expect(screen.queryByTestId('stat-skeleton')).not.toBeInTheDocument()

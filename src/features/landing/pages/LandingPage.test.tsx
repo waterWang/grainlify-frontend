@@ -45,7 +45,14 @@ vi.mock('react-intl', () => ({
 
 const mockUseLandingStats = vi.fn()
 
-function setLandingStatsMock(overrides: Partial<ReturnType<typeof useLandingStatsDefault>>) {
+type LandingStatsMock = {
+  display: Record<string, string>
+  isLoading: boolean
+  error: string | null
+  refetch: ReturnType<typeof vi.fn>
+}
+
+function setLandingStatsMock(overrides: Partial<LandingStatsMock>) {
   mockUseLandingStats.mockReturnValue({
     display: {
       activeProjects: '1,234',
@@ -57,15 +64,6 @@ function setLandingStatsMock(overrides: Partial<ReturnType<typeof useLandingStat
     refetch: vi.fn(),
     ...overrides,
   })
-}
-
-function useLandingStatsDefault() {
-  return {
-    display: {} as Record<string, string>,
-    isLoading: false,
-    error: null,
-    refetch: vi.fn(),
-  }
 }
 
 // ---------------------------------------------------------------------------

@@ -16,7 +16,7 @@ import {
 import { useTheme } from '../../../shared/contexts/ThemeContext'
 import { useLandingStats } from '../../../shared/hooks/useLandingStats'
 import { SkeletonLoader } from '../../../shared/components/SkeletonLoader'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { logger } from '../../../shared/utils/logger'
 import { useTranslation } from '../../../shared/i18n'
