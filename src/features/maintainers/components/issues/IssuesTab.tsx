@@ -18,6 +18,12 @@ interface Project {
   status: string;
 }
 
+// Surfaced by the backend (github_installation_not_found) when a project's
+// GitHub App installation id is stale/revoked - a maintainer-side connection
+// problem with a concrete fix, unlike a generic network/API failure.
+const GITHUB_INSTALLATION_NOT_FOUND_MESSAGE =
+  "This project's GitHub connection is broken. A maintainer needs to reinstall the Grainlify GitHub App to fix this.";
+
 interface IssuesTabProps {
   onNavigate: (page: string) => void;
   selectedProjects: Project[];
@@ -464,7 +470,12 @@ Only applications submitted via the apply link above will be considered. Please 
       setBotCommentDraft('');
       setBotCommentModalOpen(false);
     } catch (e: any) {
-      setBotCommentError(e?.message || 'Failed to post bot comment');
+      const msg = e?.message ?? '';
+      if (msg.includes('github_installation_not_found')) {
+        setBotCommentError(GITHUB_INSTALLATION_NOT_FOUND_MESSAGE);
+      } else {
+        setBotCommentError(msg || 'Failed to post bot comment');
+      }
     } finally {
       setIsPostingBotComment(false);
     }
@@ -523,6 +534,8 @@ Only applications submitted via the apply link above will be considered. Please 
       const msg = e?.message ?? '';
       if (msg.includes('assignee_has_not_applied')) {
         setApplicationError("This person hasn't applied to this issue on Grainlify yet.");
+      } else if (msg.includes('github_installation_not_found')) {
+        setApplicationError(GITHUB_INSTALLATION_NOT_FOUND_MESSAGE);
       } else {
         setApplicationError(msg || 'Failed to assign');
       }
@@ -546,7 +559,12 @@ Only applications submitted via the apply link above will be considered. Please 
         )
       );
     } catch (e: any) {
-      setApplicationError(e?.message || 'Failed to unassign');
+      const msg = e?.message ?? '';
+      if (msg.includes('github_installation_not_found')) {
+        setApplicationError(GITHUB_INSTALLATION_NOT_FOUND_MESSAGE);
+      } else {
+        setApplicationError(msg || 'Failed to unassign');
+      }
     } finally {
       setActionInProgress(null);
     }
@@ -561,7 +579,12 @@ Only applications submitted via the apply link above will be considered. Please 
       await rejectApplication(selectedIssueFromAPI.projectId, selectedIssueFromAPI.number, login);
       onRefresh?.();
     } catch (e: any) {
-      setApplicationError(e?.message || 'Failed to reject');
+      const msg = e?.message ?? '';
+      if (msg.includes('github_installation_not_found')) {
+        setApplicationError(GITHUB_INSTALLATION_NOT_FOUND_MESSAGE);
+      } else {
+        setApplicationError(msg || 'Failed to reject');
+      }
     } finally {
       setActionInProgress(null);
     }

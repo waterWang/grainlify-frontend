@@ -153,6 +153,24 @@ describe('IssuesTab - assign error messaging', () => {
     expect(await screen.findByText("This person hasn't applied to this issue on Grainlify yet.")).toBeInTheDocument()
   })
 
+  it('shows a reconnect-GitHub message when the project\'s installation is stale', async () => {
+    const user = userEvent.setup()
+    vi.mocked(assignApplicant).mockRejectedValue(new Error('github_installation_not_found'))
+
+    renderWithProviders(
+      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} />,
+      { route: '/dashboard?tab=maintainers&subtab=Issues' },
+    )
+    await expandFirstApplicationCard(user)
+
+    const assignButton = await screen.findByRole('button', { name: 'Assign' })
+    await user.click(assignButton)
+
+    expect(
+      await screen.findByText("This project's GitHub connection is broken. A maintainer needs to reinstall the Grainlify GitHub App to fix this.")
+    ).toBeInTheDocument()
+  })
+
   it('falls back to the raw error message for a different failure', async () => {
     const user = userEvent.setup()
     vi.mocked(assignApplicant).mockRejectedValue(new Error('installation_token_failed'))

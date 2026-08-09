@@ -60,6 +60,7 @@ export function DashboardTab({ selectedProjects, isLoadingProjects = false, onRe
             return (response.issues || []).map((issue: any) => ({
               ...issue,
               projectName: project.github_full_name,
+              projectId: project.id,
             }));
           } catch (err) {
             console.error(`Failed to fetch issues for ${project.github_full_name}:`, err);
