@@ -62,7 +62,11 @@ interface IssueFromAPI {
   last_seen_at: string;
 }
 
-export function IssuesTab({ onNavigate, selectedProjects, onRefresh, initialSelectedIssueId, initialSelectedProjectId, viewMode = 'maintainer', isLoadingProjects = false }: IssuesTabProps) {
+// Defaults to 'contributor' (not 'maintainer') deliberately: both real
+// callers now pass an explicit computed value, so this only matters for a
+// caller that forgets to - and Assign/Reject/Unassign failing closed is the
+// right default for a prop that gates those actions.
+export function IssuesTab({ onNavigate, selectedProjects, onRefresh, initialSelectedIssueId, initialSelectedProjectId, viewMode = 'contributor', isLoadingProjects = false }: IssuesTabProps) {
   const { theme } = useTheme();
   const { userRole, user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();

@@ -134,24 +134,46 @@ describe('apiRequest (exercised through the exported endpoint functions)', () =>
     expect(localStorage.getItem('patchwork_jwt')).toBeNull()
   })
 
-  it('always falls back to a status-code message for a generic non-OK error, even when the body has a message field (real quirk, not a design choice)', async () => {
-    // client.ts's generic-error branch (lines ~125-133) does:
-    //   try { const errorData = await response.json(); throw new Error(errorData.message || ...) }
-    //   catch { throw new Error(`API request failed with status ${status}`) }
-    // The deliberate `throw` inside the try is itself caught by the very next
-    // catch, so a successfully-parsed server message can never actually reach
-    // the caller here — the generic status-code message always wins. This
-    // pins down that real (if surprising) current behavior; the 403 branch a
-    // few lines above has the identical pattern.
+  it('throws the parsed error/message field for a generic non-OK error with a JSON body', async () => {
+    // Regression coverage: the throw using the parsed message previously sat
+    // INSIDE the try that guards response.json(), so it was immediately
+    // caught by that same block's own catch and every backend error code
+    // (this one, and every .includes(...)-based mapping built on it across
+    // the app) silently never reached callers - only the generic
+    // status-code fallback ever did. Fixed by moving the throw outside the
+    // parse-guarding try.
     fetchMock.mockResolvedValueOnce(nonOkJsonResponse(500, { message: 'Server exploded' }))
+    await expect(checkHealth()).rejects.toThrow('Server exploded')
 
-    await expect(checkHealth()).rejects.toThrow('API request failed with status 500')
+    fetchMock.mockResolvedValueOnce(nonOkJsonResponse(502, { error: 'github_installation_not_found' }))
+    await expect(checkHealth()).rejects.toThrow('github_installation_not_found')
+  })
+
+  it('prefers message over error when a non-OK JSON body has both', async () => {
+    fetchMock.mockResolvedValueOnce(nonOkJsonResponse(400, { message: 'human readable', error: 'machine_code' }))
+    await expect(checkHealth()).rejects.toThrow('human readable')
   })
 
   it('falls back to a status-code message when a non-OK response body is not JSON', async () => {
     fetchMock.mockResolvedValueOnce(nonOkUnparsableResponse(502))
 
     await expect(checkHealth()).rejects.toThrow('API request failed with status 502')
+  })
+
+  it('throws a permission-denied message including the parsed error field for a 403 with a JSON body', async () => {
+    fetchMock.mockResolvedValueOnce(nonOkJsonResponse(403, { error: 'not_project_owner' }))
+
+    await expect(checkHealth()).rejects.toThrow(
+      'Permission denied: not_project_owner. You may need admin privileges to perform this action.'
+    )
+  })
+
+  it('falls back to a generic permission-denied message for a 403 with a non-JSON body', async () => {
+    fetchMock.mockResolvedValueOnce(nonOkUnparsableResponse(403))
+
+    await expect(checkHealth()).rejects.toThrow(
+      'Permission denied: You do not have permission to perform this action. Admin privileges may be required.'
+    )
   })
 
   it('maps a network-level fetch rejection (TypeError mentioning fetch) to a friendly network error', async () => {

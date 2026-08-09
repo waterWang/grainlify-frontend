@@ -793,6 +793,7 @@ export function Dashboard() {
                 projectId={selectedIssue.projectId}
                 onClose={() => setSelectedIssue(null)}
                 userRole={userRole}
+                activeRole={activeRole}
               />
             ) : selectedProjectId ? (
               <ProjectDetailPage
@@ -825,6 +826,7 @@ export function Dashboard() {
               <>
                 {currentPage === "discover" && (
                   <DiscoverPage
+                    activeRole={activeRole}
                     onGoToBilling={() => {
                       // SettingsPage/MaintainersPage now own their sub-tab via
                       // their own ?subtab= read (see those files) - writing it
@@ -894,7 +896,10 @@ export function Dashboard() {
                   )}
                 {currentPage === "contributors" && <ContributorsPage />}
                 {currentPage === "maintainers" && (
-                  <MaintainersPage onNavigate={handleNavigation} />
+                  <MaintainersPage
+                    onNavigate={handleNavigation}
+                    viewMode={activeRole === "maintainer" || activeRole === "admin" ? "maintainer" : "contributor"}
+                  />
                 )}
                 {currentPage === "profile" && (
                   <ProfilePage

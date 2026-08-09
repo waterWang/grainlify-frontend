@@ -19,9 +19,16 @@ interface IssueDetailPageProps {
   projectId?: string;
   onClose: () => void;
   userRole?: UserRole;
+  /** The CONTRIBUTOR/MAINTAINER/ADMIN nav pill's currently-selected mode
+   * (Dashboard.tsx's `activeRole`) - distinct from `userRole` (the account's
+   * stored role). Maintainer actions require both: the account must be
+   * authorized for this project (ownership or admin `userRole`) AND the
+   * viewer must have actually switched into a mode that can act on it,
+   * rather than showing up regardless of which mode is selected. */
+  activeRole?: 'contributor' | 'maintainer' | 'admin';
 }
 
-export function IssueDetailPage({ issueId, projectId, onClose, userRole }: IssueDetailPageProps) {
+export function IssueDetailPage({ issueId, projectId, onClose, userRole, activeRole }: IssueDetailPageProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -75,7 +82,9 @@ export function IssueDetailPage({ issueId, projectId, onClose, userRole }: Issue
   // owner-or-admin, so mirror that here rather than gating only on
   // ownership.
   const isOwner = !!project && myProjects.some((m) => m.id === project.id);
-  const viewMode: 'contributor' | 'maintainer' = isOwner || userRole === 'admin' ? 'maintainer' : 'contributor';
+  const canManage = isOwner || userRole === 'admin';
+  const modeAllowsManage = activeRole === 'maintainer' || activeRole === 'admin';
+  const viewMode: 'contributor' | 'maintainer' = canManage && modeAllowsManage ? 'maintainer' : 'contributor';
 
   return (
     // Same viewport budget as MaintainersPage (see its comment): 84px covers the

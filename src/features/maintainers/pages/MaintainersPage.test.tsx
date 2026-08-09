@@ -28,7 +28,11 @@ vi.mock('../components/dashboard/DashboardTab', () => ({
 }))
 
 vi.mock('../components/issues/IssuesTab', () => ({
-  IssuesTab: () => <div data-testid="issues-tab">Issues Tab Stub</div>,
+  IssuesTab: (props: { viewMode?: string }) => (
+    <div data-testid="issues-tab" data-view-mode={props.viewMode ?? ''}>
+      Issues Tab Stub
+    </div>
+  ),
 }))
 
 vi.mock('../components/pull-requests/PullRequestsTab', () => ({
@@ -107,6 +111,25 @@ describe('MaintainersPage', () => {
 
     expect(await screen.findByTestId('issues-tab')).toBeInTheDocument()
     expect(screen.queryByTestId('dashboard-tab')).not.toBeInTheDocument()
+  })
+
+  it('forwards viewMode to IssuesTab unchanged, including reaching Issues without it ever being set', async () => {
+    // This page's project list is already scoped to ones the viewer owns
+    // (getMyProjects), but that alone doesn't mean the viewer is currently
+    // acting as a maintainer - Discover's "View all issues" link reaches
+    // this exact tab without ever switching the nav pill away from
+    // CONTRIBUTOR. MaintainersPage doesn't decide viewMode itself; it must
+    // forward whatever Dashboard.tsx computed, including undefined if the
+    // caller forgot to pass it (IssuesTab's own default is what protects
+    // that case, not this page).
+    const { rerender } = renderWithProviders(
+      <MaintainersPage onNavigate={vi.fn()} viewMode="contributor" />,
+      { route: '/dashboard?tab=maintainers&subtab=Issues' }
+    )
+    expect(await screen.findByTestId('issues-tab')).toHaveAttribute('data-view-mode', 'contributor')
+
+    rerender(<MaintainersPage onNavigate={vi.fn()} viewMode="maintainer" />)
+    expect(await screen.findByTestId('issues-tab')).toHaveAttribute('data-view-mode', 'maintainer')
   })
 
   it('falls back to the Dashboard sub-tab when ?subtab= is missing or invalid', async () => {

@@ -111,34 +111,61 @@ describe('IssueDetailPage', () => {
     expect(props.viewMode).toBe('contributor')
   })
 
-  it('passes viewMode="maintainer" when the current project is one of myProjects', async () => {
+  // viewMode="maintainer" requires BOTH: authorization for this project
+  // (ownership or an admin account) AND having actually switched into a
+  // maintainer-capable mode via the nav pill (activeRole). Neither alone is
+  // sufficient - see IssueDetailPage.tsx's canManage/modeAllowsManage.
+  it('passes viewMode="maintainer" when owning the project AND in maintainer mode', async () => {
     vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
     vi.mocked(getMyProjects).mockResolvedValue([buildMyProject({ id: 'p1' })])
 
-    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} />)
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} activeRole="maintainer" />)
 
     await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
     expect(getIssuesTabProps().viewMode).toBe('maintainer')
   })
 
-  it('passes viewMode="contributor" when the current project is not owned, even with other myProjects', async () => {
+  it('passes viewMode="contributor" when owning the project but still in contributor mode', async () => {
+    // This is the exact scenario a screenshot flagged: reachable via
+    // Discover's "View all issues" without ever switching the nav pill away
+    // from CONTRIBUTOR, on a project the viewer happens to own.
     vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
-    vi.mocked(getMyProjects).mockResolvedValue([buildMyProject({ id: 'p2' })])
+    vi.mocked(getMyProjects).mockResolvedValue([buildMyProject({ id: 'p1' })])
 
-    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} />)
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} activeRole="contributor" />)
 
     await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
     expect(getIssuesTabProps().viewMode).toBe('contributor')
   })
 
-  it('passes viewMode="maintainer" for an admin viewer regardless of ownership', async () => {
+  it('passes viewMode="contributor" when in maintainer mode but not owning the project, even with other myProjects', async () => {
+    vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
+    vi.mocked(getMyProjects).mockResolvedValue([buildMyProject({ id: 'p2' })])
+
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} activeRole="maintainer" />)
+
+    await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
+    expect(getIssuesTabProps().viewMode).toBe('contributor')
+  })
+
+  it('passes viewMode="maintainer" for an admin viewer in admin mode, regardless of ownership', async () => {
     vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
     vi.mocked(getMyProjects).mockResolvedValue([])
 
-    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} userRole="admin" />)
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} userRole="admin" activeRole="admin" />)
 
     await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
     expect(getIssuesTabProps().viewMode).toBe('maintainer')
+  })
+
+  it('passes viewMode="contributor" for an admin viewer still in contributor mode', async () => {
+    vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
+    vi.mocked(getMyProjects).mockResolvedValue([])
+
+    renderWithProviders(<IssueDetailPage projectId="p1" onClose={vi.fn()} userRole="admin" activeRole="contributor" />)
+
+    await waitFor(() => expect(screen.getByTestId('issues-tab')).toBeInTheDocument())
+    expect(getIssuesTabProps().viewMode).toBe('contributor')
   })
 
   it('de-duplicates the current project so it appears exactly once, ordered first, in selectedProjects', async () => {

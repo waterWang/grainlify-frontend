@@ -168,12 +168,18 @@ interface DiscoverPageProps {
   onGoToBilling?: () => void;
   onGoToOpenSourceWeek?: () => void;
   onViewAllIssues?: () => void;
+  /** Dashboard's `activeRole` (the CONTRIBUTOR/MAINTAINER/ADMIN nav pill) -
+   * forwarded to this page's own IssueDetailPage overlay so maintainer
+   * actions there require actually being in maintainer/admin mode, not just
+   * owning the project. */
+  activeRole?: 'contributor' | 'maintainer' | 'admin';
 }
 
 export function DiscoverPage({
   onGoToBilling,
   onGoToOpenSourceWeek,
   onViewAllIssues,
+  activeRole,
 }: DiscoverPageProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -367,6 +373,7 @@ export function DiscoverPage({
         issueId={selectedIssue.issueId}
         projectId={selectedIssue.projectId}
         userRole={userRole}
+        activeRole={activeRole}
         onClose={() => {
           const next = new URLSearchParams(searchParams);
           next.delete('dIssue');

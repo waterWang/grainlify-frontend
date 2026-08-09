@@ -107,30 +107,38 @@ async function apiRequest<T>(
     }
 
     if (response.status === 403) {
-      // Forbidden - user doesn't have permission
+      // Forbidden - user doesn't have permission. Same fix as the generic
+      // branch below: the throw using the parsed message must sit outside
+      // the try that guards response.json(), or it's caught by this same
+      // block's own catch and the specific message never reaches the caller.
+      let forbiddenData: { message?: string; error?: string } | undefined;
       try {
-        const errorData = await response.json();
-        const errorMsg =
-          errorData.message || errorData.error || "Access forbidden";
-        throw new Error(
-          `Permission denied: ${errorMsg}. You may need admin privileges to perform this action.`,
-        );
+        forbiddenData = await response.json();
       } catch {
         throw new Error(
           "Permission denied: You do not have permission to perform this action. Admin privileges may be required.",
         );
       }
+      const errorMsg =
+        forbiddenData?.message || forbiddenData?.error || "Access forbidden";
+      throw new Error(
+        `Permission denied: ${errorMsg}. You may need admin privileges to perform this action.`,
+      );
     }
 
-    // Try to parse error response
+    // Try to parse error response. The throw for the parsed message must sit
+    // outside this try block - throwing it from inside was being caught by
+    // this same block's own catch, so the parsed backend error code (and
+    // every .includes(...)-based frontend mapping built on it, across every
+    // feature) never actually reached callers; only the generic status-code
+    // fallback below ever did.
+    let errorData: { message?: string; error?: string } | undefined;
     try {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.message || errorData.error || "API request failed",
-      );
+      errorData = await response.json();
     } catch {
       throw new Error(`API request failed with status ${response.status}`);
     }
+    throw new Error(errorData?.message || errorData?.error || "API request failed");
   }
 
   // Parse JSON response

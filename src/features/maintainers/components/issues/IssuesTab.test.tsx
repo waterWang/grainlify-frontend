@@ -142,7 +142,7 @@ describe('IssuesTab - assign error messaging', () => {
     vi.mocked(assignApplicant).mockRejectedValue(new Error('assignee_has_not_applied'))
 
     renderWithProviders(
-      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} />,
+      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} viewMode="maintainer" />,
       { route: '/dashboard?tab=maintainers&subtab=Issues' },
     )
     await expandFirstApplicationCard(user)
@@ -158,7 +158,7 @@ describe('IssuesTab - assign error messaging', () => {
     vi.mocked(assignApplicant).mockRejectedValue(new Error('github_installation_not_found'))
 
     renderWithProviders(
-      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} />,
+      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} viewMode="maintainer" />,
       { route: '/dashboard?tab=maintainers&subtab=Issues' },
     )
     await expandFirstApplicationCard(user)
@@ -176,7 +176,7 @@ describe('IssuesTab - assign error messaging', () => {
     vi.mocked(assignApplicant).mockRejectedValue(new Error('installation_token_failed'))
 
     renderWithProviders(
-      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} />,
+      <IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} viewMode="maintainer" />,
       { route: '/dashboard?tab=maintainers&subtab=Issues' },
     )
     await expandFirstApplicationCard(user)

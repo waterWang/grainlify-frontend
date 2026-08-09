@@ -15,6 +15,14 @@ const VALID_TABS: TabType[] = ['Dashboard', 'Issues', 'Pull Requests'];
 
 interface MaintainersPageProps {
   onNavigate: (page: string) => void;
+  /** The CONTRIBUTOR/MAINTAINER/ADMIN nav pill's currently-selected mode.
+   * This page's project list is already scoped to ones the viewer owns
+   * (getMyProjects() below), but IssuesTab's Assign/Reject/Unassign should
+   * still only appear while actually in maintainer/admin mode - this page
+   * is reachable (via Discover's "View all issues") without ever switching
+   * into that mode, and until this prop was threaded through, IssuesTab
+   * defaulted to full maintainer view regardless. */
+  viewMode?: 'contributor' | 'maintainer';
 }
 
 interface Project {
@@ -45,7 +53,7 @@ interface GroupedRepository {
   }>;
 }
 
-export function MaintainersPage({ onNavigate }: MaintainersPageProps) {
+export function MaintainersPage({ onNavigate, viewMode }: MaintainersPageProps) {
   const { theme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   // Derived directly from ?subtab= (not local state) so which sub-tab is
@@ -572,6 +580,7 @@ export function MaintainersPage({ onNavigate }: MaintainersPageProps) {
             onRefresh={refreshAll}
             initialSelectedIssueId={targetIssueId}
             initialSelectedProjectId={targetProjectId}
+            viewMode={viewMode}
           />
         )}
 
