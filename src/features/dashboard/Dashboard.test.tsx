@@ -33,6 +33,9 @@ vi.mock('./pages/BrowsePage', () => ({
 vi.mock('./pages/SearchPage', () => ({
   SearchPage: () => <div data-testid="search-page" />,
 }))
+vi.mock('../grainhack/pages/GrainHackAdminPage', () => ({
+  GrainHackAdminPage: () => <div data-testid="grainhack-page" />,
+}))
 
 // UserProfileDropdown pulls in Radix DropdownMenu internals that add nothing to a
 // Dashboard-shell test beyond opening/closing chrome. Replace it with a minimal
@@ -78,22 +81,19 @@ vi.mock('../admin/components/RedemptionsReview', () => ({
   RedemptionsReview: () => null,
 }))
 
-const { mockLogin, mockLogout } = vi.hoisted(() => ({
+// useAuth is a hoisted vi.fn() (not a fixed literal) so individual tests -
+// namely the GrainHack admin-gating ones below - can override userRole for a
+// single render via mockReturnValueOnce without disturbing every other test
+// in this file, which all rely on the plain-contributor default set below.
+const { mockLogin, mockLogout, mockUseAuth } = vi.hoisted(() => ({
   mockLogin: vi.fn(),
   mockLogout: vi.fn(),
+  mockUseAuth: vi.fn(),
 }))
 
 vi.mock('../../shared/contexts/AuthContext', () => ({
   AuthProvider: ({ children }: any) => children,
-  useAuth: () => ({
-    userRole: null,
-    userId: null,
-    user: null,
-    isAuthenticated: false,
-    isLoading: false,
-    login: mockLogin,
-    logout: mockLogout,
-  }),
+  useAuth: mockUseAuth,
 }))
 
 async function openAdminModal(user: ReturnType<typeof userEvent.setup>) {
@@ -109,6 +109,15 @@ describe('Dashboard', () => {
     // across tests within a file (jsdom is shared per test file), so reset them.
     window.history.pushState({}, '', '/dashboard')
     sessionStorage.clear()
+    mockUseAuth.mockReset().mockReturnValue({
+      userRole: null,
+      userId: null,
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      login: mockLogin,
+      logout: mockLogout,
+    })
   })
 
   it('renders the dashboard shell with Discover active by default', async () => {
@@ -231,5 +240,45 @@ describe('Dashboard', () => {
 
     expect(mockLogout).toHaveBeenCalledTimes(1)
     expect(sessionStorage.getItem('admin_authenticated')).toBeNull()
+  })
+
+  describe('GrainHack admin gating (real userRole, not the activeRole view-switcher)', () => {
+    it('hides the GrainHack nav item for a non-admin', async () => {
+      const { container } = renderWithProviders(<Dashboard />)
+      expect(await screen.findByTestId('discover-page')).toBeInTheDocument()
+
+      expect(container.querySelector('[data-icon="Flag"]')).not.toBeInTheDocument()
+    })
+
+    it('shows the GrainHack nav item for userRole admin and navigates to it on click', async () => {
+      mockUseAuth.mockReturnValue({
+        userRole: 'admin',
+        userId: 'admin-user-id',
+        user: null,
+        isAuthenticated: true,
+        isLoading: false,
+        login: mockLogin,
+        logout: mockLogout,
+      })
+      const user = userEvent.setup()
+      const { container } = renderWithProviders(<Dashboard />)
+      expect(await screen.findByTestId('discover-page')).toBeInTheDocument()
+
+      const grainhackNavButton = container.querySelector('[data-icon="Flag"]')?.closest('button')
+      expect(grainhackNavButton).toBeTruthy()
+
+      await user.click(grainhackNavButton as HTMLButtonElement)
+
+      expect(await screen.findByTestId('grainhack-page')).toBeInTheDocument()
+    })
+
+    it('blocks the grainhack page for a non-admin even when navigated to directly via ?tab= (the nav item alone is not the security boundary)', async () => {
+      window.history.pushState({}, '', '/dashboard?tab=grainhack')
+
+      renderWithProviders(<Dashboard />)
+
+      expect(await screen.findByText('Admin Access Required')).toBeInTheDocument()
+      expect(screen.queryByTestId('grainhack-page')).not.toBeInTheDocument()
+    })
   })
 })

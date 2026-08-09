@@ -28,6 +28,13 @@ vi.mock('../../../../shared/contexts/AuthContext', () => ({
   useAuth: () => ({ userRole: 'maintainer', user: { github: { login: 'octocat' } } }),
 }))
 
+// GrainHack fields are an independent, separately-tested concern (see
+// HackathonIssueFieldsPanel.test.tsx) - stub it here so this file doesn't
+// also need to carry a getHackathonIssue mock for every test.
+vi.mock('../../../grainhack/components/HackathonIssueFieldsPanel', () => ({
+  HackathonIssueFieldsPanel: () => null,
+}))
+
 const mockedGetProjectIssues = vi.mocked(getProjectIssues)
 
 const PROJECT = { id: 'proj-1', github_full_name: 'acme/widgets', status: 'verified' }

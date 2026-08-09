@@ -1381,3 +1381,284 @@ export const submitOrgRating = (
     body: JSON.stringify(data),
   });
 
+// ---------------------------------------------------------------------------
+// GrainHack (AI-specs.md) - Slice 1: hackathon lifecycle, project
+// applications, GitHub-label issue intake.
+// ---------------------------------------------------------------------------
+
+export interface Hackathon {
+  id: string;
+  name: string;
+  phase: "draft" | "application_period" | "issue_prep" | "live";
+  announced_at: string | null;
+  application_period_start: string | null;
+  application_period_end: string | null;
+  issue_prep_start: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  merge_grace_period_hours: number;
+  contributor_prize_pool: string | null;
+  maintainer_prize_pool: string | null;
+  created_at: string;
+}
+
+export interface HackathonBlockingReason {
+  field: string;
+  message: string;
+}
+
+export interface HackathonApplication {
+  id: string;
+  hackathon_id: string;
+  hackathon_name: string;
+  project_id: string;
+  project_full_name: string;
+  short_description: string;
+  goal: string;
+  expected_issue_count: number;
+  maintainer_contact: string;
+  status: "pending" | "accepted" | "rejected" | "more_info_requested";
+  review_reason: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface HackathonApplicationSignal {
+  computed: boolean;
+  value?: unknown;
+  note?: string;
+}
+
+export interface HackathonApplicationSignals {
+  repo_created_at: HackathonApplicationSignal;
+  had_commits_before_announced: HackathonApplicationSignal;
+  commit_activity_90d: HackathonApplicationSignal;
+  distinct_contributors: HackathonApplicationSignal;
+  prior_grainhack_participation: HackathonApplicationSignal;
+  median_time_to_first_review_hours: HackathonApplicationSignal;
+  prior_flagged_associations: HackathonApplicationSignal;
+}
+
+export interface HackathonIssue {
+  id: string;
+  hackathon_id: string;
+  hackathon_name: string;
+  project_id: string;
+  issue_number: number;
+  org_login: string;
+  status: "pending" | "published" | "removed";
+  acceptance_criteria: string;
+  difficulty_tier: string;
+  primary_language: string;
+  flagged_for_admin: boolean;
+  flagged_reason: string | null;
+  synced_at: string;
+  published_at: string | null;
+}
+
+export interface HackathonConfigSetting {
+  key: string;
+  type: string;
+  section: string;
+  description: string;
+  valid_range?: string;
+  active: boolean;
+  default: string;
+  value: string;
+  overridden: boolean;
+}
+
+export interface HackathonConfigAuditEntry {
+  id: string;
+  hackathon_id: string | null;
+  key: string;
+  old_value: string | null;
+  new_value: string | null;
+  actor_user_id: string | null;
+  actor_login: string | null;
+  created_at: string;
+}
+
+// Public
+export const getHackathons = () => apiRequest<{ hackathons: Hackathon[] }>("/hackathons");
+export const getHackathon = (id: string) => apiRequest<Hackathon>(`/hackathons/${id}`);
+
+// Project-owner-facing
+export const applyToHackathon = (
+  hackathonId: string,
+  data: {
+    project_ids: string[];
+    short_description: string;
+    goal: string;
+    expected_issue_count: number;
+    maintainer_contact: string;
+  },
+) =>
+  apiRequest<{ application_ids: string[] }>(`/hackathons/${hackathonId}/applications`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getMyHackathonApplications = () =>
+  apiRequest<{ applications: HackathonApplication[] }>("/hackathon-applications/me", {
+    requiresAuth: true,
+  });
+
+// Maintainer-facing (owner-or-admin, not admin-only)
+export const getHackathonIssuesForProject = (projectId: string) =>
+  apiRequest<{ issues: HackathonIssue[] }>(`/projects/${projectId}/hackathon-issues`, {
+    requiresAuth: true,
+  });
+
+export const getHackathonIssue = (projectId: string, issueNumber: number) =>
+  apiRequest<HackathonIssue>(`/projects/${projectId}/hackathon-issues/${issueNumber}`, {
+    requiresAuth: true,
+  });
+
+export const updateHackathonIssueFields = (
+  projectId: string,
+  issueNumber: number,
+  data: { acceptance_criteria?: string; difficulty_tier?: string; primary_language?: string },
+) =>
+  apiRequest<HackathonIssue>(`/projects/${projectId}/hackathon-issues/${issueNumber}`, {
+    requiresAuth: true,
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+// Admin - hackathon lifecycle
+export const createHackathon = (name: string) =>
+  apiRequest<{ id: string }>("/admin/hackathons", {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+
+export const getAdminHackathons = () =>
+  apiRequest<{ hackathons: Hackathon[] }>("/admin/hackathons", { requiresAuth: true });
+
+export const getAdminHackathon = (id: string) =>
+  apiRequest<{ hackathon: Hackathon; next_phase: string; blocking_reasons: HackathonBlockingReason[] }>(
+    `/admin/hackathons/${id}`,
+    { requiresAuth: true },
+  );
+
+export const updateHackathon = (
+  id: string,
+  data: Partial<{
+    name: string;
+    announced_at: string;
+    application_period_start: string;
+    application_period_end: string;
+    issue_prep_start: string;
+    starts_at: string;
+    ends_at: string;
+    merge_grace_period_hours: number;
+    contributor_prize_pool: number;
+    maintainer_prize_pool: number;
+  }>,
+) =>
+  apiRequest<{ ok: boolean }>(`/admin/hackathons/${id}`, {
+    requiresAuth: true,
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+export const transitionHackathon = (id: string, toPhase: string) =>
+  apiRequest<{ ok: boolean }>(`/admin/hackathons/${id}/transition`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify({ to_phase: toPhase }),
+  });
+
+// Admin - project applications review queue
+export const getAdminHackathonApplications = (hackathonId: string, status: string = "pending") =>
+  apiRequest<{ applications: HackathonApplication[] }>(
+    `/admin/hackathons/${hackathonId}/applications?status=${encodeURIComponent(status)}`,
+    { requiresAuth: true },
+  );
+
+export const getHackathonApplicationSignals = (applicationId: string, refresh: boolean = false) =>
+  apiRequest<HackathonApplicationSignals>(
+    `/admin/hackathons/applications/${applicationId}/signals${refresh ? "?refresh=true" : ""}`,
+    { requiresAuth: true },
+  );
+
+export const acceptHackathonApplication = (applicationId: string) =>
+  apiRequest<{ ok: boolean }>(`/admin/hackathons/applications/${applicationId}/accept`, {
+    requiresAuth: true,
+    method: "POST",
+  });
+
+export const rejectHackathonApplication = (applicationId: string, reason: string) =>
+  apiRequest<{ ok: boolean }>(`/admin/hackathons/applications/${applicationId}/reject`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+
+export const requestMoreInfoHackathonApplication = (applicationId: string, reason: string) =>
+  apiRequest<{ ok: boolean }>(`/admin/hackathons/applications/${applicationId}/request-more-info`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+
+// Admin - issues
+export const getAdminHackathonIssues = (
+  hackathonId: string,
+  params?: { status?: string; flagged?: boolean },
+) => {
+  const q = new URLSearchParams();
+  if (params?.status) q.set("status", params.status);
+  if (params?.flagged) q.set("flagged", "true");
+  const qs = q.toString();
+  return apiRequest<{ issues: HackathonIssue[] }>(
+    `/admin/hackathons/${hackathonId}/issues${qs ? `?${qs}` : ""}`,
+    { requiresAuth: true },
+  );
+};
+
+// Admin - config settings
+export const getHackathonConfigSettings = (hackathonId?: string) =>
+  apiRequest<{ settings: HackathonConfigSetting[] }>(
+    `/admin/hackathon-config${hackathonId ? `?hackathon_id=${encodeURIComponent(hackathonId)}` : ""}`,
+    { requiresAuth: true },
+  );
+
+export const updateHackathonConfigSetting = (data: {
+  hackathon_id?: string | null;
+  key: string;
+  value: string;
+}) =>
+  apiRequest<{ ok: boolean }>("/admin/hackathon-config", {
+    requiresAuth: true,
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+export const resetHackathonConfigSetting = (data: { hackathon_id: string; key: string }) =>
+  apiRequest<{ ok: boolean }>("/admin/hackathon-config/reset", {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getHackathonConfigAudit = (params?: {
+  key?: string;
+  hackathon_id?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  const q = new URLSearchParams();
+  if (params?.key) q.set("key", params.key);
+  if (params?.hackathon_id) q.set("hackathon_id", params.hackathon_id);
+  if (params?.limit) q.set("limit", String(params.limit));
+  if (params?.offset) q.set("offset", String(params.offset));
+  const qs = q.toString();
+  return apiRequest<{ entries: HackathonConfigAuditEntry[] }>(
+    `/admin/hackathon-config/audit${qs ? `?${qs}` : ""}`,
+    { requiresAuth: true },
+  );
+};

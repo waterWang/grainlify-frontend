@@ -12,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { IssueCardSkeleton } from '../../../../shared/components/IssueCardSkeleton';
 import { getGitHubAvatarUrl } from '../../../../shared/utils/avatar';
 import RenderMarkdownContent from '../../../../app/utils/renderMarkdown';
+import { HackathonIssueFieldsPanel } from '../../../grainhack/components/HackathonIssueFieldsPanel';
 
 interface Project {
   id: string;

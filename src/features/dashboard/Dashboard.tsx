@@ -17,7 +17,8 @@ import {
   Shield,
   X,
   Menu,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Flag
 } from "lucide-react";
 import { useThemeToggleAnimation } from "../../shared/hooks/useThemeToggleAnimation";
 import { useAuth } from "../../shared/contexts/AuthContext";
@@ -57,6 +58,7 @@ const LeaderboardPage = lazy(() => import("../leaderboard/pages/LeaderboardPage"
 const BlogPage = lazy(() => import("../blog/pages/BlogPage").then((m) => ({ default: m.BlogPage })));
 const SettingsPage = lazy(() => import("../settings/pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const AdminPage = lazy(() => import("../admin/pages/AdminPage").then((m) => ({ default: m.AdminPage })));
+const GrainHackAdminPage = lazy(() => import("../grainhack/pages/GrainHackAdminPage").then((m) => ({ default: m.GrainHackAdminPage })));
 const SearchPage = lazy(() => import("./pages/SearchPage").then((m) => ({ default: m.SearchPage })));
 const RedeemPage = lazy(() => import("./pages/RedeemPage").then((m) => ({ default: m.RedeemPage })));
 
@@ -414,6 +416,13 @@ export function Dashboard() {
     // Data page is only visible to admin
     ...(activeRole === "admin"
       ? [{ id: "data", icon: Database, label: "Data" }]
+      : []),
+    // GrainHack administration is gated on the real backend-verified role,
+    // not activeRole - that's a client-side view toggle, not an authorization
+    // boundary, and this surface can accept/reject applications and edit
+    // live event config.
+    ...(userRole === "admin"
+      ? [{ id: "grainhack", icon: Flag, label: "GrainHack" }]
       : []),
     { id: "leaderboard", icon: Trophy, label: "Leaderboard" },
     { id: "redeem", icon: ArrowLeftRight, label: "Redeem" },
@@ -1009,6 +1018,28 @@ export function Dashboard() {
                       >
                         Authenticate
                       </button>
+                    </div>
+                  </div>
+                )}
+                {currentPage === "grainhack" && userRole === "admin" && <GrainHackAdminPage />}
+                {currentPage === "grainhack" && userRole !== "admin" && (
+                  <div className="flex items-center justify-center min-h-[60vh]">
+                    <div
+                      className={`text-center p-8 rounded-[24px] backdrop-blur-[40px] border ${
+                        darkTheme
+                          ? "bg-white/[0.08] border-white/10 text-[#d4d4d4]"
+                          : "bg-white/[0.15] border-white/25 text-[#7a6b5a]"
+                      }`}
+                    >
+                      <Shield className="w-16 h-16 mx-auto mb-4 text-[#c9983a]" />
+                      <h2
+                        className={`text-2xl font-bold mb-2 ${darkTheme ? "text-[#f5f5f5]" : "text-[#2d2820]"}`}
+                      >
+                        Admin Access Required
+                      </h2>
+                      <p className="mb-4">
+                        You don't have permission to view this page.
+                      </p>
                     </div>
                   </div>
                 )}
