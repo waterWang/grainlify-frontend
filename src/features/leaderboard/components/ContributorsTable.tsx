@@ -2,6 +2,7 @@ import { TrendingUp, TrendingDown, Minus, Award } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { LeaderData, FilterType } from "../types";
 import { getAvatarGradient } from "../data/leaderboardData";
+import { getGitHubAvatarUrl } from "../../../shared/utils/avatar";
 
 interface ContributorsTableProps {
   data: LeaderData[];
@@ -121,7 +122,7 @@ export function ContributorsTable({
                     onError={(e) => {
                       // Fallback to GitHub avatar if image fails to load
                       const target = e.target as HTMLImageElement;
-                      target.src = `https://github.com/${leader.username}.png?size=200`;
+                      target.src = getGitHubAvatarUrl(leader.username, 200);
                     }}
                   />
                 ) : (

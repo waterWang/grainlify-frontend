@@ -1,4 +1,4 @@
-import { X, SearchX, AlertCircle, ChevronLeft } from "lucide-react";
+import { X, SearchX, AlertCircle, Building2, FolderGit2 } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { useState, useEffect, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
@@ -6,7 +6,9 @@ import { Dropdown } from "../../../shared/components/ui/Dropdown";
 import { ProjectCard, Project } from "../components/ProjectCard";
 import { ProjectCardSkeleton } from "../components/ProjectCardSkeleton";
 import { OrganizationCard, Organization } from "../components/OrganizationCard";
-import { getPublicProjects, getEcosystems } from "../../../shared/api/client";
+import { LanguageIcon } from "../../../shared/components/LanguageIcon";
+import { getPublicProjects, getEcosystems, getProjectFilters } from "../../../shared/api/client";
+import { getGitHubAvatarUrl } from "../../../shared/utils/avatar";
 import {
   isValidProject,
   getRepoName,
@@ -21,7 +23,19 @@ import { useOptimisticData } from "../../../shared/hooks/useOptimisticData";
 
 interface BrowsePageProps {
   onProjectClick?: (id: string) => void;
+  /** Navigates to that org's own profile page - Browse itself no longer
+   * has an inline org drill-down view (see viewMode below). */
+  onOrgClick?: (org: string) => void;
 }
+
+type FilterKey = "languages" | "ecosystems" | "categories" | "tags";
+
+const FILTER_TYPES: { key: FilterKey; label: string }[] = [
+  { key: "languages", label: "Language" },
+  { key: "ecosystems", label: "Ecosystem" },
+  { key: "categories", label: "Category" },
+  { key: "tags", label: "Tag" },
+];
 
 // BrowsePage's own project shape carries the owning org alongside whatever
 // ProjectCard needs to render - Browse groups by org, ProjectCard doesn't
@@ -48,7 +62,7 @@ const formatNumber = (num: number): string => {
 const getProjectIcon = (githubFullName: string): string => {
   const [owner] = githubFullName.split("/");
   // Use higher‑resolution owner avatar so cards look crisp
-  return `https://github.com/${owner}.png?size=200`;
+  return getGitHubAvatarUrl(owner, 200);
 };
 
 // Helper function to get gradient color based on project name
@@ -89,10 +103,12 @@ const truncateDescription = (
   return firstLine;
 };
 
-export function BrowsePage({ onProjectClick }: BrowsePageProps) {
+export function BrowsePage({ onProjectClick, onOrgClick }: BrowsePageProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const prefersReducedMotion = useReducedMotion();
+  const [viewMode, setViewMode] = useState<"orgs" | "repos">("orgs");
+  const [activeFilterType, setActiveFilterType] = useState<FilterKey>("languages");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({
     languages: "",
@@ -108,7 +124,6 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
     categories: [],
     tags: [],
   });
-  const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 
   // Use optimistic data hook for projects with 30-second cache
   const {
@@ -118,8 +133,7 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
     fetchData: fetchProjects,
   } = useOptimisticData<BrowseProject[]>([], { cacheDuration: 30000 });
 
-  // Group projects by their GitHub org/owner - Browse shows orgs first,
-  // drilling into a specific org shows just its repos.
+  // Group projects by their GitHub org/owner for the "Organizations" view.
   const organizations = useMemo<Organization[]>(() => {
     const byOwner = new Map<string, BrowseProject[]>();
     for (const project of projects) {
@@ -130,7 +144,7 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
     return Array.from(byOwner.entries())
       .map(([owner, repos]) => ({
         name: owner,
-        avatar: `https://github.com/${owner}.png?size=200`,
+        avatar: getGitHubAvatarUrl(owner, 200),
         repoCount: repos.length,
         totalStars: repos.reduce((sum, r) => sum + r.starsCount, 0),
         totalContributors: repos.reduce((sum, r) => sum + r.contributors, 0),
@@ -138,47 +152,31 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
       .sort((a, b) => b.repoCount - a.repoCount || a.name.localeCompare(b.name));
   }, [projects]);
 
-  const orgProjects = useMemo(
-    () => (selectedOrg ? projects.filter((p) => p.owner === selectedOrg) : []),
-    [projects, selectedOrg],
-  );
-
-  // If a filter change makes the drilled-into org disappear (no more
-  // matching repos), don't strand the user on an empty drill-down view.
-  useEffect(() => {
-    if (selectedOrg && !isLoading && !organizations.some((o) => o.name === selectedOrg)) {
-      setSelectedOrg(null);
-    }
-  }, [selectedOrg, organizations, isLoading]);
-
   const [ecosystems, setEcosystems] = useState<Array<{ name: string }>>([]);
+  const [dynamicFilters, setDynamicFilters] = useState<{ languages: string[]; categories: string[]; tags: string[] }>({
+    languages: [],
+    categories: [],
+    tags: [],
+  });
 
-  // Filter options data
-  const filterOptions = {
-    languages: [
-      { name: "TypeScript" },
-      { name: "JavaScript" },
-      { name: "Python" },
-      { name: "Go" },
-      { name: "Rust" },
-      { name: "Java" },
-    ],
+  // Language/category/tag values are whatever's actually on verified
+  // projects right now (no hardcoded allow-list anywhere in the schema) -
+  // fetched once via the existing, previously-unused /projects/filters
+  // endpoint so a maintainer adding a project with a new language/category/
+  // tag makes it show up here automatically, no code change needed.
+  useEffect(() => {
+    getProjectFilters()
+      .then((data) => setDynamicFilters({ languages: data.languages, categories: data.categories, tags: data.tags }))
+      .catch(() => { /* leave dynamicFilters empty - that filter type just shows no options */ });
+  }, []);
+
+  // Filter options data - languages/categories/tags are DB-driven (see
+  // dynamicFilters above), only ecosystems was already dynamic before this.
+  const filterOptions: Record<FilterKey, { name: string }[]> = {
+    languages: dynamicFilters.languages.map((name) => ({ name })),
     ecosystems: ecosystems,
-    categories: [
-      { name: "Frontend" },
-      { name: "Backend" },
-      { name: "Full Stack" },
-      { name: "DevOps" },
-      { name: "Mobile" },
-    ],
-    tags: [
-      { name: "Good first issues" },
-      { name: "Open issues" },
-      { name: "Help wanted" },
-      { name: "Bug" },
-      { name: "Feature" },
-      { name: "Documentation" },
-    ],
+    categories: dynamicFilters.categories.map((name) => ({ name })),
+    tags: dynamicFilters.tags.map((name) => ({ name })),
   };
 
   // Fetch ecosystems from API
@@ -240,7 +238,15 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
     }));
   };
 
-  // Fetch projects from API
+  // Fetch projects from API. This effect only re-runs when selectedFilters
+  // (or fetchProjects itself) actually changes, so useOptimisticData's own
+  // 30s cache can only ever get in the way here, never usefully prevent a
+  // redundant call - without forceRefresh=true, selecting a filter within
+  // 30s of the previous fetch (i.e. almost always) silently re-served the
+  // stale unfiltered cache instead of ever calling this closure with the
+  // new filter params: the chip/button UI shows the filter as selected
+  // (selectedFilters itself updates fine) while the grid never narrows,
+  // since the actual API call carrying that filter never happened.
   useEffect(() => {
     const loadProjects = async () => {
       await fetchProjects(async () => {
@@ -310,11 +316,22 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
           console.error('BrowsePage: Failed to fetch projects:', err);
           throw err; // Re-throw to let the hook handle the error
         }
-      });
+      }, true);
     };
 
     loadProjects();
-  }, [selectedFilters, fetchProjects]);
+    // fetchProjects is deliberately NOT a dependency: useOptimisticData's
+    // fetchData is a useCallback closed over its own `data` state, so its
+    // identity changes on every successful fetch. Combined with
+    // forceRefresh=true above (needed so a real filter change is never
+    // silently swallowed by the 30s cache - see the comment above this
+    // effect), including it here creates a genuine infinite loop: fetch
+    // resolves -> data changes -> fetchProjects gets a new identity ->
+    // this effect re-fires because fetchProjects "changed" -> fetches
+    // again -> forever. selectedFilters is the only real trigger this
+    // effect should react to.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFilters]);
 
   return (
     <div className="space-y-6">
@@ -325,7 +342,7 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
             values.map((value) => (
               <span
                 key={`${filterType}-${value}`}
-                className={`px-3.5 py-2 rounded-full text-[13px] font-semibold border-[1.5px] flex items-center gap-2 transition-all hover:scale-105 shadow-lg ${
+                className={`px-3.5 py-2 rounded-full text-[13px] font-semibold border-[1.5px] flex items-center gap-2 transition-all shadow-lg ${
                   isDark
                     ? "bg-[#a17932] border-[#c9983a] text-white"
                     : "bg-[#b8872f] border-[#a17932] text-white"
@@ -344,54 +361,94 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex items-center flex-wrap gap-3">
-        {["languages", "ecosystems", "categories", "tags"].map((filterType) => (
-          <Dropdown
-            key={filterType}
-            filterType={filterType}
-            options={filterOptions[filterType as keyof typeof filterOptions]}
-            selectedValues={selectedFilters[filterType]}
-            onToggle={(value) => toggleFilter(filterType, value)}
-            searchValue={searchTerms[filterType]}
-            onSearchChange={(value) =>
-              setSearchTerms((prev) => ({ ...prev, [filterType]: value }))
-            }
-            isOpen={openDropdown === filterType}
-            onToggleOpen={() =>
-              setOpenDropdown(openDropdown === filterType ? null : filterType)
-            }
-            onClose={() => setOpenDropdown(null)}
-          />
+      {/* Orgs / Repos toggle */}
+      <div className={`inline-flex items-center p-1 rounded-[14px] border backdrop-blur-[30px] ${isDark ? "bg-white/[0.06] border-white/15" : "bg-white/[0.2] border-white/30"}`}>
+        {(
+          [
+            { key: "orgs" as const, label: "Organizations", icon: Building2 },
+            { key: "repos" as const, label: "Repositories", icon: FolderGit2 },
+          ]
+        ).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setViewMode(key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold transition-all ${
+              viewMode === key
+                ? isDark
+                  ? "bg-[#a17932] text-white shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+                  : "bg-[#b8872f] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+                : isDark
+                  ? "text-[#d4d4d4] hover:text-[#f5f5f5]"
+                  : "text-[#6b5d4d] hover:text-[#2d2820]"
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
         ))}
       </div>
 
-      {/* Back button + org header, only while drilled into an organization */}
-      {!isLoading && !hasError && selectedOrg && (
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setSelectedOrg(null)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[12px] backdrop-blur-[30px] border font-medium text-[14px] transition-all hover:scale-[1.02] ${
-              isDark
-                ? "bg-[#2d2820]/60 hover:bg-[#2d2820]/80 text-[#d4c5b0] border-white/10"
-                : "bg-white/60 hover:bg-white/80 text-[#6b5d4d] border-white/25"
-            }`}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Organizations
-          </button>
-          <div className="flex items-center gap-2.5">
-            <img
-              src={`https://github.com/${selectedOrg}.png?size=80`}
-              alt={selectedOrg}
-              className="w-7 h-7 rounded-[8px] border border-white/20"
-            />
-            <h2 className={`text-[16px] font-bold transition-colors ${isDark ? "text-[#f5f5f5]" : "text-[#2d2820]"}`}>
-              {selectedOrg}
-            </h2>
-          </div>
+      {/* Filters: pick a type, then pick values for that type - the value
+          list (options prop) swaps based on which type pill is active,
+          keeping every selected value across all 4 types active at once
+          (shown below in Active Filters). */}
+      <div className="flex items-center flex-wrap gap-3">
+        <div className={`inline-flex items-center gap-1 p-1 rounded-[12px] border ${isDark ? "bg-white/[0.06] border-white/15" : "bg-white/[0.2] border-white/30"}`}>
+          {FILTER_TYPES.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveFilterType(key)}
+              className={`px-3 py-1.5 rounded-[9px] text-[13px] font-semibold transition-all ${
+                activeFilterType === key
+                  ? isDark
+                    ? "bg-[#a17932] text-white"
+                    : "bg-[#b8872f] text-white"
+                  : isDark
+                    ? "text-[#d4d4d4] hover:text-[#f5f5f5]"
+                    : "text-[#6b5d4d] hover:text-[#2d2820]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-      )}
+
+        <Dropdown
+          filterType={activeFilterType}
+          options={filterOptions[activeFilterType]}
+          selectedValues={selectedFilters[activeFilterType]}
+          onToggle={(value) => toggleFilter(activeFilterType, value)}
+          searchValue={searchTerms[activeFilterType]}
+          onSearchChange={(value) =>
+            setSearchTerms((prev) => ({ ...prev, [activeFilterType]: value }))
+          }
+          isOpen={openDropdown === activeFilterType}
+          onToggleOpen={() =>
+            setOpenDropdown(openDropdown === activeFilterType ? null : activeFilterType)
+          }
+          onClose={() => setOpenDropdown(null)}
+          renderOption={
+            activeFilterType === "languages"
+              ? (option, isSelected) => (
+                  <div className="flex-1 min-w-0 flex items-center gap-2 text-left">
+                    <LanguageIcon language={option.name} className="w-4 h-4 flex-shrink-0" />
+                    <div
+                      className={`text-[14px] font-semibold truncate ${
+                        isSelected
+                          ? isDark ? "text-[#f5c563]" : "text-[#8b6f3a]"
+                          : isDark ? "text-[#f5f5f5]" : "text-[#2d2820]"
+                      }`}
+                    >
+                      {option.name}
+                    </div>
+                  </div>
+                )
+              : undefined
+          }
+        />
+      </div>
 
       {/* Projects / Organizations Grid */}
       {isLoading ? (
@@ -412,14 +469,14 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
           title="No projects found"
           description="Try adjusting your filters or check back later."
         />
-      ) : selectedOrg ? (
+      ) : viewMode === "repos" ? (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5"
           variants={cardContainerVariants}
           initial={prefersReducedMotion ? false : "hidden"}
           animate="visible"
         >
-          {orgProjects.map((project) => (
+          {projects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
@@ -439,7 +496,7 @@ export function BrowsePage({ onProjectClick }: BrowsePageProps) {
             <OrganizationCard
               key={organization.name}
               organization={organization}
-              onClick={setSelectedOrg}
+              onClick={onOrgClick}
               variants={cardVariants}
             />
           ))}

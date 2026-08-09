@@ -106,7 +106,7 @@ describe('MaintainersPage', () => {
     expect(screen.queryByTestId('pull-requests-tab')).not.toBeInTheDocument()
   })
 
-  it('opens directly on the Issues tab when the URL has ?subtab=Issues (e.g. from Discover\'s "View all issues")', async () => {
+  it('opens directly on the Issues tab when the URL has ?subtab=Issues (e.g. a deep link)', async () => {
     renderWithProviders(<MaintainersPage onNavigate={vi.fn()} />, { route: '/dashboard?tab=maintainers&subtab=Issues' })
 
     expect(await screen.findByTestId('issues-tab')).toBeInTheDocument()
@@ -116,12 +116,11 @@ describe('MaintainersPage', () => {
   it('forwards viewMode to IssuesTab unchanged, including reaching Issues without it ever being set', async () => {
     // This page's project list is already scoped to ones the viewer owns
     // (getMyProjects), but that alone doesn't mean the viewer is currently
-    // acting as a maintainer - Discover's "View all issues" link reaches
-    // this exact tab without ever switching the nav pill away from
-    // CONTRIBUTOR. MaintainersPage doesn't decide viewMode itself; it must
-    // forward whatever Dashboard.tsx computed, including undefined if the
-    // caller forgot to pass it (IssuesTab's own default is what protects
-    // that case, not this page).
+    // acting as a maintainer - a direct/deep-linked visit to this URL could
+    // still arrive with the nav pill on CONTRIBUTOR. MaintainersPage doesn't
+    // decide viewMode itself; it must forward whatever Dashboard.tsx
+    // computed, including undefined if the caller forgot to pass it
+    // (IssuesTab's own default is what protects that case, not this page).
     const { rerender } = renderWithProviders(
       <MaintainersPage onNavigate={vi.fn()} viewMode="contributor" />,
       { route: '/dashboard?tab=maintainers&subtab=Issues' }

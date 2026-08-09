@@ -6,6 +6,7 @@ import { useAuth } from '../../../shared/contexts/AuthContext';
 import { getUserProfile, getProjectsContributed, getProjectsLed, getProfileCalendar, getProfileActivity, getPublicProfile } from '../../../shared/api/client';
 import { SkeletonLoader } from '../../../shared/components/SkeletonLoader';
 import { LanguageIcon } from '../../../shared/components/LanguageIcon';
+import { getGitHubAvatarUrl } from '../../../shared/utils/avatar';
 
 interface ProfileData {
   contributions_count: number;
@@ -113,7 +114,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
           if (!isSameView(requestedUserId, requestedLogin)) return;
           setViewingUser({
             login: data.login,
-            avatar_url: data.avatar_url || `https://github.com/${data.login}.png?size=200`
+            avatar_url: data.avatar_url || getGitHubAvatarUrl(data.login, 200)
           });
         } else {
           data = await getUserProfile();
@@ -340,8 +341,12 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       )}
 
       {/* Profile Header */}
-      <div className="backdrop-blur-[40px] bg-gradient-to-br from-white/[0.18] to-white/[0.10] rounded-[32px] border-2 border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.15),0_0_80px_rgba(201,152,58,0.08)] p-12 relative overflow-visible z-20 group">
-        {/* Ambient Background Glow - Enhanced */}
+      <div className="backdrop-blur-[40px] bg-gradient-to-br from-white/[0.18] to-white/[0.10] rounded-[32px] border-2 border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.15),0_0_80px_rgba(201,152,58,0.08)] p-12 relative overflow-hidden z-20 group">
+        {/* Ambient Background Glow - Enhanced. overflow-hidden above (not
+            overflow-visible) is load-bearing: these are 400-600px blurred
+            circles inside a 32px-rounded card - without clipping, they
+            visibly smear past the card's rounded corners as a hard-edged
+            rectangular glare onto whatever sits next to it on the page. */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#c9983a]/15 via-[#d4af37]/10 to-transparent rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#d4af37]/12 to-transparent rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-1000" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-[#c9983a]/5 via-transparent to-[#d4af37]/5 rounded-full blur-3xl pointer-events-none" />
@@ -370,7 +375,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                         const target = e.target as HTMLImageElement;
                         const login = viewingUser?.login || user?.github?.login;
                         if (login) {
-                          target.src = `https://github.com/${login}.png?size=200`;
+                          target.src = getGitHubAvatarUrl(login, 200);
                         }
                       }}
                     />
@@ -432,7 +437,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                     href={`https://github.com/${viewingUser?.login || user?.github?.login || ''}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:scale-110 hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
                     title="GitHub"
                   >
                     <Github className="w-4 h-4 text-[#c9983a]" />
@@ -467,7 +472,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                       href={`https://t.me/${profileData.telegram.replace(/^@/, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:scale-110 hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
                       title="Telegram"
                     >
                       <svg className="w-4 h-4" fill="#c9983a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -491,7 +496,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                       href={profileData.linkedin.startsWith('http') ? profileData.linkedin : `https://www.linkedin.com/in/${profileData.linkedin.replace(/^@/, '').replace(/^in\//, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-8 h-8 mb-1 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:scale-110 hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
+                      className="w-8 h-8 mb-1 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
                       title="LinkedIn"
                     >
                       <svg className="w-4 h-4" fill="#c9983a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -515,7 +520,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                       href={`https://wa.me/${profileData.whatsapp.replace(/[^0-9]/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:scale-110 hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
                       title="WhatsApp"
                     >
                       <svg className="w-4 h-4" fill="#c9983a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -539,7 +544,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                       href={`https://twitter.com/${profileData.twitter.replace(/^@/, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:scale-110 hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
                       title="Twitter"
                     >
                       <svg className="w-4 h-4" fill="#c9983a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -563,7 +568,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                       href={`https://discord.com/users/${profileData.discord.replace(/^@/, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:scale-110 hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/50 flex items-center justify-center hover:shadow-[0_4px_12px_rgba(201,152,58,0.4)] transition-all duration-300"
                       title="Discord"
                     >
                       <svg className="w-4 h-4" fill="#c9983a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -910,7 +915,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                   tabIndex={0}
                   onClick={() => onProjectClick?.(project.id)}
                   onKeyDown={(e) => e.key === 'Enter' && onProjectClick?.(project.id)}
-                  className={`backdrop-blur-[20px] rounded-[16px] border p-5 hover:scale-105 hover:shadow-[0_12px_36px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/project ${theme === 'dark'
+                  className={`backdrop-blur-[20px] rounded-[16px] border p-5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/project ${theme === 'dark'
                       ? 'bg-white/[0.08] border-white/10 hover:bg-white/[0.12] hover:border-white/15'
                       : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2] hover:border-white/40'
                     }`}
@@ -1227,7 +1232,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               {rewardsData.map((item, idx) => (
                 <div
                   key={item.name}
-                  className="backdrop-blur-[20px] bg-white/[0.15] rounded-[14px] border border-white/25 p-4 hover:bg-white/[0.25] hover:scale-105 hover:border-white/40 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/card"
+                  className="backdrop-blur-[20px] bg-white/[0.15] rounded-[14px] border border-white/25 p-4 hover:bg-white/[0.25] hover:border-white/40 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/card"
                   style={{
                     animationDelay: `${idx * 100}ms`,
                   }}

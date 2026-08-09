@@ -37,7 +37,15 @@ export function BentoGridItem({ className, title, description, icon, large }: Be
         isDark
           ? "bg-white/[0.08] border-white/15 hover:bg-white/[0.11] hover:border-[#c9983a]/40"
           : "bg-white/[0.18] border-white/30 hover:bg-white/[0.25] hover:border-[#c9983a]/40",
-        "hover:shadow-[0_16px_40px_rgba(201,152,58,0.18)]",
+        // inset, not a regular outer shadow: an outer shadow's blur radius
+        // paints past this card's own bottom edge regardless of
+        // overflow-hidden (box-shadow is never clipped by the box that
+        // casts it) - on the wide 2-col "large" card that bleed showed up
+        // as a visible glow through the translucent, backdrop-blurred row
+        // of cards sitting just below it in the grid. inset keeps the glow
+        // physically inside this card's own box, so it can't bleed onto a
+        // neighbor no matter how tight the grid gap is.
+        "hover:shadow-[inset_0_0_32px_rgba(201,152,58,0.16)]",
         className,
       )}
     >

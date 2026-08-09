@@ -126,9 +126,10 @@ describe('IssueDetailPage', () => {
   })
 
   it('passes viewMode="contributor" when owning the project but still in contributor mode', async () => {
-    // This is the exact scenario a screenshot flagged: reachable via
-    // Discover's "View all issues" without ever switching the nav pill away
-    // from CONTRIBUTOR, on a project the viewer happens to own.
+    // This is the exact scenario a screenshot flagged: reachable by clicking
+    // an individual Recommended Issues card on Discover without ever
+    // switching the nav pill away from CONTRIBUTOR, on a project the viewer
+    // happens to own.
     vi.mocked(getPublicProject).mockResolvedValue(buildPublicProject({ id: 'p1' }))
     vi.mocked(getMyProjects).mockResolvedValue([buildMyProject({ id: 'p1' })])
 

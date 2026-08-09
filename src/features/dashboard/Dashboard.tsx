@@ -49,6 +49,7 @@ const EcosystemsPage = lazy(() => import("./pages/EcosystemsPage").then((m) => (
 const EcosystemDetailPage = lazy(() => import("./pages/EcosystemDetailPage").then((m) => ({ default: m.EcosystemDetailPage })));
 const MaintainersPage = lazy(() => import("../maintainers/pages/MaintainersPage").then((m) => ({ default: m.MaintainersPage })));
 const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage })));
+const OrgProfilePage = lazy(() => import("./pages/OrgProfilePage").then((m) => ({ default: m.OrgProfilePage })));
 const DataPage = lazy(() => import("./pages/DataPage").then((m) => ({ default: m.DataPage })));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage").then((m) => ({ default: m.ProjectDetailPage })));
 const IssueDetailPage = lazy(() => import("./pages/IssueDetailPage").then((m) => ({ default: m.IssueDetailPage })));
@@ -150,6 +151,17 @@ export function Dashboard() {
     }
     return null;
   });
+  // Org login has no id/login ambiguity (unlike users, orgs are only ever a
+  // plain GitHub login string) - a single state, mirroring viewingUserLogin.
+  const [viewingOrgLogin, setViewingOrgLogin] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const orgParam = params.get("org");
+    const tabParam = params.get("tab") || params.get("page");
+    return tabParam === "org" && orgParam ? orgParam : null;
+  });
+  // Where "Back" from an org's page should return to - mirrors profileBackTarget.
+  const [orgBackTarget, setOrgBackTarget] = useState("discover");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deviceWidth, setDeviceWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : null
@@ -207,6 +219,21 @@ export function Dashboard() {
     }
   }, [location.search]);
 
+  // Check URL params for viewing an org's page (tab=org&org=X) - mirrors the
+  // profile effect above; org logins have no id/login ambiguity to resolve.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const orgParam = params.get("org");
+    const tabParam = params.get("tab") || params.get("page");
+
+    if (tabParam === "org" && orgParam) {
+      setCurrentPage("org");
+      setViewingOrgLogin(orgParam);
+    } else if (tabParam === "org" && !orgParam) {
+      setViewingOrgLogin(null);
+    }
+  }, [location.search]);
+
   // Note: a former "deep link" effect that special-cased tab=browse&project=&issue=
   // URLs used to live here. It's now redundant - selectedIssue's own useState
   // initializer above reads ?issue=/?project= unconditionally (any tab), and
@@ -227,6 +254,11 @@ export function Dashboard() {
     } else if (currentPage === "profile") {
       params.delete("user");
     }
+    if (currentPage === "org" && viewingOrgLogin) {
+      params.set("org", viewingOrgLogin);
+    } else if (currentPage === "org") {
+      params.delete("org");
+    }
     if (selectedProjectId) {
       params.set("project", selectedProjectId);
       if (projectBackTarget) {
@@ -244,7 +276,15 @@ export function Dashboard() {
     isFirstUrlSync.current = false;
 
     localStorage.setItem("dashboardTab", currentPage);
-  }, [currentPage, selectedProjectId, selectedIssue, viewingUserId, viewingUserLogin, projectBackTarget, setSearchParams]);
+  }, [currentPage, selectedProjectId, selectedIssue, viewingUserId, viewingUserLogin, viewingOrgLogin, projectBackTarget, setSearchParams]);
+
+  // Forget the viewed org once the user has navigated away from its page -
+  // viewingOrgLogin has no meaning outside currentPage === "org".
+  useEffect(() => {
+    if (currentPage !== "org" && viewingOrgLogin) {
+      setViewingOrgLogin(null);
+    }
+  }, [currentPage, viewingOrgLogin]);
 
   // Keyboard shortcut for search (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -593,10 +633,10 @@ export function Dashboard() {
         <div className="max-w-[1400px] mx-auto">
           {/* Premium Pill-Style Header - Greatest of All Time */}
           <div
-            className={`fixed top-2 right-2 left-auto z-[9999] flex items-center gap-1 md:gap-2 lg:gap-3 lg:h-[52px] py-3 rounded-[26px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-[90px] border ml-[81px] transition-all duration-300 ${
+            className={`fixed top-2 right-2 left-auto z-[9999] flex items-center gap-1 md:gap-2 lg:gap-3 lg:h-[52px] py-3 rounded-[26px] backdrop-blur-[90px] border ml-[81px] transition-all duration-300 ${
               darkTheme
-                ? "bg-[#2d2820]/[0.4] border-white/10 shadow-[inset_0px_0px_9px_0px_rgba(201,152,58,0.1)]"
-                : "bg-white/[0.35] border-white shadow-[inset_0px_0px_9px_0px_rgba(255,255,255,0.5)]"
+                ? "bg-[#2d2820]/[0.4] border-white/10 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25),inset_0px_0px_9px_0px_rgba(201,152,58,0.1)]"
+                : "bg-white/[0.35] border-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25),inset_0px_0px_9px_0px_rgba(255,255,255,0.5)]"
             }
           ${showMobileNav? "h-screen flex-col":"" } 
           `}
@@ -809,7 +849,9 @@ export function Dashboard() {
                           ? "Back to Ecosystems"
                           : projectBackTarget === "discover"
                             ? "Back to Discover"
-                            : "Back"
+                            : projectBackTarget === "org"
+                              ? "Back to Organization"
+                              : "Back"
                 }
                 onBack={() => {
                   setSelectedProjectId(null);
@@ -839,13 +881,6 @@ export function Dashboard() {
                       setCurrentPage("settings");
                     }}
                     onGoToOpenSourceWeek={() => setCurrentPage("osw")}
-                    onViewAllIssues={() => {
-                      const params = new URLSearchParams(location.search);
-                      params.set("tab", "maintainers");
-                      params.set("subtab", "Issues");
-                      setSearchParams(params);
-                      setCurrentPage("maintainers");
-                    }}
                   />
                 )}
                 {currentPage === "browse" && (
@@ -853,6 +888,11 @@ export function Dashboard() {
                     onProjectClick={(id) => {
                       setSelectedProjectId(id);
                       setProjectBackTarget("browse");
+                    }}
+                    onOrgClick={(org) => {
+                      setViewingOrgLogin(org);
+                      setOrgBackTarget("browse");
+                      setCurrentPage("org");
                     }}
                   />
                 )}
@@ -920,6 +960,20 @@ export function Dashboard() {
                       setSelectedProjectId(projectId);
                       setSelectedIssue({ issueId, projectId });
                       setCurrentPage("discover");
+                    }}
+                  />
+                )}
+                {currentPage === "org" && viewingOrgLogin && (
+                  <OrgProfilePage
+                    viewingOrgLogin={viewingOrgLogin}
+                    onBack={() => {
+                      setViewingOrgLogin(null);
+                      setCurrentPage(orgBackTarget);
+                      setOrgBackTarget("discover");
+                    }}
+                    onProjectClick={(id) => {
+                      setSelectedProjectId(id);
+                      setProjectBackTarget("org");
                     }}
                   />
                 )}

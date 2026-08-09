@@ -876,6 +876,19 @@ export const submitSocialFollowProof = (platform: SocialFollowPlatform, screensh
     body: JSON.stringify({ screenshot }),
   });
 
+// Public (no auth required) so it works for anonymous landing-page visitors,
+// not just signed-in dashboard users.
+export const submitBugReport = (payload: {
+  description: string;
+  screenshot?: string;
+  page_url?: string;
+  reporter_login?: string;
+}) =>
+  apiRequest<{ ok: boolean }>("/bug-reports", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
 export interface SocialFollowSubmission {
   id: string;
   user_id: string;
@@ -1259,3 +1272,112 @@ export const rejectApplication = (
       body: JSON.stringify({ assignee }),
     },
   );
+
+// Organizations
+export interface OrgSummary {
+  login: string;
+  avatar_url: string;
+  repo_count: number;
+  stars_count: number;
+  contributors_count: number;
+  merged_prs_count: number;
+  rank_position: number | null;
+  rank_tier: string;
+  rank_tier_name: string;
+  rank_tier_color: string;
+  average_rating: number | null;
+  ratings_count: number;
+}
+
+export interface OrgRating {
+  rating: number;
+  comment?: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  display_name: string;
+  avatar_url: string;
+  github_login?: string;
+}
+
+export interface OrgRatingStatus {
+  eligible: boolean;
+  rating: {
+    rating: number;
+    comment?: string | null;
+    created_at: string;
+    updated_at: string;
+  } | null;
+}
+
+export interface OrgActivityWeek {
+  week_start: string;
+  issues_opened: number;
+  prs_merged: number;
+}
+
+export const getOrgSummary = (login: string) =>
+  apiRequest<OrgSummary>(`/orgs/${login}`);
+
+export const getOrgActivity = (login: string) =>
+  apiRequest<{ weeks: OrgActivityWeek[] }>(`/orgs/${login}/activity`);
+
+export interface OrgCalendarDay {
+  date: string;
+  count: number;
+  level: number;
+}
+
+export const getOrgCalendar = (login: string) =>
+  apiRequest<{ calendar: OrgCalendarDay[]; total: number }>(`/orgs/${login}/calendar`);
+
+export interface OrgLinks {
+  telegram: string | null;
+  linkedin: string | null;
+  whatsapp: string | null;
+  twitter: string | null;
+  discord: string | null;
+}
+
+export const getOrgLinks = (login: string) =>
+  apiRequest<OrgLinks>(`/orgs/${login}/links`);
+
+// Omitting a key leaves that link untouched; passing "" clears it (sets it
+// to NULL server-side) - unlike updateProfile, which has no way to clear a
+// field once set. Matches the codebase's org_links backend behavior
+// exactly, see internal/handlers/org_links.go's Update().
+export const updateOrgLinks = (login: string, links: Partial<OrgLinks>) =>
+  apiRequest<{ ok: boolean }>(`/orgs/${login}/links`, {
+    requiresAuth: true,
+    method: "PUT",
+    body: JSON.stringify(links),
+  });
+
+export const getOrgRatings = (
+  login: string,
+  params?: { limit?: number; offset?: number },
+) => {
+  const q = new URLSearchParams();
+  if (params?.limit) q.append("limit", params.limit.toString());
+  if (params?.offset) q.append("offset", params.offset.toString());
+  const qs = q.toString();
+  return apiRequest<{ ratings: OrgRating[]; total: number }>(
+    `/orgs/${login}/ratings${qs ? `?${qs}` : ""}`,
+  );
+};
+
+export const getMyOrgRatingStatus = (login: string) =>
+  apiRequest<OrgRatingStatus>(`/orgs/${login}/ratings/me`, {
+    requiresAuth: true,
+  });
+
+export const submitOrgRating = (
+  login: string,
+  data: { rating: number; comment?: string },
+) =>
+  apiRequest<{ ok: boolean }>(`/orgs/${login}/ratings`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+

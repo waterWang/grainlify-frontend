@@ -6,6 +6,11 @@ test.describe('Browse and search', () => {
   test.beforeEach(async ({ page, setupMockAuth, setupMockBrowse }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem('patchwork_jwt', 'mock_jwt_token_123')
+      // Dashboard.tsx gates a first-visit product tour on this key (keyed by
+      // the user id mockAuth's **/me returns, "user-1"). Left unset, the
+      // tour's dialog traps focus, silently swallowing the Ctrl+K shortcut
+      // the second test below depends on.
+      window.localStorage.setItem('grainlify_tour_seen_user-1', 'true')
     })
     await setupMockAuth()
     await setupMockBrowse()
@@ -13,7 +18,10 @@ test.describe('Browse and search', () => {
 
   test('browse tab renders the mocked project grid', async ({ page }) => {
     await page.goto('/dashboard?tab=browse')
-    // Cards show just the repo name (org prefix stripped), not the full "org/repo".
+    // Browse groups repos into an org grid first (one card per owner) -
+    // drill into "grainlify" to reach its one repo, "example-repo" (org
+    // prefix stripped from the repo card's own heading).
+    await page.getByText('grainlify', { exact: true }).click()
     await expect(page.getByRole('heading', { name: 'example-repo' })).toBeVisible({ timeout: 10000 })
   })
 

@@ -6,6 +6,7 @@ import { getPublicProject, getPublicProjectIssues, getPublicProjectPRs } from '.
 import { SkeletonLoader } from '../../../shared/components/SkeletonLoader';
 import ReactMarkdown from 'react-markdown';
 import { LanguageIcon } from '../../../shared/components/LanguageIcon';
+import { getGitHubAvatarUrl } from '../../../shared/utils/avatar';
 
 const InPreContext = createContext(false);
 
@@ -189,7 +190,7 @@ export function ProjectDetailPage({ onBack, onIssueClick, projectId: propProject
   const ownerLogin = project?.repo?.owner_login || (project?.github_full_name?.split('/')[0] || '');
   const ownerAvatar =
     project?.repo?.owner_avatar_url ||
-    (ownerLogin ? `https://github.com/${ownerLogin}.png?size=200` : 'https://github.com/github.png?size=200');
+    getGitHubAvatarUrl(ownerLogin || 'github', 200);
   
   // Use project avatar if available, otherwise fallback to owner avatar
   const projectAvatar = project?.repo?.owner_avatar_url || ownerAvatar;
@@ -269,7 +270,7 @@ export function ProjectDetailPage({ onBack, onIssueClick, projectId: propProject
     for (const it of [...issues, ...prs]) {
       const login = (it as any).author_login;
       if (!login || uniq.has(login)) continue;
-      uniq.set(login, { name: login, avatar: `https://github.com/${login}.png?size=80` });
+      uniq.set(login, { name: login, avatar: getGitHubAvatarUrl(login, 80) });
       if (uniq.size >= 5) break; // Get top 5
     }
     return Array.from(uniq.values());
@@ -418,7 +419,7 @@ export function ProjectDetailPage({ onBack, onIssueClick, projectId: propProject
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   // Fallback to GitHub default avatar if image fails to load
-                  (e.target as HTMLImageElement).src = 'https://github.com/github.png?size=200';
+                  (e.target as HTMLImageElement).src = getGitHubAvatarUrl('github', 200);
                 }}
               />
             )}
@@ -602,7 +603,7 @@ export function ProjectDetailPage({ onBack, onIssueClick, projectId: propProject
                   alt={ownerLogin}
                   className="w-8 h-8 rounded-full border-2 border-[#c9983a]/30"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://github.com/github.png?size=80';
+                    (e.target as HTMLImageElement).src = getGitHubAvatarUrl('github', 80);
                   }}
                 />
                 <span className={`text-[13px] font-semibold transition-colors ${
@@ -642,7 +643,7 @@ export function ProjectDetailPage({ onBack, onIssueClick, projectId: propProject
                     alt={contributor.name}
                     className="w-10 h-10 rounded-full border-2 border-[#c9983a]/30 hover:z-10 transition-transform hover:scale-110"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://github.com/github.png?size=80';
+                      (e.target as HTMLImageElement).src = getGitHubAvatarUrl('github', 80);
                     }}
                   />
                 ))}
@@ -925,7 +926,7 @@ export function ProjectDetailPage({ onBack, onIssueClick, projectId: propProject
                     }`}>{timeAgo(issue.updated_at || issue.last_seen_at)}</span>
                     <div className="flex items-center gap-2">
                       <img 
-                        src={`https://github.com/${issue.author_login}.png?size=40`} 
+                        src={getGitHubAvatarUrl(issue.author_login, 40)}
                         alt={issue.author_login}
                         className="w-5 h-5 rounded-full border border-[#c9983a]/30"
                       />
@@ -941,7 +942,7 @@ export function ProjectDetailPage({ onBack, onIssueClick, projectId: propProject
                         alt={repoName}
                         className="w-4 h-4 rounded-full border border-[#c9983a]/30 object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://github.com/github.png?size=40';
+                          (e.target as HTMLImageElement).src = getGitHubAvatarUrl('github', 40);
                         }}
                       />
                       <span className={`text-[11px] font-bold transition-colors ${

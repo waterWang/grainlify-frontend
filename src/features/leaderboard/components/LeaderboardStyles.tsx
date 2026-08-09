@@ -171,24 +171,6 @@ export function LeaderboardStyles() {
         animation: falling linear infinite;
       }
       
-      @keyframes ray-rotate {
-        0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(360deg); }
-      }
-      
-      .animate-ray-rotate {
-        animation: ray-rotate 2s linear infinite;
-      }
-      
-      @keyframes particle-float {
-        0%, 100% { transform: translateY(0); opacity: 1; }
-        50% { transform: translateY(-20px); opacity: 0.8; }
-      }
-      
-      .animate-particle-float {
-        animation: particle-float 3s ease-in-out infinite;
-      }
-      
       @keyframes ping-gentle {
         0%, 100% { transform: scale(1); opacity: 1; }
         50% { transform: scale(1.1); opacity: 0.8; }

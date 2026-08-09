@@ -133,7 +133,16 @@ const projectB = makeApiProject({
   tags: ['Python'],
 })
 
+const projectC = makeApiProject({
+  id: 'proj-c',
+  github_full_name: 'initech/reportgen',
+  description: 'A report generator',
+  stars_count: 7,
+})
+
 describe('DiscoverPage', () => {
+  const originalLocation = window.location
+
   beforeEach(() => {
     vi.resetAllMocks()
     // Fresh-user default (nothing set up yet) — matches most scenarios below, which
@@ -148,6 +157,22 @@ describe('DiscoverPage', () => {
       ecosystems: [],
       kyc_verified: false,
       rank: { position: null, tier: 'unranked', tier_name: 'Unranked', tier_color: '#000' },
+    })
+    // The org-card click now does a real window.location.href navigation -
+    // jsdom's real setter throws "Not implemented: navigation", so replace
+    // it with an inert stand-in, matching RewardsTab.test.tsx's pattern.
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: { href: '' },
+    })
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: originalLocation,
     })
   })
 
@@ -305,21 +330,95 @@ describe('DiscoverPage', () => {
     expect(screen.queryByText('A second acme repo')).not.toBeInTheDocument()
   })
 
-  it('shows a View all issues button that calls onViewAllIssues, and hides it when the prop is not provided', async () => {
+  it('hides the View all issues button when there are no recommended issues', async () => {
     mockedGetRecommendedProjects.mockResolvedValue({ projects: [] })
-    const onViewAllIssues = vi.fn()
-    const user = userEvent.setup()
-
-    const { unmount } = renderWithProviders(<DiscoverPage onViewAllIssues={onViewAllIssues} />, { withAuth: true })
-    await waitFor(() => expect(screen.getByText('No recommended projects found')).toBeInTheDocument())
-
-    await user.click(screen.getByRole('button', { name: /View all issues/i }))
-    expect(onViewAllIssues).toHaveBeenCalledTimes(1)
-    unmount()
 
     renderWithProviders(<DiscoverPage />, { withAuth: true })
     await waitFor(() => expect(screen.getByText('No recommended projects found')).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: /View all issues/i })).not.toBeInTheDocument()
+  })
+
+  // Regression coverage: "View all issues" used to navigate to
+  // MaintainersPage's Issues tab (see Dashboard.tsx's old onViewAllIssues
+  // wiring) - a contributor who doesn't own any repos landed on an
+  // owner-only "Add a repository" empty state, losing the personalized
+  // issues they came from. It must instead expand this same list in place.
+  it('expands the recommended issues list in place when "View all issues" is clicked, instead of navigating away', async () => {
+    mockedGetRecommendedProjects.mockResolvedValue({ projects: [projectA, projectB, projectC] })
+    // github_issue_id must be unique ACROSS projects here, not just within
+    // one - it becomes the React key for every rendered IssueCard
+    // (issue.id = String(github_issue_id)), and real GitHub issue ids are
+    // globally unique, unlike per-repo issue *numbers*. A per-project
+    // offset avoids colliding keys silently dropping/misrendering cards.
+    const projectOffsets: Record<string, number> = { 'proj-a': 100, 'proj-b': 200, 'proj-c': 300 }
+    mockedGetPublicProjectIssues.mockImplementation(async (projectId: string) => ({
+      issues: Array.from({ length: 5 }, (_, i) =>
+        makeApiIssue({ github_issue_id: projectOffsets[projectId] + i + 1, title: `${projectId} issue ${i + 1}` }),
+      ),
+      total: 5,
+    }))
+    const user = userEvent.setup()
+
+    renderWithProviders(<DiscoverPage />, { withAuth: true })
+
+    // Default view: capped at 2 issues/project x 3 projects = 6.
+    await waitFor(() => {
+      expect(screen.getAllByText(/^(proj-a|proj-b|proj-c) issue \d$/)).toHaveLength(6)
+    })
+
+    await user.click(screen.getByRole('button', { name: /View all issues/i }))
+
+    // Expanded view: up to 5 issues/project x 3 projects = 15, well under
+    // the higher cap - and the button disappears once fully expanded.
+    await waitFor(() => {
+      expect(screen.getAllByText(/^(proj-a|proj-b|proj-c) issue \d$/)).toHaveLength(15)
+    })
+    expect(screen.queryByRole('button', { name: /View all issues/i })).not.toBeInTheDocument()
+  })
+
+  // Regression test for a real infinite-loop bug (found and fixed
+  // 2026-08-09, same day the feature above was built): the issues-fetch
+  // effect included `fetchIssues` in its own dependency array while also
+  // calling it with forceRefresh=showAllIssues. useOptimisticData's
+  // fetchData closes over its own `data` state, so its identity changes on
+  // every successful fetch - once showAllIssues was true, every resolved
+  // fetch recreated fetchIssues, which re-triggered this same effect,
+  // which fetched again, forever. A plain waitFor-based assertion (like the
+  // test above) does NOT catch this: waitFor stops polling the instant its
+  // condition is met once, even while the effect keeps looping in the
+  // background afterward - this test instead explicitly checks the call
+  // count has stabilized, not just that the right content appeared once.
+  it('does not keep re-fetching after "View all issues" settles (no infinite loop)', async () => {
+    mockedGetRecommendedProjects.mockResolvedValue({ projects: [projectA, projectB, projectC] })
+    const projectOffsets: Record<string, number> = { 'proj-a': 100, 'proj-b': 200, 'proj-c': 300 }
+    mockedGetPublicProjectIssues.mockImplementation(async (projectId: string) => ({
+      issues: Array.from({ length: 5 }, (_, i) =>
+        makeApiIssue({ github_issue_id: projectOffsets[projectId] + i + 1, title: `${projectId} issue ${i + 1}` }),
+      ),
+      total: 5,
+    }))
+    const user = userEvent.setup()
+
+    renderWithProviders(<DiscoverPage />, { withAuth: true })
+    await waitFor(() => {
+      expect(screen.getAllByText(/^(proj-a|proj-b|proj-c) issue \d$/)).toHaveLength(6)
+    })
+
+    await user.click(screen.getByRole('button', { name: /View all issues/i }))
+    await waitFor(() => {
+      expect(screen.getAllByText(/^(proj-a|proj-b|proj-c) issue \d$/)).toHaveLength(15)
+    })
+
+    const callsRightAfterExpansion = mockedGetPublicProjectIssues.mock.calls.length
+    expect(callsRightAfterExpansion).toBeGreaterThan(0)
+
+    // Give any runaway effect a real window to keep firing in the
+    // background. A healthy effect makes zero further calls once
+    // showAllIssues/projects/isLoadingProjects have all stopped changing;
+    // a looping one would keep incrementing this count indefinitely.
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    expect(mockedGetPublicProjectIssues.mock.calls.length).toBe(callsRightAfterExpansion)
   })
 
   it('fires onGoToBilling and onGoToOpenSourceWeek when their call-to-action buttons are clicked', async () => {
@@ -364,7 +463,16 @@ describe('DiscoverPage', () => {
       expect(overlay.getAttribute('data-project-id')).toBe('proj-b')
     })
 
-    it('clicking a recommended project card writes ?dProject=, and closing clears it', async () => {
+  })
+
+  describe('org card navigation', () => {
+    // Regression coverage: this card represents a whole org (one card per
+    // owner, deduped from potentially many repos - see the "one card per
+    // org" test above), but its click handler used to carry the single
+    // underlying repo's project.id into ProjectDetailPage instead of
+    // opening the org's own page - fixed to navigate to /dashboard?tab=org
+    // instead, matching how Browse already shows all of an org's repos.
+    it('clicking a recommended project card navigates to that org\'s page, not a single repo\'s ProjectDetailPage', async () => {
       mockedGetRecommendedProjects.mockResolvedValue({ projects: [projectA] })
       mockedGetPublicProjectIssues.mockResolvedValue({ issues: [] })
       const user = userEvent.setup()
@@ -373,13 +481,8 @@ describe('DiscoverPage', () => {
 
       await user.click(await screen.findByText('acme'))
 
-      const overlay = await screen.findByTestId('project-detail-page')
-      expect(overlay.getAttribute('data-project-id')).toBe('proj-a')
-
-      await user.click(screen.getByRole('button', { name: 'Close project' }))
+      expect(window.location.href).toBe('/dashboard?tab=org&org=acme')
       expect(screen.queryByTestId('project-detail-page')).not.toBeInTheDocument()
-      // Back to the real Discover content, not stuck on the overlay.
-      expect(await screen.findByText('Recommended Projects (1)')).toBeInTheDocument()
     })
   })
 })

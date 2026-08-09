@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowDown, Wheat, Wallet2, Loader2, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { ArrowDown, Wallet2, Loader2, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import grainlifyCoin from '../../../assets/grainlify_coin.svg';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { TokenOnStellarIcon } from '../../../shared/components/icons/TokenIcons';
 import {
@@ -164,11 +165,13 @@ export function RedeemPage() {
                 darkTheme ? 'placeholder:text-white/20' : 'placeholder:text-black/15'
               }`}
             />
-            <div className="shrink-0 flex items-center gap-2 pl-2.5 pr-4 py-2 rounded-full bg-gradient-to-br from-[#c9983a] to-[#d4af37] shadow-[0_4px_14px_rgba(201,152,58,0.4)]">
-              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                <Wheat className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="text-white font-semibold text-[15px]">Points</span>
+            <div
+              className={`shrink-0 flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full border transition-colors ${
+                darkTheme ? 'bg-[#c9983a]/10 border-[#c9983a]/30' : 'bg-[#c9983a]/[0.06] border-[#c9983a]/25'
+              }`}
+            >
+              <img src={grainlifyCoin} alt="" className="w-8 h-8" />
+              <span className={`font-semibold text-[15px] ${darkTheme ? 'text-[#e8c77f]' : 'text-[#a67c2e]'}`}>Points</span>
             </div>
           </div>
         </div>

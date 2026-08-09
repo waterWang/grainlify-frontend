@@ -308,7 +308,7 @@ export function DashboardTab({ selectedProjects, isLoadingProjects = false, onRe
   return (
     <>
       {/* Stats Cards */}
-      <div className="grid grid-cols-5 gap-5">
+      <div className="grid grid-cols-5 gap-5 mb-6">
         {showLoading ? (
           [...Array(5)].map((_, idx) => (
             <StatsCardSkeleton key={idx} />

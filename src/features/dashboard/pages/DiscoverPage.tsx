@@ -18,6 +18,7 @@ import {
   getPublicProjectIssues,
   getUserProfile,
 } from "../../../shared/api/client";
+import { getGitHubAvatarUrl } from "../../../shared/utils/avatar";
 import { SkeletonLoader } from "../../../shared/components/SkeletonLoader";
 import { useOptimisticData } from "../../../shared/hooks/useOptimisticData";
 import { EmptyState } from "../../../shared/components/EmptyState";
@@ -55,7 +56,7 @@ const formatNumber = (num: number): string => {
 const getProjectIcon = (githubFullName: string): string => {
   const [owner] = githubFullName.split("/");
   // Use higher‑resolution owner avatar so cards look crisp
-  return `https://github.com/${owner}.png?size=200`;
+  return getGitHubAvatarUrl(owner, 200);
 };
 
 // On-brand gradient for the avatar-fallback initial letter — shared with ProjectCard.tsx
@@ -167,7 +168,6 @@ type IssueType = {
 interface DiscoverPageProps {
   onGoToBilling?: () => void;
   onGoToOpenSourceWeek?: () => void;
-  onViewAllIssues?: () => void;
   /** Dashboard's `activeRole` (the CONTRIBUTOR/MAINTAINER/ADMIN nav pill) -
    * forwarded to this page's own IssueDetailPage overlay so maintainer
    * actions there require actually being in maintainer/admin mode, not just
@@ -178,7 +178,6 @@ interface DiscoverPageProps {
 export function DiscoverPage({
   onGoToBilling,
   onGoToOpenSourceWeek,
-  onViewAllIssues,
   activeRole,
 }: DiscoverPageProps) {
   const { theme } = useTheme();
@@ -237,6 +236,12 @@ export function DiscoverPage({
     isLoading: isLoadingIssues,
     fetchData: fetchIssues,
   } = useOptimisticData<IssueType[]>([], { cacheDuration: 30000 });
+
+  // "View all issues" expands this same in-place list instead of navigating
+  // anywhere - it used to route to MaintainersPage's Issues tab (owner-only
+  // chrome, an empty project/issue list for anyone who doesn't own a repo),
+  // which was a real bug for every contributor. See loadRecommendedIssues.
+  const [showAllIssues, setShowAllIssues] = useState(false);
 
   // Fetch recommended projects
   useEffect(() => {
@@ -323,19 +328,28 @@ export function DiscoverPage({
         return;
       }
 
+      // "View all issues" fetches a bigger pool in place, rather than
+      // navigating anywhere - see showAllIssues above. forceRefresh=true
+      // when expanding: useOptimisticData's cache is a single time-windowed
+      // slot with no awareness of these caps, so within its 30s window a
+      // plain fetchIssues() call here would just re-serve the stale 6-issue
+      // result instead of actually running this closure again.
+      const perProjectCap = showAllIssues ? 5 : 2;
+      const totalCap = showAllIssues ? 40 : 6;
+
       await fetchIssues(async () => {
         const issues: IssueType[] = [];
 
         // Try to get issues from projects, moving to next if a project has no issues
         for (const project of projects) {
-          if (issues.length >= 6) break; // We only need 6 issues
+          if (issues.length >= totalCap) break;
           try {
             const issuesResponse = await getPublicProjectIssues(project.id);
             if (issuesResponse?.issues && Array.isArray(issuesResponse.issues) && issuesResponse.issues.length > 0) {
-              // Take up to 2 issues from this project
-              const projectIssues = issuesResponse.issues.slice(0, 2);
+              // Take up to perProjectCap issues from this project
+              const projectIssues = issuesResponse.issues.slice(0, perProjectCap);
               for (const issue of projectIssues) {
-                if (issues.length >= 6) break;
+                if (issues.length >= totalCap) break;
 
                 // Get project language for the issue
                 const projectData = projects.find(p => p.id === project.id);
@@ -360,11 +374,24 @@ export function DiscoverPage({
         }
 
         return issues;
-      });
+      }, showAllIssues);
     };
 
     loadRecommendedIssues();
-  }, [projects, isLoadingProjects, fetchIssues]);
+    // fetchIssues is deliberately NOT a dependency here - useOptimisticData's
+    // fetchData is a useCallback closed over its own `data` state, so its
+    // identity changes on every successful fetch. Combined with
+    // forceRefresh=showAllIssues above (needed so expanding the list is
+    // never silently swallowed by the 30s cache), including it here creates
+    // a genuine infinite loop once showAllIssues is true: fetch resolves ->
+    // data changes -> fetchIssues gets a new identity -> this effect
+    // re-fires because fetchIssues "changed" -> fetches again -> forever.
+    // Confirmed via an identical bug in BrowsePage.tsx's filter fetch
+    // (2026-08-09) - a waitFor-based test can pass without ever exposing
+    // this, since it stops polling the instant its assertion is met once,
+    // even while the effect keeps looping in the background afterward.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, isLoadingProjects, showAllIssues]);
 
   // If an issue is selected, show the detail page instead
   if (selectedIssue) {
@@ -556,9 +583,14 @@ export function DiscoverPage({
                 key={project.id}
                 project={project}
                 onClick={() => {
-                  const next = new URLSearchParams(searchParams);
-                  next.set('dProject', String(project.id));
-                  setSearchParams(next);
+                  // Each card here represents a whole org (deduped to one
+                  // card per owner, see mappedProjects above), not the single
+                  // repo project.id happens to carry - so this must open the
+                  // org's own page (all its repos, rank, ratings), not drop
+                  // straight into that one repo's ProjectDetailPage. The org
+                  // login is only available via project.name (see
+                  // mappedProjects' `name: owner` above).
+                  window.location.href = `/dashboard?tab=org&org=${encodeURIComponent(project.name)}`;
                 }}
                 variants={cardVariants}
               />
@@ -580,9 +612,9 @@ export function DiscoverPage({
             <h3 className={`text-xl md:text-[24px] font-bold transition-colors ${isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
               }`}>Recommended Issues</h3>
           </div>
-          {onViewAllIssues && (
+          {!showAllIssues && recommendedIssues.length > 0 && (
             <button
-              onClick={onViewAllIssues}
+              onClick={() => setShowAllIssues(true)}
               className={`shrink-0 inline-flex items-center gap-1 text-[13px] md:text-[14px] font-semibold transition-colors ${
                 isDark ? 'text-[#c9983a] hover:text-[#e8c77f]' : 'text-[#a67c2e] hover:text-[#c9983a]'
               }`}

@@ -100,7 +100,7 @@ export function FiltersSection({
                 onToggleDropdown();
               }
             }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border hover:scale-105 transition-all duration-300 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border transition-all duration-300 ${
               theme === "dark"
                 ? "bg-white/[0.08] border-white/15 hover:bg-white/[0.12]"
                 : "bg-white/[0.15] border-white/25 hover:bg-white/[0.2]"
@@ -120,8 +120,8 @@ export function FiltersSection({
             />
           </button>
           {showFilterDropdown && (
-            <div className={`absolute right-0 mt-2 w-[220px] border-2 border-white/30 rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden z-[100] animate-dropdown-in ${
-              theme === "dark" ? "bg-[#2d2820]/95" : "bg-white/95"
+            <div className={`absolute right-0 mt-2 w-[220px] border-2 border-[#c9983a]/30 rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden z-[100] animate-dropdown-in ${
+              theme === "dark" ? "bg-[#2d2820]/95" : "bg-[#d4c5b0]/95"
             }`}>
               {filterOptions.map((option) => (
                 <button
@@ -153,7 +153,7 @@ export function FiltersSection({
                 setShowFilterDropdown(false);
               }
             }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border hover:scale-105 transition-all duration-300 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border transition-all duration-300 ${
               theme === "dark"
                 ? "bg-white/[0.08] border-white/15 hover:bg-white/[0.12]"
                 : "bg-white/[0.15] border-white/25 hover:bg-white/[0.2]"
@@ -173,8 +173,8 @@ export function FiltersSection({
             />
           </button>
           {showDropdown && (
-            <div className={`absolute right-0 mt-2 w-[200px] border-2 border-white/30 rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden z-[100] animate-dropdown-in ${
-              theme === "dark" ? "bg-[#2d2820]/95" : "bg-white/95"
+            <div className={`absolute right-0 mt-2 w-[200px] border-2 border-[#c9983a]/30 rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.15)] overflow-hidden z-[100] animate-dropdown-in ${
+              theme === "dark" ? "bg-[#2d2820]/95" : "bg-[#d4c5b0]/95"
             }`}>
               {loading ? (
                 <div className="px-4 py-3 flex justify-center">

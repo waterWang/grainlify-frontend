@@ -10,6 +10,7 @@ import { Modal, ModalFooter, ModalButton } from '../../../../shared/components/u
 import { applyToIssue, getProjectIssues, postBotComment, withdrawApplication, assignApplicant, unassignApplicant, rejectApplication } from '../../../../shared/api/client';
 import { formatDistanceToNow } from 'date-fns';
 import { IssueCardSkeleton } from '../../../../shared/components/IssueCardSkeleton';
+import { getGitHubAvatarUrl } from '../../../../shared/utils/avatar';
 import RenderMarkdownContent from '../../../../app/utils/renderMarkdown';
 
 interface Project {
@@ -268,7 +269,7 @@ export function IssuesTab({ onNavigate, selectedProjects, onRefresh, initialSele
 
   // Helper function to get GitHub avatar URL
   const getGitHubAvatar = (login: string, size: number = 40): string => {
-    return `https://github.com/${login}.png?size=${size}`;
+    return getGitHubAvatarUrl(login, size);
   };
 
   // Detect application comments: new format has "has applied to work on this issue as part of the Grainlify program"; legacy had "[grainlify application]" at start
@@ -850,7 +851,7 @@ Only applications submitted via the apply link above will be considered. Please 
                     applicants={countApplicationComments(issue.comments)}
                     author={{
                       name: issue.author_login,
-                      avatar: `https://github.com/${issue.author_login}.png?size=40`
+                      avatar: getGitHubAvatarUrl(issue.author_login, 40)
                     }}
                     timeAgo={timeAgoFormatted}
                     tags={issue.labels?.map((l: any) => l.name || l) || []}
@@ -972,6 +973,13 @@ Only applications submitted via the apply link above will be considered. Please 
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {viewMode === 'maintainer' && selectedIssueFromAPI && (
+              <HackathonIssueFieldsPanel
+                projectId={selectedIssueFromAPI.projectId}
+                issueNumber={selectedIssueFromAPI.number}
+              />
+            )}
 
             {/* Tabs */}
             <div className="flex items-center gap-2 mb-6 border-b border-white/20 pb-4">

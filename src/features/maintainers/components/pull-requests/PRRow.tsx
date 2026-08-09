@@ -1,6 +1,7 @@
 import { GitPullRequest, CircleCheck, CircleX, Trophy, Eye, Code } from 'lucide-react';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import { PullRequest } from '../../types';
+import { getGitHubAvatarUrl } from '../../../../shared/utils/avatar';
 
 interface PRRowProps {
   pr: PullRequest;
@@ -88,7 +89,7 @@ export function PRRow({ pr }: PRRowProps) {
       <div>
         <div className="flex items-center gap-2 mb-2">
           <img
-            src={`https://github.com/${pr.author.name}.png?size=28`}
+            src={getGitHubAvatarUrl(pr.author.name, 28)}
             alt={pr.author.name}
             loading="lazy"
             decoding="async"
@@ -140,7 +141,7 @@ export function PRRow({ pr }: PRRowProps) {
         <div className="flex items-center gap-2 mb-1">
           {(() => {
             const [owner] = pr.org ? [pr.org] : pr.repo.split('/');
-            const repoAvatarUrl = `https://github.com/${owner}.png?size=20`;
+            const repoAvatarUrl = getGitHubAvatarUrl(owner, 20);
             return (
               <img
                 src={repoAvatarUrl}

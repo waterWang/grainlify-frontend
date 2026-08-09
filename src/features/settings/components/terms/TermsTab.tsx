@@ -355,7 +355,7 @@ const SECTIONS: SectionData[] = [
         <p>
           Questions about these Terms or the Privacy Policy, or requests regarding your personal data, can be sent
           through the support channel linked in the app footer or on our{' '}
-          <a href="https://docs.grainlify.0xo.in" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline underline-offset-2">
+          <a href="https://docs.grainlify.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline underline-offset-2">
             documentation site<ExternalLink className="w-3 h-3" />
           </a>.
         </p>

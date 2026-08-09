@@ -8,6 +8,7 @@ import { IssuesTab } from '../components/issues/IssuesTab';
 import { PullRequestsTab } from '../components/pull-requests/PullRequestsTab';
 import { TabType } from '../types';
 import { getMyProjects, getPendingSetupProjects, type PendingSetupProject } from '../../../shared/api/client';
+import { getGitHubAvatarUrl } from '../../../shared/utils/avatar';
 import { InstallGitHubAppModal } from '../components/InstallGitHubAppModal';
 import { NewProjectSetupModal } from '../components/NewProjectSetupModal';
 
@@ -100,7 +101,7 @@ export function MaintainersPage({ onNavigate, viewMode }: MaintainersPageProps) 
   // Helper function to get GitHub repository avatar (owner's avatar)
   const getRepoAvatar = (githubFullName: string, size: number = 20): string => {
     const [owner] = githubFullName.split('/');
-    return `https://github.com/${owner}.png?size=${size}`;
+    return getGitHubAvatarUrl(owner, size);
   };
 
   const tabs: TabType[] = ['Dashboard', 'Issues', 'Pull Requests'];

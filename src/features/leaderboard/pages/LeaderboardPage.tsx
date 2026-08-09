@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { LeaderboardType, FilterType, Petal, LeaderData, ProjectData } from "../types";
 import { getLeaderboard, getRecommendedProjects } from "../../../shared/api/client";
+import { getGitHubAvatarUrl } from "../../../shared/utils/avatar";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { FallingPetals } from "../components/FallingPetals";
 import { LeaderboardTypeToggle } from "../components/LeaderboardTypeToggle";
@@ -68,8 +69,7 @@ export function LeaderboardPage() {
               rank_tier: item.rank_tier,
               rank_tier_name: item.rank_tier_name,
               username: item.username,
-              avatar:
-                item.avatar || `https://github.com/${item.username}.png?size=200`,
+              avatar: item.avatar || getGitHubAvatarUrl(item.username, 200),
               user_id: item.user_id || "",
               score: item.score,
               trend: item.trend,
@@ -141,7 +141,7 @@ export function LeaderboardPage() {
             );
             return {
               name: owner,
-              logo: `https://github.com/${owner}.png?size=200`,
+              logo: getGitHubAvatarUrl(owner, 200),
               score: contributors,
               trend: "same" as const,
               trendValue: 0,

@@ -17,8 +17,8 @@ export function LeaderboardTypeToggle({ leaderboardType, onToggle, isLoaded }: L
           onClick={() => onToggle('contributors')}
           className={`flex items-center gap-2 px-6 py-3 rounded-[14px] font-bold text-[15px] transition-all duration-300 ${
             leaderboardType === 'contributors'
-              ? 'bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white shadow-[0_6px_20px_rgba(201,152,58,0.4)] scale-105 border-2 border-white/20'
-              : 'text-[#6b5d4d] hover:bg-white/[0.15] hover:scale-105'
+              ? 'bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white shadow-[0_6px_20px_rgba(201,152,58,0.4)] border-2 border-white/20'
+              : 'text-[#6b5d4d] hover:bg-white/[0.15]'
           }`}
         >
           <Users className="w-5 h-5" />
@@ -28,8 +28,8 @@ export function LeaderboardTypeToggle({ leaderboardType, onToggle, isLoaded }: L
           onClick={() => onToggle('projects')}
           className={`flex items-center gap-2 px-6 py-3 rounded-[14px] font-bold text-[15px] transition-all duration-300 ${
             leaderboardType === 'projects'
-              ? 'bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white shadow-[0_6px_20px_rgba(201,152,58,0.4)] scale-105 border-2 border-white/20'
-              : 'text-[#6b5d4d] hover:bg-white/[0.15] hover:scale-105'
+              ? 'bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white shadow-[0_6px_20px_rgba(201,152,58,0.4)] border-2 border-white/20'
+              : 'text-[#6b5d4d] hover:bg-white/[0.15]'
           }`}
         >
           <FolderGit2 className="w-5 h-5" />

@@ -1,6 +1,7 @@
 import { Circle, FileText, User, Rocket, Users, User as UserIcon } from 'lucide-react';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import { Issue } from '../../types';
+import { getGitHubAvatarUrl } from '../../../../shared/utils/avatar';
 
 interface IssueCardProps {
   issue: Issue;
@@ -103,7 +104,7 @@ export function IssueCard({ issue, index, onClick }: IssueCardProps) {
         theme === 'dark' ? 'border-white/10' : 'border-white/20'
       }`}>
         <img
-          src={`https://github.com/${issue.user}.png?size=24`}
+          src={getGitHubAvatarUrl(issue.user, 24)}
           alt={issue.user}
           loading="lazy"
           decoding="async"

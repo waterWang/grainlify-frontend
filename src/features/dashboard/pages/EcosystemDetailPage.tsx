@@ -5,6 +5,7 @@ import { ProjectCard, Project } from '../components/ProjectCard';
 import { SearchWithFilter } from '../components/SearchWithFilter';
 import { getPublicProjects, getEcosystemDetail, type EcosystemDetail } from '../../../shared/api/client';
 import { SkeletonLoader } from '../../../shared/components/SkeletonLoader';
+import { getGitHubAvatarUrl } from '../../../shared/utils/avatar';
 
 const formatNumber = (num: number): string => {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -15,7 +16,7 @@ const formatNumber = (num: number): string => {
 const getProjectIcon = (githubFullName: string): string => {
   const [owner] = githubFullName.split('/');
   // Use higher‑resolution owner avatar so cards look crisp
-  return `https://github.com/${owner}.png?size=200`;
+  return getGitHubAvatarUrl(owner, 200);
 };
 
 const getProjectColor = (name: string): string => {

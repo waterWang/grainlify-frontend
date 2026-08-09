@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { siGithub, siTelegram } from 'simple-icons';
-import { Linkedin, Loader2, Gift, Coins, CheckCircle2, Clock, XCircle, Upload, ExternalLink, ArrowLeftRight } from 'lucide-react';
+import { Linkedin, Loader2, Gift, CheckCircle2, Clock, XCircle, Upload, ExternalLink, ArrowLeftRight } from 'lucide-react';
 import { toast } from 'sonner';
+import grainlifyCoin from '../../../../assets/grainlify_coin.svg';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import {
   getPointsBalance,
@@ -228,9 +229,7 @@ export function RewardsTab() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#c9983a] to-[#d4af37] flex items-center justify-center shadow-[0_2px_8px_rgba(201,152,58,0.4)]">
-                <Coins className="w-5 h-5 text-white" />
-              </div>
+              <img src={grainlifyCoin} alt="" className="w-10 h-10 drop-shadow-[0_2px_8px_rgba(201,152,58,0.4)]" />
               <h2 className={`text-[28px] font-bold transition-colors ${theme === 'dark' ? 'text-[#f5efe5]' : 'text-[#2d2820]'}`}>
                 {balance.balance.toLocaleString()} points
               </h2>
