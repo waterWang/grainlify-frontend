@@ -6,15 +6,32 @@ interface UseThemeToggleAnimationOptions {
   duration?: number;
 }
 
-// Circle-reveal theme toggle via the View Transitions API, centered on the
-// trigger button. Replaces `react-theme-switch-animation`, which had two
-// confirmed bugs: a perspective/transform hack for large displays that broke
-// the clip-path animation in Chrome, and an inconsistent circle origin
-// between browser engines. This mirrors the standard documented pattern
-// (see Chrome's own View Transitions demos) without either.
+// Brand gold, matches --primary in theme.css.
+const GLOW_COLOR = "201, 152, 58";
+
+// easeOutExpo (easings.net) - the "expo-out" curve a diagonal wipe like this
+// is usually paired with: fast start, long soft settle.
+const EASE_OUT_EXPO = "cubic-bezier(0.19, 1, 0.22, 1)";
+
+// Diagonal-wipe theme toggle via the View Transitions API: a triangle
+// anchored at the top-left corner, its two legs growing well past the
+// viewport so the hypotenuse sweeps across the screen as a straight
+// diagonal edge before the triangle swallows it whole. A `drop-shadow`
+// animated alongside gives the edge a soft gold glow.
+//
+// The glow is a `filter: drop-shadow()` on the pseudo-element itself, not a
+// separate DOM overlay - `::view-transition-*` pseudo-elements render in the
+// browser's top layer, above *any* normal DOM node regardless of z-index, so
+// a bare `<div>` glow would be invisible for the whole transition.
+//
+// Replaces `react-theme-switch-animation`, which had two confirmed bugs: a
+// perspective/transform hack for large displays that broke its clip-path
+// animation in Chrome, and an inconsistent circle origin between browser
+// engines. Built directly on the platform API instead of pulling the
+// library back in.
 export function useThemeToggleAnimation({
   onToggle,
-  duration = 600,
+  duration = 2000,
 }: UseThemeToggleAnimationOptions) {
   const ref = useRef<HTMLButtonElement>(null);
 
@@ -30,14 +47,6 @@ export function useThemeToggleAnimation({
       return;
     }
 
-    const { top, left, width, height } = ref.current.getBoundingClientRect();
-    const x = left + width / 2;
-    const y = top + height / 2;
-    const radius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y),
-    );
-
     const transition = (document as any).startViewTransition(() => {
       flushSync(() => {
         onToggle();
@@ -48,13 +57,19 @@ export function useThemeToggleAnimation({
       document.documentElement.animate(
         {
           clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${radius}px at ${x}px ${y}px)`,
+            "polygon(0% 0%, 0% 0%, 0% 0%)",
+            "polygon(0% 0%, 100% 0%, 0% 100%)",
+            "polygon(0% 0%, 200% 0%, 0% 200%)",
+          ],
+          filter: [
+            `drop-shadow(0 0 0px rgba(${GLOW_COLOR}, 0))`,
+            `drop-shadow(0 0 36px rgba(${GLOW_COLOR}, 0.55))`,
+            `drop-shadow(0 0 8px rgba(${GLOW_COLOR}, 0))`,
           ],
         },
         {
           duration,
-          easing: "ease-in-out",
+          easing: EASE_OUT_EXPO,
           pseudoElement: "::view-transition-new(root)",
         },
       );
