@@ -115,4 +115,20 @@ describe('ThemeProvider + useTheme', () => {
       consoleError.mockRestore()
     }
   })
+
+  it('falls back to the default theme when localStorage holds an empty string', () => {
+    localStorage.setItem('theme', '')
+
+    const { result } = renderHook(() => useTheme(), { wrapper })
+
+    expect(result.current.theme).toBe('light')
+  })
+
+  it('falls back to the default theme when localStorage holds an invalid value', () => {
+    localStorage.setItem('theme', 'invalid')
+
+    const { result } = renderHook(() => useTheme(), { wrapper })
+
+    expect(result.current.theme).toBe('light')
+  })
 })
