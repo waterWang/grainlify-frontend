@@ -18,6 +18,10 @@ export interface Activity {
   label: string | null;
   timeAgo: string;
   projectId?: string;
+  /** Only meaningful for type 'issue' - PRs already encode their state via
+   * `label` (Merged/Open/Closed). Issues use a separate field since `label`
+   * is already used for their comment count. */
+  closed?: boolean;
 }
 
 export interface ChartDataPoint {

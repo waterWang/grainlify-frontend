@@ -855,6 +855,7 @@ Only applications submitted via the apply link above will be considered. Please 
                     timeAgo={timeAgoFormatted}
                     tags={issue.labels?.map((l: any) => l.name || l) || []}
                     isSelected={selectedIssue?.id === issue.github_issue_id.toString()}
+                    isClosed={(issue.state || '').toLowerCase() !== 'open'}
                     onClick={() => {
                       const issueId = issue.github_issue_id.toString();
                       seededForIdRef.current = issueId;
@@ -901,6 +902,15 @@ Only applications submitted via the apply link above will be considered. Please 
                 </div>
 
                 <div className="flex items-center gap-3 mb-4">
+                  {selectedIssueFromAPI && (selectedIssueFromAPI.state || '').toLowerCase() !== 'open' && (
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border transition-colors ${isDark
+                      ? 'bg-white/[0.08] border-white/20 text-[#b8a898]'
+                      : 'bg-black/[0.05] border-black/10 text-[#7a6b5a]'
+                      }`}>
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span className="text-[12px] font-bold">Closed</span>
+                    </div>
+                  )}
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-[8px] border transition-colors ${isDark
                     ? 'bg-[#c9983a]/20 border-[#c9983a]/30'
                     : 'bg-[#8b6f3a]/15 border-[#8b6f3a]/30'
@@ -1069,8 +1079,9 @@ Only applications submitted via the apply link above will be considered. Please 
                       }`}>No applications yet</h3>
                     <p className={`text-[14px] max-w-sm mx-auto leading-relaxed transition-colors ${isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]'
                       }`}>
-                      This issue is open and waiting for contributors to apply.
-                      Applications will appear here once submitted.
+                      {(selectedIssueFromAPI?.state || '').toLowerCase() === 'open'
+                        ? 'This issue is open and waiting for contributors to apply. Applications will appear here once submitted.'
+                        : 'This issue is closed, so no new applications can be submitted.'}
                     </p>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import { GitPullRequest, Circle } from 'lucide-react';
+import { GitPullRequest, Circle, Check } from 'lucide-react';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import { Activity } from '../../types';
 
@@ -42,8 +42,16 @@ export function ActivityItem({ activity, index, onClick }: ActivityItemProps) {
           {activity.type === 'pr' ? (
             <GitPullRequest className={`w-5 h-5 mt-0.5 flex-shrink-0 ${getPRIconColor()}`} />
           ) : (
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#c9983a]/50">
-              <Circle className="w-4 h-4 text-white fill-white" strokeWidth={0} />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+              activity.closed
+                ? theme === 'dark' ? 'bg-white/20' : 'bg-black/20'
+                : 'bg-[#c9983a]/50'
+            }`}>
+              {activity.closed ? (
+                <Check className="w-4 h-4 text-white" strokeWidth={3} />
+              ) : (
+                <Circle className="w-4 h-4 text-white fill-white" strokeWidth={0} />
+              )}
             </div>
           )}
 

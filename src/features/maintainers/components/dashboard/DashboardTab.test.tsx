@@ -79,3 +79,38 @@ describe('DashboardTab - Review button navigation', () => {
     expect(onNavigateToIssue).not.toHaveBeenCalled()
   })
 })
+
+describe('DashboardTab - closed issue state in Last activity', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(getProjectPRs).mockResolvedValue({ prs: [] })
+  })
+
+  it('shows the checkmark indicator for a closed issue, not the open-issue dot', async () => {
+    // Regression coverage: a closed issue's `state` was fetched but dropped
+    // when building the Activity list, so every issue rendered identically
+    // regardless of open/closed - a closed issue looked exactly like an open
+    // one in this widget.
+    vi.mocked(getProjectIssues).mockResolvedValue({
+      issues: [makeIssue({ github_issue_id: 721, number: 721, state: 'closed', title: 'A finished issue' })],
+    })
+
+    const { container } = renderWithProviders(<DashboardTab selectedProjects={[PROJECT]} />)
+
+    await screen.findByText('A finished issue')
+    expect(container.querySelector('.lucide-check')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-circle')).not.toBeInTheDocument()
+  })
+
+  it('shows the open-issue dot for an open issue', async () => {
+    vi.mocked(getProjectIssues).mockResolvedValue({
+      issues: [makeIssue({ state: 'open', title: 'A fresh issue' })],
+    })
+
+    const { container } = renderWithProviders(<DashboardTab selectedProjects={[PROJECT]} />)
+
+    await screen.findByText('A fresh issue')
+    expect(container.querySelector('.lucide-circle')).toBeInTheDocument()
+    expect(container.querySelector('.lucide-check')).not.toBeInTheDocument()
+  })
+})

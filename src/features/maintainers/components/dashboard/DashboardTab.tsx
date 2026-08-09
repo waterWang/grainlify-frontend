@@ -259,6 +259,7 @@ export function DashboardTab({ selectedProjects, isLoadingProjects = false, onRe
         title: issue.title,
         label: issue.comments_count > 0 ? `${issue.comments_count} comment${issue.comments_count !== 1 ? 's' : ''}` : null,
         projectId: issue.projectId,
+        closed: (issue.state || '').toLowerCase() !== 'open',
         timeAgo: issue.updated_at
           ? formatTimeAgo(new Date(issue.updated_at))
           : formatTimeAgo(new Date(issue.last_seen_at)),

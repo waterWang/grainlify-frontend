@@ -187,3 +187,55 @@ describe('IssuesTab - assign error messaging', () => {
     expect(await screen.findByText('installation_token_failed')).toBeInTheDocument()
   })
 })
+
+describe('IssuesTab - closed issue display', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('shows a Closed badge in the header and does not claim the issue is open in the empty-applications state', async () => {
+    // Regression coverage: the header only ever said "opened {time} ago"
+    // with no closed indicator, and the empty-applications illustration
+    // unconditionally said "This issue is open and waiting for
+    // contributors to apply" - directly contradicting the separate,
+    // correctly state-aware "This issue is closed. Applications are
+    // disabled." message shown just above it for the same issue.
+    //
+    // Selected via initialSelectedIssueId (deep link), not a sidebar click:
+    // the sidebar list filters to open issues by default, so a closed issue
+    // doesn't appear there at all - exactly how the original report reached
+    // this issue (via Dashboard's "Review" button / a persisted ?mIssue=
+    // link), not by finding it in the filtered list.
+    mockedGetProjectIssues.mockResolvedValue({
+      issues: [makeApiIssue({ github_issue_id: 721, state: 'closed', title: 'A finished issue' })],
+    })
+
+    renderWithProviders(
+      <IssuesTab
+        onNavigate={vi.fn()}
+        selectedProjects={[PROJECT]}
+        initialSelectedIssueId="721"
+        initialSelectedProjectId={PROJECT.id}
+      />
+    )
+
+    expect(await screen.findByText('Closed')).toBeInTheDocument()
+    expect(screen.getByText('This issue is closed. Applications are disabled.')).toBeInTheDocument()
+    expect(screen.getByText('This issue is closed, so no new applications can be submitted.')).toBeInTheDocument()
+    expect(screen.queryByText(/This issue is open and waiting/)).not.toBeInTheDocument()
+  })
+
+  it('shows no Closed badge and the original waiting-for-contributors text for an open issue', async () => {
+    mockedGetProjectIssues.mockResolvedValue({
+      issues: [makeApiIssue({ github_issue_id: 722, state: 'open', title: 'A fresh issue' })],
+    })
+    const user = userEvent.setup()
+
+    renderWithProviders(<IssuesTab onNavigate={vi.fn()} selectedProjects={[PROJECT]} />)
+    await waitFor(() => expect(screen.getByText('A fresh issue')).toBeInTheDocument())
+    await user.click(screen.getByText('A fresh issue'))
+
+    await screen.findByText(/This issue is open and waiting/)
+    expect(screen.queryByText('Closed')).not.toBeInTheDocument()
+  })
+})

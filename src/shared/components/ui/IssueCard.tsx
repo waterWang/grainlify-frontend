@@ -1,4 +1,4 @@
-import { Users, Circle } from 'lucide-react';
+import { Users, Circle, Check } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LanguageIcon } from '../LanguageIcon';
 
@@ -23,6 +23,7 @@ export interface IssueCardProps {
   daysLeft?: string;
   variant?: 'default' | 'recommended';
   primaryTag?: string; // For the main tag (e.g., "good first issue", "bug")
+  isClosed?: boolean;
 }
 
 export function IssueCard({
@@ -42,6 +43,7 @@ export function IssueCard({
   daysLeft,
   variant = 'default',
   primaryTag,
+  isClosed = false,
 }: IssueCardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -118,19 +120,23 @@ export function IssueCard({
       {/* Issue Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          {/* Circular Icon Container */}
+          {/* Circular Icon Container - gray checkmark for closed, gold dot for open */}
           <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
-            isDark 
-              ? 'bg-[#c9983a]' 
+            isClosed
+              ? isDark ? 'bg-white/20' : 'bg-black/20'
               : 'bg-[#c9983a]'
           }`}>
-            <Circle className="w-4 h-4 text-white fill-white" strokeWidth={0} />
+            {isClosed ? (
+              <Check className="w-4 h-4 text-white" strokeWidth={3} />
+            ) : (
+              <Circle className="w-4 h-4 text-white fill-white" strokeWidth={0} />
+            )}
           </div>
           {/* Issue Number Badge */}
           {number && (
             <div className={`px-2.5 py-1 rounded-[8px] shadow-md transition-colors ${
-              isDark 
-                ? 'bg-[#c9983a]' 
+              isClosed
+                ? isDark ? 'bg-white/20' : 'bg-black/20'
                 : 'bg-[#c9983a]'
             }`}>
               <span className="text-[12px] font-bold text-white">{number}</span>
