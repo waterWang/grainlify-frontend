@@ -312,6 +312,20 @@ body.modal-open aside {
     padding: 0;
   }
 
+  /* html/body's overscroll-behavior only stops the *document* from
+     rubber-banding - it doesn't reach inner scroll containers (the
+     dashboard's content pane, dropdowns, modals, etc.), each of which
+     bounces on its own and flashes whatever's behind it. Contain that
+     locally wherever we use these overflow utilities. */
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-auto,
+  .overflow-y-scroll,
+  .overflow-x-scroll,
+  .overflow-scroll {
+    overscroll-behavior: contain;
+  }
+
   /**
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.

@@ -1,19 +1,18 @@
 import { Link } from "react-router-dom";
 import { Menu, X, Moon, Sun } from "lucide-react";
 import { useState } from "react";
-import { useModeAnimation } from "react-theme-switch-animation";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useThemeToggleAnimation } from "../../../shared/hooks/useThemeToggleAnimation";
 import grainlifyLogo from "../../../assets/grainlify_log.svg";
 import { HoverBorderGradient } from "./HoverBorderGradient";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { theme, setThemeFromAnimation } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, logout } = useAuth();
-  const { ref, toggleSwitchTheme } = useModeAnimation({
-    isDarkMode: theme === "dark",
-    onDarkModeChange: (isDark) => setThemeFromAnimation(isDark),
+  const { ref, toggleWithAnimation: toggleSwitchTheme } = useThemeToggleAnimation({
+    onToggle: toggleTheme,
   });
 
   return (
