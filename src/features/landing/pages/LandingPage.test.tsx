@@ -17,13 +17,7 @@ vi.mock('../../../shared/contexts/AuthContext', () => ({
 }))
 
 vi.mock('../../../shared/hooks/useLandingStats', () => ({
-  useLandingStats: () => ({
-    display: {
-      activeProjects: '1,234',
-      contributors: '5,678',
-      grantsDistributed: '$2.1M',
-    },
-  }),
+  useLandingStats: () => mockUseLandingStats(),
 }))
 
 vi.mock('../../../shared/utils/logger', () => ({
@@ -46,6 +40,35 @@ vi.mock('react-intl', () => ({
 }))
 
 // ---------------------------------------------------------------------------
+// Mutable useLandingStats mock
+// ---------------------------------------------------------------------------
+
+const mockUseLandingStats = vi.fn()
+
+function setLandingStatsMock(overrides: Partial<ReturnType<typeof useLandingStatsDefault>>) {
+  mockUseLandingStats.mockReturnValue({
+    display: {
+      activeProjects: '1,234',
+      contributors: '5,678',
+      grantsDistributed: '$2.1M',
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+    ...overrides,
+  })
+}
+
+function useLandingStatsDefault() {
+  return {
+    display: {} as Record<string, string>,
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helper
 // ---------------------------------------------------------------------------
 
@@ -62,6 +85,11 @@ function renderWithRouter(ui: React.ReactNode) {
 // ---------------------------------------------------------------------------
 
 describe('LandingPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setLandingStatsMock({})
+  })
+
   it('renders without crashing', () => {
     const { container } = renderWithRouter(<LandingPage />)
     expect(container).toBeInTheDocument()
@@ -169,5 +197,32 @@ describe('ImageWithFallback security', () => {
     renderWithRouter(<LandingPage />)
     const images = screen.getAllByTestId('image-with-fallback')
     expect(images.length).toBe(3)
+  })
+})
+
+describe('WhyChooseUs stats loading state', () => {
+  beforeEach(() => {
+    setLandingStatsMock({ isLoading: true, error: null })
+  })
+
+  it('shows skeleton loaders while stats are loading', () => {
+    renderWithRouter(<LandingPage />)
+    const skeletons = screen.getAllByTestId('skeleton-loader')
+    expect(skeletons.length).toBeGreaterThanOrEqual(2)
+  })
+})
+
+describe('WhyChooseUs stats error state', () => {
+  beforeEach(() => {
+    setLandingStatsMock({
+      isLoading: false,
+      error: 'Network error',
+      display: { activeProjects: '—', contributors: '—', grantsDistributed: '—' },
+    })
+  })
+
+  it('shows retry button when fetch fails', () => {
+    renderWithRouter(<LandingPage />)
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()
   })
 })

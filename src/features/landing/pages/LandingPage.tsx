@@ -15,7 +15,8 @@ import {
 } from 'lucide-react'
 import { useTheme } from '../../../shared/contexts/ThemeContext'
 import { useLandingStats } from '../../../shared/hooks/useLandingStats'
-import { useEffect } from 'react'
+import { SkeletonLoader } from '../../../shared/components/SkeletonLoader'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { logger } from '../../../shared/utils/logger'
 import { useTranslation } from '../../../shared/i18n'
@@ -258,7 +259,7 @@ function HowItWorks() {
 
 function WhyChooseUs() {
   const { theme } = useTheme()
-  const { display } = useLandingStats()
+  const { display, isLoading, error, refetch } = useLandingStats()
 
   const benefits = [
     'Verified and vetted projects from trusted organizations',
@@ -347,12 +348,24 @@ function WhyChooseUs() {
                 {
                   icon: Users,
                   label: 'Active Users',
-                  value: display.contributors,
+                  value: isLoading ? (
+                    <SkeletonLoader variant="text" width="60px" height="20px" />
+                  ) : error ? (
+                    <span className="text-red-400">—</span>
+                  ) : (
+                    display.contributors
+                  ),
                 },
                 {
                   icon: Award,
                   label: 'Projects Funded',
-                  value: display.activeProjects,
+                  value: isLoading ? (
+                    <SkeletonLoader variant="text" width="60px" height="20px" />
+                  ) : error ? (
+                    <span className="text-red-400">—</span>
+                  ) : (
+                    display.activeProjects
+                  ),
                 },
               ].map((item, index) => (
                 <div
@@ -380,6 +393,20 @@ function WhyChooseUs() {
                   </span>
                 </div>
               ))}
+              {error && (
+                <div className="flex items-center justify-center pt-2">
+                  <button
+                    onClick={refetch}
+                    className={`text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                      theme === 'dark'
+                        ? 'bg-white/[0.08] text-[#e8dfd0] hover:bg-white/[0.15]'
+                        : 'bg-white/[0.15] text-[#2d2820] hover:bg-white/[0.25]'
+                    }`}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
