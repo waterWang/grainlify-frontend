@@ -1911,3 +1911,117 @@ export const getGrainHackRules = (hackathonId?: string) =>
   apiRequest<GrainHackRules>(
     `/grainhack/rules${hackathonId ? `?hackathon_id=${encodeURIComponent(hackathonId)}` : ""}`,
   );
+
+// ---------------------------------------------------------------------------
+// GrainHack §5 judging - admin review.
+// ---------------------------------------------------------------------------
+
+/** One acceptance criterion as the judge assessed it. §5.5 rule 3 requires
+ * evidence be a citation a human can verify, which is why `evidence` is a
+ * free-text pointer at a file and line range rather than a summary. */
+export interface VerdictCriterion {
+  text: string;
+  met: boolean;
+  evidence: string;
+}
+
+/** §5.3's judge output schema. */
+export interface VerdictPayload {
+  criteria?: VerdictCriterion[];
+  criteria_met?: number;
+  criteria_total?: number;
+  scope?: "in_scope" | "partial" | "out_of_scope";
+  substance?: "trivial" | "routine" | "core_logic";
+  bucket?: string;
+  confidence?: "low" | "medium" | "high";
+  concerns?: string[];
+  reasoning?: string;
+}
+
+/** §5.3's diff_stats, computed in code so nothing in the diff can
+ * misrepresent its own size. */
+export interface VerdictDiffStats {
+  files_changed: number;
+  lines_added: number;
+  lines_removed: number;
+  generated_lines: number;
+  lockfile_lines: number;
+  test_lines: number;
+  tests_added: boolean;
+  touches_core_paths: boolean;
+  meaningful_lines: number;
+  docs_only: boolean;
+}
+
+export interface HackathonVerdict {
+  id: string;
+  hackathon_id: string;
+  hackathon_issue_id: string | null;
+  project_id: string;
+  repo_full_name: string;
+  pr_number: number;
+  issue_number: number | null;
+  github_login: string;
+  prefilter_status: "pending" | "passed" | "rejected";
+  prefilter_reason: string | null;
+  diff_stats: VerdictDiffStats | null;
+
+  duplicate_of_verdict_id: string | null;
+  duplicate_similarity: number | null;
+  duplicate_flagged: boolean;
+
+  judge_bucket: string | null;
+  judge_confidence: string | null;
+  judge_payload: VerdictPayload | null;
+  judge_model: string | null;
+  cross_check_bucket: string | null;
+  cross_check_payload: VerdictPayload | null;
+  cross_check_model: string | null;
+  escalation_bucket: string | null;
+  escalation_payload: VerdictPayload | null;
+
+  needs_human_review: boolean;
+  review_reason: string | null;
+  final_bucket: string | null;
+  final_source: string | null;
+  overridden_by: string | null;
+  override_reason: string | null;
+  overridden_at: string | null;
+
+  units: number | null;
+  payout_amount: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Pins citation links to the diff as merged. */
+  merge_commit_sha: string | null;
+}
+
+export const getHackathonVerdicts = (
+  hackathonId: string,
+  params?: { status?: string; bucket?: string },
+) => {
+  const q = new URLSearchParams();
+  if (params?.status) q.set("status", params.status);
+  if (params?.bucket) q.set("bucket", params.bucket);
+  const qs = q.toString();
+  return apiRequest<{ verdicts: HackathonVerdict[]; shadow_mode: boolean }>(
+    `/admin/hackathons/${hackathonId}/verdicts${qs ? `?${qs}` : ""}`,
+    { requiresAuth: true },
+  );
+};
+
+export const getHackathonVerdict = (verdictId: string) =>
+  apiRequest<{ verdict: HackathonVerdict; shadow_mode: boolean }>(
+    `/admin/hackathon-verdicts/${verdictId}`,
+    { requiresAuth: true },
+  );
+
+export const overrideHackathonVerdict = (verdictId: string, bucket: string, reason: string) =>
+  apiRequest<{ ok: boolean; final_bucket: string }>(
+    `/admin/hackathon-verdicts/${verdictId}/override`,
+    {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify({ bucket, reason }),
+    },
+  );
