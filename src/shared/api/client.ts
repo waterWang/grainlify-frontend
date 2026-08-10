@@ -1996,6 +1996,27 @@ export interface HackathonVerdict {
   merge_commit_sha: string | null;
 }
 
+/** §5.6's disagreement rate and the counts around it. */
+export interface JudgingStats {
+  total: number;
+  /** Verdicts where both a judge and a cross-check returned a bucket. A
+   * missing cross-check is not a disagreement, so it isn't a sample. */
+  both_judged: number;
+  disagreements: number;
+  /** Null when nothing has been double-judged - a rate over zero samples is
+   * unknown, not zero, and 0% would read as perfect agreement. */
+  disagreement_rate: number | null;
+  expected_range_low: number;
+  expected_range_high: number;
+  needs_review: number;
+  overridden: number;
+  prefiltered_out: number;
+  cross_checked: number;
+  injection_flagged: number;
+  /** "substantial -> accepted" -> count. Says *where* the ambiguity is. */
+  disagreement_by_pair: Record<string, number>;
+}
+
 export const getHackathonVerdicts = (
   hackathonId: string,
   params?: { status?: string; bucket?: string },
@@ -2004,10 +2025,11 @@ export const getHackathonVerdicts = (
   if (params?.status) q.set("status", params.status);
   if (params?.bucket) q.set("bucket", params.bucket);
   const qs = q.toString();
-  return apiRequest<{ verdicts: HackathonVerdict[]; shadow_mode: boolean }>(
-    `/admin/hackathons/${hackathonId}/verdicts${qs ? `?${qs}` : ""}`,
-    { requiresAuth: true },
-  );
+  return apiRequest<{
+    verdicts: HackathonVerdict[];
+    shadow_mode: boolean;
+    stats: JudgingStats | null;
+  }>(`/admin/hackathons/${hackathonId}/verdicts${qs ? `?${qs}` : ""}`, { requiresAuth: true });
 };
 
 export const getHackathonVerdict = (verdictId: string) =>

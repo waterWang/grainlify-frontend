@@ -3,7 +3,8 @@ import { Gavel, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { VerdictDetail } from './VerdictDetail';
-import { getHackathonVerdicts, type HackathonVerdict } from '../../../shared/api/client';
+import { DisagreementRate } from './DisagreementRate';
+import { getHackathonVerdicts, type HackathonVerdict, type JudgingStats } from '../../../shared/api/client';
 
 const FILTERS: { id: string; label: string }[] = [
   { id: 'needs_review', label: 'Needs review' },
@@ -23,6 +24,7 @@ export function VerdictsReview({ hackathonId }: VerdictsReviewProps) {
   const isDark = theme === 'dark';
   const [verdicts, setVerdicts] = useState<HackathonVerdict[]>([]);
   const [shadowMode, setShadowMode] = useState(true);
+  const [stats, setStats] = useState<JudgingStats | null>(null);
   const [filter, setFilter] = useState('needs_review');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +35,7 @@ export function VerdictsReview({ hackathonId }: VerdictsReviewProps) {
       const res = await getHackathonVerdicts(hackathonId, status ? { status } : undefined);
       setVerdicts(res.verdicts);
       setShadowMode(res.shadow_mode);
+      setStats(res.stats);
     } catch (error) {
       console.error('Failed to load verdicts:', error);
       toast.error('Could not load verdicts.');
@@ -48,6 +51,8 @@ export function VerdictsReview({ hackathonId }: VerdictsReviewProps) {
 
   return (
     <div className="space-y-4">
+      {stats && <DisagreementRate stats={stats} />}
+
       <div className="flex items-center gap-2 flex-wrap">
         {FILTERS.map((f) => (
           <button
