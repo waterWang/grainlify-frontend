@@ -2047,3 +2047,75 @@ export const overrideHackathonVerdict = (verdictId: string, bucket: string, reas
       body: JSON.stringify({ bucket, reason }),
     },
   );
+
+// ---------------------------------------------------------------------------
+// GrainHack §6 - appeals
+// ---------------------------------------------------------------------------
+
+/** When appeals open and close for a hackathon. Anchored to the moment
+ *  results were actually published, not to a planned date. */
+export interface AppealWindow {
+  days: number;
+  opens_at: string | null;
+  closes_at: string | null;
+  open: boolean;
+  closed_out_at: string | null;
+}
+
+export interface HackathonAppeal {
+  id: string;
+  verdict_id: string;
+  github_login: string;
+  reason: string;
+  status: "pending" | "upheld" | "rejected";
+  decision_reason: string | null;
+  decided_bucket: string | null;
+  decided_at: string | null;
+  created_at: string;
+  /** Only present on the admin queue: §6 requires the appeal to reach a human
+   *  with both model verdicts and the diff already in front of them. */
+  verdict?: HackathonVerdict;
+}
+
+/** One of the caller's own verdicts, plus their appeal against it if any.
+ *  Returns nothing before results are published. */
+export interface MyVerdictEntry {
+  verdict: HackathonVerdict;
+  phase: string;
+  appeal?: HackathonAppeal;
+}
+
+export const getMyGrainHackVerdicts = () =>
+  apiRequest<{ verdicts: MyVerdictEntry[] }>("/grainhack/my-verdicts", {
+    requiresAuth: true,
+  });
+
+export const getVerdictAppealWindow = (verdictId: string) =>
+  apiRequest<AppealWindow>(`/grainhack/verdicts/${verdictId}/appeal-window`, {
+    requiresAuth: true,
+  });
+
+export const appealVerdict = (verdictId: string, reason: string) =>
+  apiRequest<{ id: string }>(`/grainhack/verdicts/${verdictId}/appeal`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+
+export const getHackathonAppeals = (hackathonId: string, status?: string) =>
+  apiRequest<{ appeals: HackathonAppeal[]; appeal_window: AppealWindow }>(
+    `/admin/hackathons/${hackathonId}/appeals${status ? `?status=${encodeURIComponent(status)}` : ""}`,
+    { requiresAuth: true },
+  );
+
+export const decideHackathonAppeal = (
+  appealId: string,
+  upheld: boolean,
+  reason: string,
+  bucket?: string,
+) =>
+  apiRequest<{ ok: boolean }>(`/admin/hackathon-appeals/${appealId}/decide`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify({ upheld, reason, bucket: bucket ?? "" }),
+  });
