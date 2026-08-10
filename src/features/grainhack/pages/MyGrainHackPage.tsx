@@ -2,9 +2,10 @@ import { useSearchParams } from 'react-router-dom';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { MyApplications } from '../components/MyApplications';
 import { MyAssignments } from '../components/MyAssignments';
+import { GrainHackRulesPage } from './GrainHackRulesPage';
 
-type Tab = 'assignments' | 'applications';
-const VALID_TABS: Tab[] = ['assignments', 'applications'];
+type Tab = 'assignments' | 'applications' | 'rules';
+const VALID_TABS: Tab[] = ['assignments', 'applications', 'rules'];
 
 /** A contributor's own GrainHack view. Assignments first: what you're
  * holding right now (and its stale timer) is more urgent than what you've
@@ -28,6 +29,7 @@ export function MyGrainHackPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'assignments', label: 'My assignments' },
     { id: 'applications', label: 'My applications' },
+    { id: 'rules', label: 'Rules' },
   ];
 
   return (
@@ -56,13 +58,18 @@ export function MyGrainHackPage() {
         </div>
       </div>
 
-      <div
-        className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 transition-colors ${
-          isDark ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/20'
-        }`}
-      >
-        {activeTab === 'assignments' ? <MyAssignments /> : <MyApplications />}
-      </div>
+      {activeTab === 'rules' ? (
+        // Renders its own cards, so it isn't wrapped in the shared one.
+        <GrainHackRulesPage />
+      ) : (
+        <div
+          className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 transition-colors ${
+            isDark ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/20'
+          }`}
+        >
+          {activeTab === 'assignments' ? <MyAssignments /> : <MyApplications />}
+        </div>
+      )}
     </div>
   );
 }

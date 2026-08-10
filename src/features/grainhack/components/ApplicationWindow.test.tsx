@@ -76,6 +76,43 @@ describe('ApplicationWindow', () => {
     expect(screen.getByText(/Applications open in/)).toBeInTheDocument()
   })
 
+  it('shows a coarse band instead of an exact number when bucketing', () => {
+    renderWithProviders(
+      <ApplicationWindow
+        opensAt={null}
+        closesAt={new Date(Date.now() + 3600_000).toISOString()}
+        applicantCount={null}
+        applicantBucket="many"
+      />,
+    )
+    expect(screen.getByText('many applicants')).toBeInTheDocument()
+  })
+
+  it('shows nothing about the pool when the count is hidden entirely', () => {
+    renderWithProviders(
+      <ApplicationWindow
+        opensAt={null}
+        closesAt={new Date(Date.now() + 3600_000).toISOString()}
+        applicantCount={null}
+        applicantBucket=""
+      />,
+    )
+    expect(screen.queryByText(/applicant/)).not.toBeInTheDocument()
+  })
+
+  it('prefers the exact count when the event publishes it', () => {
+    renderWithProviders(
+      <ApplicationWindow
+        opensAt={null}
+        closesAt={new Date(Date.now() + 3600_000).toISOString()}
+        applicantCount={7}
+        applicantBucket="many"
+      />,
+    )
+    expect(screen.getByText('7 applicants')).toBeInTheDocument()
+    expect(screen.queryByText('many applicants')).not.toBeInTheDocument()
+  })
+
   it('flags a newcomer-reserved issue', () => {
     renderWithProviders(
       <ApplicationWindow opensAt={null} closesAt={new Date(Date.now() + 3600_000).toISOString()} reserved />,

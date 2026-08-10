@@ -1873,6 +1873,41 @@ export interface ContributorHackathonIssue {
 export const getContributorHackathonIssue = (projectId: string, issueNumber: number) =>
   apiRequest<{
     issue: ContributorHackathonIssue;
-    applicant_count: number;
+    /** Set only when the pool is shown exactly - see applicant_visibility. */
+    applicant_count: number | null;
+    /** Set only when bucketing: "none" | "few" | "many". */
+    applicant_bucket: string;
+    applicant_visibility: "hidden" | "bucketed" | "exact";
     my_application: HackathonIssueApplication | null;
   }>(`/projects/${projectId}/grainhack/${issueNumber}`, { requiresAuth: true });
+
+export interface GrainHackRule {
+  key: string;
+  value: string;
+  type: string;
+  section: string;
+  description: string;
+  valid_range?: string;
+  active: boolean;
+}
+
+export interface GrainHackRules {
+  /** "snapshot" once an event is live and reading its own frozen copy;
+   * "not_yet_frozen" before that; "global_defaults" with no hackathon. */
+  source: "snapshot" | "not_yet_frozen" | "global_defaults";
+  hackathon_id: string | null;
+  hackathon_name: string;
+  phase: string;
+  rules: GrainHackRule[];
+  section_order: string[];
+  structural: {
+    prior_completion_cap: number;
+    prior_completion_cap_note: string;
+  };
+}
+
+/** Public - no auth. These are the rules contributors read before applying. */
+export const getGrainHackRules = (hackathonId?: string) =>
+  apiRequest<GrainHackRules>(
+    `/grainhack/rules${hackathonId ? `?hackathon_id=${encodeURIComponent(hackathonId)}` : ""}`,
+  );

@@ -25,7 +25,8 @@ export function ApplyToIssuePanel({ projectId, issueNumber }: ApplyToIssuePanelP
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [issue, setIssue] = useState<ContributorHackathonIssue | null>(null);
-  const [applicantCount, setApplicantCount] = useState(0);
+  const [applicantCount, setApplicantCount] = useState<number | null>(null);
+  const [applicantBucket, setApplicantBucket] = useState('');
   const [application, setApplication] = useState<HackathonIssueApplication | null>(null);
   const [notApplicable, setNotApplicable] = useState(false);
   const [text, setText] = useState('');
@@ -35,6 +36,7 @@ export function ApplyToIssuePanel({ projectId, issueNumber }: ApplyToIssuePanelP
     const data = await getContributorHackathonIssue(projectId, issueNumber);
     setIssue(data.issue);
     setApplicantCount(data.applicant_count);
+    setApplicantBucket(data.applicant_bucket);
     setApplication(data.my_application);
   };
 
@@ -49,6 +51,7 @@ export function ApplyToIssuePanel({ projectId, issueNumber }: ApplyToIssuePanelP
         if (cancelled) return;
         setIssue(data.issue);
         setApplicantCount(data.applicant_count);
+        setApplicantBucket(data.applicant_bucket);
         setApplication(data.my_application);
       })
       .catch(() => {
@@ -118,6 +121,7 @@ export function ApplyToIssuePanel({ projectId, issueNumber }: ApplyToIssuePanelP
           opensAt={issue.application_window_opens_at}
           closesAt={issue.application_window_closes_at}
           applicantCount={applicantCount}
+          applicantBucket={applicantBucket}
           reserved={issue.reserved}
         />
       </div>

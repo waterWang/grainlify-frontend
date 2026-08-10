@@ -28,10 +28,22 @@ export function windowStateOf(opensAt: string | null, closesAt: string | null, n
   return 'open';
 }
 
+/** Copy for the coarse bands the backend returns when the exact pool size
+ * is deliberately withheld (see applicant_count_visibility). */
+const BUCKET_COPY: Record<string, string> = {
+  none: 'no applicants yet',
+  few: 'a few applicants',
+  many: 'many applicants',
+};
+
 interface ApplicationWindowProps {
   opensAt: string | null;
   closesAt: string | null;
-  applicantCount?: number;
+  /** Exact pool size. Only set when the event publishes it exactly, or once
+   * the window has closed and precision can no longer steer anyone. */
+  applicantCount?: number | null;
+  /** Coarse band, when the exact size is withheld. */
+  applicantBucket?: string;
   /** Reserved issues draw only from contributors with no completed
    * GrainHack issues (§3.8), which changes whether it's worth applying. */
   reserved?: boolean;
@@ -45,6 +57,7 @@ export function ApplicationWindow({
   opensAt,
   closesAt,
   applicantCount,
+  applicantBucket,
   reserved,
   compact = false,
 }: ApplicationWindowProps) {
@@ -81,12 +94,20 @@ export function ApplicationWindow({
         {state === 'closed' ? <Lock className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
         {label}
       </span>
-      {typeof applicantCount === 'number' && (
+      {typeof applicantCount === 'number' ? (
         <span className={`flex items-center gap-1.5 ${isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
           <Users className="w-3.5 h-3.5" />
           {applicantCount} {applicantCount === 1 ? 'applicant' : 'applicants'}
         </span>
-      )}
+      ) : applicantBucket && BUCKET_COPY[applicantBucket] ? (
+        <span
+          title="The exact number is withheld while the window is open, so applying late isn't an advantage."
+          className={`flex items-center gap-1.5 ${isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          {BUCKET_COPY[applicantBucket]}
+        </span>
+      ) : null}
       {reserved && (
         <span
           title="Reserved for contributors who haven't completed a GrainHack issue yet"
