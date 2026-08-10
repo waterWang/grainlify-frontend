@@ -13,6 +13,7 @@ import { IssueCardSkeleton } from '../../../../shared/components/IssueCardSkelet
 import { getGitHubAvatarUrl } from '../../../../shared/utils/avatar';
 import RenderMarkdownContent from '../../../../app/utils/renderMarkdown';
 import { HackathonIssueFieldsPanel } from '../../../grainhack/components/HackathonIssueFieldsPanel';
+import { ApplyToIssuePanel } from '../../../grainhack/components/ApplyToIssuePanel';
 
 interface Project {
   id: string;
@@ -977,6 +978,16 @@ Only applications submitted via the apply link above will be considered. Please 
 
             {viewMode === 'maintainer' && selectedIssueFromAPI && (
               <HackathonIssueFieldsPanel
+                projectId={selectedIssueFromAPI.projectId}
+                issueNumber={selectedIssueFromAPI.number}
+              />
+            )}
+
+            {/* Contributor-side counterpart: the apply panel. Shown in
+                contributor mode only, so a maintainer editing an issue's
+                GrainHack fields doesn't also see an Apply button for it. */}
+            {viewMode !== 'maintainer' && selectedIssueFromAPI && (
+              <ApplyToIssuePanel
                 projectId={selectedIssueFromAPI.projectId}
                 issueNumber={selectedIssueFromAPI.number}
               />

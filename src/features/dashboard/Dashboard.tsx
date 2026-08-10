@@ -18,7 +18,8 @@ import {
   X,
   Menu,
   ArrowLeftRight,
-  Flag
+  Flag,
+  Ticket
 } from "lucide-react";
 import { useThemeToggleAnimation } from "../../shared/hooks/useThemeToggleAnimation";
 import { useAuth } from "../../shared/contexts/AuthContext";
@@ -59,6 +60,7 @@ const BlogPage = lazy(() => import("../blog/pages/BlogPage").then((m) => ({ defa
 const SettingsPage = lazy(() => import("../settings/pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const AdminPage = lazy(() => import("../admin/pages/AdminPage").then((m) => ({ default: m.AdminPage })));
 const GrainHackAdminPage = lazy(() => import("../grainhack/pages/GrainHackAdminPage").then((m) => ({ default: m.GrainHackAdminPage })));
+const MyGrainHackPage = lazy(() => import("../grainhack/pages/MyGrainHackPage").then((m) => ({ default: m.MyGrainHackPage })));
 const SearchPage = lazy(() => import("./pages/SearchPage").then((m) => ({ default: m.SearchPage })));
 const RedeemPage = lazy(() => import("./pages/RedeemPage").then((m) => ({ default: m.RedeemPage })));
 
@@ -417,12 +419,15 @@ export function Dashboard() {
     ...(activeRole === "admin"
       ? [{ id: "data", icon: Database, label: "Data" }]
       : []),
+    // A contributor's own GrainHack applications and assignments. Visible
+    // to any signed-in user - it only ever shows their own rows.
+    ...(userId ? [{ id: "my-grainhack", icon: Ticket, label: "My GrainHack" }] : []),
     // GrainHack administration is gated on the real backend-verified role,
     // not activeRole - that's a client-side view toggle, not an authorization
     // boundary, and this surface can accept/reject applications and edit
     // live event config.
     ...(userRole === "admin"
-      ? [{ id: "grainhack", icon: Flag, label: "GrainHack" }]
+      ? [{ id: "grainhack", icon: Flag, label: "GrainHack admin" }]
       : []),
     { id: "leaderboard", icon: Trophy, label: "Leaderboard" },
     { id: "redeem", icon: ArrowLeftRight, label: "Redeem" },
@@ -1021,6 +1026,7 @@ export function Dashboard() {
                     </div>
                   </div>
                 )}
+                {currentPage === "my-grainhack" && <MyGrainHackPage />}
                 {currentPage === "grainhack" && userRole === "admin" && <GrainHackAdminPage />}
                 {currentPage === "grainhack" && userRole !== "admin" && (
                   <div className="flex items-center justify-center min-h-[60vh]">

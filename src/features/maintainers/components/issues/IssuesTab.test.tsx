@@ -34,6 +34,9 @@ vi.mock('../../../../shared/contexts/AuthContext', () => ({
 vi.mock('../../../grainhack/components/HackathonIssueFieldsPanel', () => ({
   HackathonIssueFieldsPanel: () => null,
 }))
+vi.mock('../../../grainhack/components/ApplyToIssuePanel', () => ({
+  ApplyToIssuePanel: () => null,
+}))
 
 const mockedGetProjectIssues = vi.mocked(getProjectIssues)
 

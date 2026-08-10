@@ -1662,3 +1662,217 @@ export const getHackathonConfigAudit = (params?: {
     { requiresAuth: true },
   );
 };
+
+// ---------------------------------------------------------------------------
+// GrainHack (AI-specs.md) - Slice 2: the assignment pipeline (§4).
+// Contributors apply to issues, hard gates screen them, a seeded weighted
+// draw assigns the issue when the application window closes.
+// ---------------------------------------------------------------------------
+
+export interface HackathonIssueApplication {
+  id: string;
+  hackathon_id: string;
+  hackathon_name: string;
+  hackathon_issue_id: string;
+  project_id: string;
+  repo_full_name: string;
+  issue_number: number;
+  status: "applied" | "rejected_gate" | "won" | "lost" | "withdrawn";
+  /** The specific §4.1 gate that rejected this application, shown verbatim. */
+  gate_failure_reason: string | null;
+  fit: "strong" | "plausible" | "weak" | null;
+  application_window_closes_at: string | null;
+  created_at: string;
+}
+
+export interface HackathonAssignment {
+  id: string;
+  hackathon_id: string;
+  hackathon_name: string;
+  hackathon_issue_id: string;
+  repo_full_name: string;
+  issue_number: number;
+  github_login: string;
+  status:
+    | "active"
+    | "pr_submitted"
+    | "completed"
+    | "released_stale"
+    | "released_voluntary"
+    | "released_event_end";
+  /** Separate from status: with slot_freed_on = pr_submission a slot frees
+   * while the assignment is still open, so "holds a slot" is not "active". */
+  holds_slot: boolean;
+  assigned_at: string;
+  /** Null once a qualifying PR exists - review latency must not cost the
+   * contributor their assignment. */
+  stale_at: string | null;
+  release_reason: string | null;
+  abandon_recorded: boolean;
+  qualifying_pr_number: number | null;
+}
+
+/** One applicant's ticket arithmetic, broken out per factor. The breakdown
+ * (not just the total) is what makes "why didn't I get it" answerable. */
+export interface HackathonDrawCandidate {
+  user_id: string;
+  github_login: string;
+  fit: string;
+  is_newcomer: boolean;
+  weights: Record<string, number>;
+  tickets: number;
+}
+
+export interface HackathonDraw {
+  id: string;
+  hackathon_issue_id: string;
+  repo_full_name: string;
+  issue_number: number;
+  /** Stored so any draw can be replayed exactly during an appeal (§4.5). */
+  seed: number;
+  pool: HackathonDrawCandidate[];
+  pool_size: number;
+  winner_user_id: string | null;
+  winner_login: string | null;
+  used_weak_pool: boolean;
+  reservation_applied: boolean;
+  reservation_fell_back: boolean;
+  first_come_fallback: boolean;
+  no_winner_reason: string | null;
+  is_simulation: boolean;
+  created_at: string;
+}
+
+/** RunDraw's own return shape, which the simulate endpoint echoes back
+ * directly - note it uses draw_id/hackathon_issue_id rather than the
+ * list endpoint's id/issue fields. */
+export interface HackathonDrawResult {
+  draw_id: string;
+  hackathon_issue_id: string;
+  seed: number;
+  pool: HackathonDrawCandidate[];
+  winner_user_id: string | null;
+  winner_login?: string;
+  used_weak_pool: boolean;
+  reservation_applied: boolean;
+  reservation_fell_back: boolean;
+  first_come_fallback: boolean;
+  no_winner_reason?: string;
+  is_simulation: boolean;
+}
+
+export interface AdminHackathonAssignment {
+  id: string;
+  hackathon_issue_id: string;
+  repo_full_name: string;
+  issue_number: number;
+  github_login: string;
+  org_login: string;
+  status: string;
+  holds_slot: boolean;
+  assigned_at: string;
+  stale_at: string | null;
+  qualifying_pr_number: number | null;
+  release_reason: string | null;
+  abandon_recorded: boolean;
+  /** §4.2's collusion signal: evidence for a human, never a gate. */
+  prior_association: {
+    shared_org?: boolean;
+    merged_prs_by_maintainer?: number;
+    frequent_merge_relation?: boolean;
+    prior_grainhack_co_occurrence?: number;
+    accounts_created_within_7_days?: boolean | null;
+    score?: number;
+  } | null;
+}
+
+// Contributor-facing
+export const applyToHackathonIssue = (
+  hackathonIssueId: string,
+  applicationText?: string,
+) =>
+  apiRequest<{ id: string; status: string }>(
+    `/hackathon-issues/${hackathonIssueId}/apply`,
+    {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify({ application_text: applicationText ?? "" }),
+    },
+  );
+
+export const getMyHackathonIssueApplications = () =>
+  apiRequest<{ applications: HackathonIssueApplication[] }>(
+    "/hackathon-issue-applications/me",
+    { requiresAuth: true },
+  );
+
+export const getMyHackathonAssignments = () =>
+  apiRequest<{ assignments: HackathonAssignment[] }>("/hackathon-assignments/me", {
+    requiresAuth: true,
+  });
+
+export const releaseHackathonAssignment = (assignmentId: string) =>
+  apiRequest<{ ok: boolean; abandon_recorded: boolean }>(
+    `/hackathon-assignments/${assignmentId}/release`,
+    { requiresAuth: true, method: "POST" },
+  );
+
+// Admin - draws and assignments
+export const simulateHackathonDraw = (hackathonIssueId: string, seed?: number) =>
+  apiRequest<HackathonDrawResult>(
+    `/admin/hackathon-issues/${hackathonIssueId}/simulate-draw`,
+    {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify(seed ? { seed } : {}),
+    },
+  );
+
+export const getHackathonDraws = (
+  hackathonId: string,
+  params?: { issue_id?: string; include_simulations?: boolean },
+) => {
+  const q = new URLSearchParams();
+  if (params?.issue_id) q.set("issue_id", params.issue_id);
+  if (params?.include_simulations) q.set("include_simulations", "true");
+  const qs = q.toString();
+  return apiRequest<{ draws: HackathonDraw[] }>(
+    `/admin/hackathons/${hackathonId}/draws${qs ? `?${qs}` : ""}`,
+    { requiresAuth: true },
+  );
+};
+
+export const getAdminHackathonAssignments = (hackathonId: string, status?: string) => {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiRequest<{ assignments: AdminHackathonAssignment[] }>(
+    `/admin/hackathons/${hackathonId}/assignments${qs}`,
+    { requiresAuth: true },
+  );
+};
+
+/** Contributor-visible view of a GrainHack issue. Distinct from
+ * HackathonIssue (the maintainer/admin shape) - readable by any signed-in
+ * user, and carries none of the admin-only fields. */
+export interface ContributorHackathonIssue {
+  id: string;
+  hackathon_id: string;
+  hackathon_name: string;
+  project_id: string;
+  issue_number: number;
+  status: "pending" | "published" | "removed";
+  acceptance_criteria: string;
+  difficulty_tier: string;
+  primary_language: string;
+  reserved: boolean;
+  application_window_opens_at: string | null;
+  application_window_closes_at: string | null;
+}
+
+/** One round trip for everything the apply panel needs. 404s when the issue
+ * isn't in a GrainHack, which is the common case. */
+export const getContributorHackathonIssue = (projectId: string, issueNumber: number) =>
+  apiRequest<{
+    issue: ContributorHackathonIssue;
+    applicant_count: number;
+    my_application: HackathonIssueApplication | null;
+  }>(`/projects/${projectId}/grainhack/${issueNumber}`, { requiresAuth: true });
