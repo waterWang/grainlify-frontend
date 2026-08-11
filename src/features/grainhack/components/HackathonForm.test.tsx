@@ -20,8 +20,12 @@ const HACKATHON = {
   starts_at: null,
   ends_at: null,
   merge_grace_period_hours: 48,
+  sponsor_total_usdc: null,
+  platform_fee_usdc: null,
+  platform_fee_rate_pct: null,
   contributor_prize_pool: null,
   maintainer_prize_pool: null,
+  net_pool_usdc: null,
   created_at: new Date().toISOString(),
 }
 

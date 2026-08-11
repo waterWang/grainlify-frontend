@@ -26,8 +26,12 @@ const FIELDS: FieldDef[] = [
   { key: 'starts_at', label: 'Starts at (live)', type: 'datetime-local' },
   { key: 'ends_at', label: 'Ends at', type: 'datetime-local' },
   { key: 'merge_grace_period_hours', label: 'Merge grace period (hours)', type: 'number' },
-  { key: 'contributor_prize_pool', label: 'Contributor prize pool (USDC)', type: 'number' },
-  { key: 'maintainer_prize_pool', label: 'Maintainer prize pool (USDC)', type: 'number' },
+  // The admin enters what the sponsor is putting in. The platform fee comes
+  // off this, and the remainder splits into the contributor and maintainer
+  // pools - all derived server-side and shown read-only below. Letting an
+  // admin type a pool figure directly would let the recorded fee and the
+  // recorded pools disagree.
+  { key: 'sponsor_total_usdc', label: 'Sponsor total (USDC)', type: 'number' },
 ];
 
 interface HackathonFormProps {

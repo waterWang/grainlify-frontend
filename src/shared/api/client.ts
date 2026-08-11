@@ -1463,8 +1463,16 @@ export interface Hackathon {
   starts_at: string | null;
   ends_at: string | null;
   merge_grace_period_hours: number;
+  /** What the sponsor put in. The three figures are always published
+   *  together: showing only the net pool would hide the deduction, and
+   *  disclosure is the whole justification for taking a fee. */
+  sponsor_total_usdc: string | null;
+  platform_fee_usdc: string | null;
+  platform_fee_rate_pct: string | null;
+  /** Net - what actually pays people, and what every payout path divides. */
   contributor_prize_pool: string | null;
   maintainer_prize_pool: string | null;
+  net_pool_usdc: string | null;
   created_at: string;
 }
 
