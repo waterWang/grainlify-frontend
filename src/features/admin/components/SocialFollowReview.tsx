@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Image as ImageIcon } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { Modal, ModalFooter, ModalButton, ModalInput } from '../../../shared/components/ui/Modal';
@@ -7,148 +7,242 @@ import {
   getAdminSocialFollowSubmissions,
   approveSocialFollowSubmission,
   rejectSocialFollowSubmission,
+  revokeSocialFollowSubmission,
   type SocialFollowSubmission,
 } from '../../../shared/api/client';
 
+type Decision = 'reject' | 'revoke';
+
+/** Review queue for social-follow proof.
+ *
+ *  One submission covers both platforms and gets one decision. Both
+ *  screenshots are shown side by side because judging one without the other
+ *  in view is making half a decision — and a half decision is exactly what
+ *  the atomic submission model exists to prevent.
+ */
 export function SocialFollowReview() {
   const { theme } = useTheme();
   const [submissions, setSubmissions] = useState<SocialFollowSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
-  const [preview, setPreview] = useState<SocialFollowSubmission | null>(null);
-  const [rejecting, setRejecting] = useState<SocialFollowSubmission | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [filter, setFilter] = useState<'pending' | 'approved' | 'all'>('pending');
+  // Rejection and revocation both require a reason, so both go through the
+  // same prompt rather than one being a bare button.
+  const [deciding, setDeciding] = useState<{ submission: SocialFollowSubmission; decision: Decision } | null>(null);
+  const [reason, setReason] = useState('');
 
-  const fetchSubmissions = async () => {
+  const dark = theme === 'dark';
+  const strong = dark ? 'text-[#f5efe5]' : 'text-[#2d2820]';
+  const muted = dark ? 'text-[#b8a898]' : 'text-[#7a6b5a]';
+
+  const fetchSubmissions = async (status: typeof filter = filter) => {
     setIsLoading(true);
     try {
-      const res = await getAdminSocialFollowSubmissions('pending');
+      const res = await getAdminSocialFollowSubmissions(status);
       setSubmissions(res.submissions);
     } catch (error) {
       console.error('Failed to fetch social-follow submissions:', error);
-      toast.error('Failed to load pending submissions.');
+      toast.error('Failed to load submissions.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSubmissions();
-  }, []);
+    fetchSubmissions(filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
+  const who = (s: SocialFollowSubmission) => s.github_login || s.user_id;
 
   const handleApprove = async (submission: SocialFollowSubmission) => {
     setActioningId(submission.id);
     try {
       await approveSocialFollowSubmission(submission.id);
-      toast.success(`Approved ${submission.platform} for ${submission.login ?? submission.user_id}.`);
+      toast.success(`${who(submission)} is now eligible.`);
       await fetchSubmissions();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to approve submission.');
+      toast.error(error instanceof Error ? error.message : 'Failed to approve.');
     } finally {
       setActioningId(null);
     }
   };
 
-  const handleReject = async () => {
-    if (!rejecting) return;
-    setActioningId(rejecting.id);
+  const submitDecision = async () => {
+    if (!deciding || !reason.trim()) return;
+    const { submission, decision } = deciding;
+    setActioningId(submission.id);
     try {
-      await rejectSocialFollowSubmission(rejecting.id, rejectReason);
-      toast.success('Submission rejected.');
-      setRejecting(null);
-      setRejectReason('');
+      if (decision === 'reject') {
+        await rejectSocialFollowSubmission(submission.id, reason.trim());
+        toast.success(`Rejected ${who(submission)}'s proof.`);
+      } else {
+        await revokeSocialFollowSubmission(submission.id, reason.trim());
+        toast.success(`Withdrew ${who(submission)}'s eligibility.`);
+      }
+      setDeciding(null);
+      setReason('');
       await fetchSubmissions();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to reject submission.');
+      toast.error(error instanceof Error ? error.message : 'Failed to record the decision.');
     } finally {
       setActioningId(null);
     }
   };
+
+  const shot = (src: string, label: string) => (
+    <figure className="flex-1 min-w-0">
+      <figcaption className={`text-[12px] font-semibold mb-1.5 ${muted}`}>{label}</figcaption>
+      <a href={src} target="_blank" rel="noopener noreferrer">
+        <img
+          src={src}
+          alt={`${label} follow proof`}
+          className={`w-full h-44 object-cover rounded-[12px] border transition-colors ${
+            dark ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-black/[0.03]'
+          }`}
+        />
+      </a>
+    </figure>
+  );
 
   return (
-    <div className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 transition-colors ${
-      theme === 'dark' ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/20'
-    }`}>
-      <div className="mb-6">
-        <h2 className={`text-[24px] font-bold mb-2 transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'}`}>
-          Social Follow Submissions
-        </h2>
-        <p className={`text-[14px] transition-colors ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'}`}>
-          Review proof-of-follow screenshots. Once all three platforms are approved for a user, they earn the reward automatically.
-        </p>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        {(['pending', 'approved', 'all'] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-[12px] text-[13px] font-medium capitalize transition-colors ${
+              filter === f
+                ? 'bg-[#a2792c] text-white'
+                : dark
+                  ? 'bg-white/[0.06] text-[#d4c5b0] hover:bg-white/[0.1]'
+                  : 'bg-black/[0.04] text-[#7a6b5a] hover:bg-black/[0.07]'
+            }`}
+          >
+            {f}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (
-        <div className={`text-center py-12 ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'}`}>Loading...</div>
-      ) : submissions.length === 0 ? (
-        <div className={`text-center py-12 ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'}`}>No pending submissions.</div>
-      ) : (
-        <div className="space-y-3">
-          {submissions.map((s) => (
-            <div
-              key={s.id}
-              className={`flex items-center gap-4 p-4 rounded-[16px] border ${
-                theme === 'dark' ? 'bg-white/[0.06] border-white/10' : 'bg-white/[0.12] border-white/20'
-              }`}
-            >
-              <button
-                onClick={() => setPreview(s)}
-                className={`w-14 h-14 rounded-[10px] overflow-hidden shrink-0 border flex items-center justify-center ${
-                  theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'
-                }`}
-                title="View screenshot"
-              >
-                {s.screenshot ? (
-                  <img src={s.screenshot} alt={`${s.platform} proof`} className="w-full h-full object-cover" />
-                ) : (
-                  <ImageIcon className="w-5 h-5 opacity-50" />
-                )}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className={`text-[14px] font-semibold capitalize ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'}`}>
-                  {s.platform}
-                </p>
-                <p className={`text-[12px] ${theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
-                  {s.login ? `@${s.login}` : s.user_id}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => handleApprove(s)}
-                  disabled={actioningId === s.id}
-                  className={`p-2 rounded-[10px] transition-all ${theme === 'dark' ? 'hover:bg-green-500/20 text-green-400' : 'hover:bg-green-500/30 text-green-600'} disabled:opacity-50`}
-                  title="Approve"
-                >
-                  <CheckCircle2 className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setRejecting(s)}
-                  disabled={actioningId === s.id}
-                  className={`p-2 rounded-[10px] transition-all ${theme === 'dark' ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-500/30 text-red-600'} disabled:opacity-50`}
-                  title="Reject"
-                >
-                  <XCircle className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className={`w-6 h-6 animate-spin ${dark ? 'text-[#c9983a]' : 'text-[#a2792c]'}`} />
         </div>
+      ) : submissions.length === 0 ? (
+        <p className={`text-[14px] py-8 text-center ${muted}`}>Nothing here.</p>
+      ) : (
+        submissions.map((s) => (
+          <div
+            key={s.id}
+            className={`rounded-[16px] border p-5 transition-colors ${
+              dark ? 'bg-white/[0.04] border-white/10' : 'bg-white/[0.15] border-white/25'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+              <div>
+                <p className={`text-[15px] font-semibold ${strong}`}>{who(s)}</p>
+                <p className={`text-[12px] ${muted}`}>Submitted {new Date(s.created_at).toLocaleString()}</p>
+                {s.decision_reason && (
+                  <p className={`text-[12px] mt-1 ${muted}`}>
+                    <span className="capitalize">{s.status}</span>: {s.decision_reason}
+                  </p>
+                )}
+              </div>
+              <span className={`text-[12px] font-medium px-2.5 py-1 rounded-full capitalize ${
+                s.status === 'approved'
+                  ? 'bg-green-500/15 text-green-500'
+                  : s.status === 'pending'
+                    ? 'bg-amber-500/15 text-amber-500'
+                    : 'bg-red-500/15 text-red-500'
+              }`}>
+                {s.status}
+              </span>
+            </div>
+
+            {/* Side by side, always both. */}
+            <div className="flex gap-3 flex-col sm:flex-row">
+              {shot(s.linkedin_screenshot, 'LinkedIn')}
+              {shot(s.x_screenshot, 'X')}
+            </div>
+
+            <div className="flex items-center gap-2 mt-4 flex-wrap">
+              {s.status === 'pending' && (
+                <>
+                  <button
+                    type="button"
+                    disabled={actioningId === s.id}
+                    onClick={() => handleApprove(s)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-green-500/15 text-green-500 hover:bg-green-500/25 disabled:opacity-50 transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Approve both
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actioningId === s.id}
+                    onClick={() => {
+                      setDeciding({ submission: s, decision: 'reject' });
+                      setReason('');
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 text-red-500 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" /> Reject
+                  </button>
+                </>
+              )}
+              {/* Only an approval can be withdrawn - the API refuses anything
+                  else, and offering the button elsewhere would invite a
+                  misclick on the wrong row. */}
+              {s.status === 'approved' && (
+                <button
+                  type="button"
+                  disabled={actioningId === s.id}
+                  onClick={() => {
+                    setDeciding({ submission: s, decision: 'revoke' });
+                    setReason('');
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 text-red-500 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+                >
+                  <ShieldOff className="w-4 h-4" /> Revoke eligibility
+                </button>
+              )}
+            </div>
+          </div>
+        ))
       )}
 
-      <Modal isOpen={!!preview} onClose={() => setPreview(null)} title={preview ? `${preview.platform} proof` : ''} width="lg">
-        {preview && <img src={preview.screenshot} alt={`${preview.platform} proof`} className="w-full rounded-[12px]" />}
-      </Modal>
-
-      <Modal isOpen={!!rejecting} onClose={() => { setRejecting(null); setRejectReason(''); }} title="Reject Submission" icon={<XCircle className="w-6 h-6 text-[#c9983a]" />} width="md">
-        <div className="space-y-4">
-          <ModalInput label="Reason (optional)" value={rejectReason} onChange={setRejectReason} placeholder="e.g. screenshot doesn't show the follow" rows={3} />
-          <ModalFooter>
-            <ModalButton onClick={() => { setRejecting(null); setRejectReason(''); }}>Cancel</ModalButton>
-            <ModalButton variant="primary" onClick={handleReject} disabled={!!actioningId}>
-              {actioningId ? 'Rejecting...' : 'Reject'}
-            </ModalButton>
-          </ModalFooter>
-        </div>
+      <Modal
+        isOpen={deciding !== null}
+        onClose={() => setDeciding(null)}
+        title={deciding?.decision === 'revoke' ? 'Revoke eligibility' : 'Reject this proof'}
+      >
+        <p className={`text-[13px] ${muted}`}>
+          {deciding?.decision === 'revoke'
+            ? 'This withdraws eligibility for the Founding Contributor Pool. The submission and both screenshots are kept — only the status changes. The reason is shown to the contributor.'
+            : 'The reason is shown to the contributor so they can fix the problem and submit again.'}
+        </p>
+        <ModalInput
+          value={reason}
+          onChange={setReason}
+          placeholder={
+            deciding?.decision === 'revoke'
+              ? 'e.g. no longer following on LinkedIn'
+              : 'e.g. the screenshot does not show your account following'
+          }
+          autoFocus
+        />
+        <ModalFooter>
+          <ModalButton variant="secondary" onClick={() => setDeciding(null)}>
+            Cancel
+          </ModalButton>
+          {/* Named distinctly from the row buttons behind the modal: two
+              controls with the same accessible name on screen at once is
+              ambiguous to anyone navigating by label. */}
+          <ModalButton variant="primary" onClick={submitDecision} disabled={!reason.trim()}>
+            {deciding?.decision === 'revoke' ? 'Confirm revocation' : 'Confirm rejection'}
+          </ModalButton>
+        </ModalFooter>
       </Modal>
     </div>
   );

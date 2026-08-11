@@ -850,30 +850,37 @@ export const getPointsBalance = () =>
   apiRequest<PointsBalance>("/points/me", { requiresAuth: true });
 
 // Social-follow program
-export const SOCIAL_FOLLOW_PLATFORMS = ["github", "telegram", "linkedin"] as const;
+export const SOCIAL_FOLLOW_PLATFORMS = ["linkedin", "x"] as const;
 export type SocialFollowPlatform = (typeof SOCIAL_FOLLOW_PLATFORMS)[number];
 
-export interface SocialFollowPlatformStatus {
-  platform: string;
-  status: "pending" | "approved" | "rejected" | null;
-  rejection_reason?: string;
-}
-
+/** One submission covering both platforms. There is deliberately no
+ *  per-platform status: a half-approved state is what the atomic model
+ *  removes, so representing one here would put it straight back. */
 export interface SocialFollowStatus {
-  platforms: SocialFollowPlatformStatus[];
-  completed: boolean;
-  points_awarded: number;
-  points_reward: number;
+  platforms: string[];
+  submitted: boolean;
+  status: "pending" | "approved" | "rejected" | "revoked" | null;
+  /** Why it was rejected or revoked. Shown to the contributor - a withdrawal
+   *  with no stated reason reads as arbitrary. */
+  decision_reason?: string | null;
+  decided_at?: string | null;
+  /** The single question the whole feature answers. */
+  eligible: boolean;
 }
 
 export const getSocialFollowStatus = () =>
   apiRequest<SocialFollowStatus>("/social-follow/me", { requiresAuth: true });
 
-export const submitSocialFollowProof = (platform: SocialFollowPlatform, screenshot: string) =>
-  apiRequest<{ ok: boolean }>(`/social-follow/${platform}/submit`, {
+/** Both screenshots go in one request. The API refuses a partial submission,
+ *  so there is no path here that submits one platform on its own. */
+export const submitSocialFollowProof = (screenshots: { linkedin: string; x: string }) =>
+  apiRequest<{ id: string; status: string }>("/social-follow/submit", {
     requiresAuth: true,
     method: "POST",
-    body: JSON.stringify({ screenshot }),
+    body: JSON.stringify({
+      linkedin_screenshot: screenshots.linkedin,
+      x_screenshot: screenshots.x,
+    }),
   });
 
 // Public (no auth required) so it works for anonymous landing-page visitors,
@@ -892,10 +899,14 @@ export const submitBugReport = (payload: {
 export interface SocialFollowSubmission {
   id: string;
   user_id: string;
-  login?: string;
-  platform: string;
-  screenshot: string;
-  status: string;
+  github_login?: string;
+  /** Both screenshots, so a reviewer sees them side by side and makes one
+   *  decision rather than judging one platform without the other in view. */
+  linkedin_screenshot: string;
+  x_screenshot: string;
+  status: "pending" | "approved" | "rejected" | "revoked";
+  decision_reason?: string | null;
+  decided_at?: string | null;
   created_at: string;
 }
 
@@ -911,14 +922,24 @@ export const approveSocialFollowSubmission = (id: string) =>
     method: "POST",
   });
 
-export const rejectSocialFollowSubmission = (id: string, reason?: string) =>
+/** A reason is required by the API and shown to the contributor. */
+export const rejectSocialFollowSubmission = (id: string, reason: string) =>
   apiRequest<{ ok: boolean }>(`/admin/social-follow/submissions/${id}/reject`, {
     requiresAuth: true,
     method: "POST",
-    body: JSON.stringify({ reason: reason ?? "" }),
+    body: JSON.stringify({ reason }),
   });
 
-// Points -> USDC redemption
+/** Withdraws an approval that has already been granted. Eligibility is
+ *  re-read at settlement, so this has to be possible after the fact. The
+ *  submission and its screenshots are kept - only the status changes. */
+export const revokeSocialFollowSubmission = (id: string, reason: string) =>
+  apiRequest<{ ok: boolean }>(`/admin/social-follow/submissions/${id}/revoke`, {
+    requiresAuth: true,
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+
 export interface Redemption {
   id: string;
   points_spent: number;

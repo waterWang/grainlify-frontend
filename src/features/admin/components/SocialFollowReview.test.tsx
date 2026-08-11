@@ -6,63 +6,105 @@ import { SocialFollowReview } from './SocialFollowReview'
 const mockGetAdminSocialFollowSubmissions = vi.fn()
 const mockApproveSocialFollowSubmission = vi.fn()
 const mockRejectSocialFollowSubmission = vi.fn()
+const mockRevokeSocialFollowSubmission = vi.fn()
 
 vi.mock('../../../shared/api/client', () => ({
   getAdminSocialFollowSubmissions: (...args: unknown[]) => mockGetAdminSocialFollowSubmissions(...args),
   approveSocialFollowSubmission: (...args: unknown[]) => mockApproveSocialFollowSubmission(...args),
   rejectSocialFollowSubmission: (...args: unknown[]) => mockRejectSocialFollowSubmission(...args),
+  revokeSocialFollowSubmission: (...args: unknown[]) => mockRevokeSocialFollowSubmission(...args),
 }))
 
-const SUBMISSIONS = [
-  { id: 'sub-1', user_id: 'user-1', login: 'octocat', platform: 'github', screenshot: 'data:image/png;base64,abc', status: 'pending', created_at: new Date().toISOString() },
-]
+const PENDING = {
+  id: 'sub-1',
+  user_id: 'user-1',
+  github_login: 'octocat',
+  linkedin_screenshot: 'data:image/png;base64,linkedin',
+  x_screenshot: 'data:image/png;base64,xproof',
+  status: 'pending' as const,
+  created_at: new Date().toISOString(),
+}
+
+const APPROVED = { ...PENDING, id: 'sub-2', status: 'approved' as const }
 
 describe('SocialFollowReview', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    mockGetAdminSocialFollowSubmissions.mockResolvedValue({ submissions: SUBMISSIONS })
+    mockGetAdminSocialFollowSubmissions.mockResolvedValue({ submissions: [PENDING] })
     mockApproveSocialFollowSubmission.mockResolvedValue({ ok: true })
     mockRejectSocialFollowSubmission.mockResolvedValue({ ok: true })
+    mockRevokeSocialFollowSubmission.mockResolvedValue({ ok: true })
   })
 
-  it('loads and displays pending submissions', async () => {
+  it('shows both screenshots so one decision covers both platforms', async () => {
     renderWithProviders(<SocialFollowReview />)
     await waitFor(() => expect(mockGetAdminSocialFollowSubmissions).toHaveBeenCalledWith('pending'))
-    expect(await screen.findByText('@octocat')).toBeInTheDocument()
-    expect(screen.getByText('github')).toBeInTheDocument()
+
+    // Judging one platform without the other in view is half a decision -
+    // which is exactly what the atomic submission model removes.
+    expect(await screen.findByAltText('LinkedIn follow proof')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,linkedin',
+    )
+    expect(screen.getByAltText('X follow proof')).toHaveAttribute('src', 'data:image/png;base64,xproof')
+    expect(screen.getByText('octocat')).toBeInTheDocument()
   })
 
-  it('shows an empty state when there are no pending submissions', async () => {
+  it('approving applies to the whole submission', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<SocialFollowReview />)
+    await user.click(await screen.findByRole('button', { name: /approve both/i }))
+    await waitFor(() => expect(mockApproveSocialFollowSubmission).toHaveBeenCalledWith('sub-1'))
+  })
+
+  it('rejection requires a reason before the API is called', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<SocialFollowReview />)
+    await user.click(await screen.findByRole('button', { name: /^reject$/i }))
+
+    // The reason is shown to the contributor, so a decision without one is
+    // not a usable decision.
+    const confirm = screen.getByRole('button', { name: 'Confirm rejection' })
+    expect(confirm).toBeDisabled()
+    expect(mockRejectSocialFollowSubmission).not.toHaveBeenCalled()
+
+    await user.type(screen.getByRole('textbox'), 'screenshot does not show your account')
+    await user.click(screen.getByRole('button', { name: 'Confirm rejection' }))
+    await waitFor(() =>
+      expect(mockRejectSocialFollowSubmission).toHaveBeenCalledWith('sub-1', 'screenshot does not show your account'),
+    )
+  })
+
+  it('offers revocation only on an approved submission, and requires a reason', async () => {
+    mockGetAdminSocialFollowSubmissions.mockResolvedValue({ submissions: [APPROVED] })
+    const user = userEvent.setup()
+    renderWithProviders(<SocialFollowReview />)
+
+    // Nothing to approve or reject on something already decided.
+    expect(await screen.findByRole('button', { name: /revoke eligibility/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /approve both/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /revoke eligibility/i }))
+    expect(screen.getByRole('button', { name: 'Confirm revocation' })).toBeDisabled()
+
+    await user.type(screen.getByRole('textbox'), 'no longer following on LinkedIn')
+    await user.click(screen.getByRole('button', { name: 'Confirm revocation' }))
+    await waitFor(() =>
+      expect(mockRevokeSocialFollowSubmission).toHaveBeenCalledWith('sub-2', 'no longer following on LinkedIn'),
+    )
+  })
+
+  it('a pending submission offers no revoke button', async () => {
+    renderWithProviders(<SocialFollowReview />)
+    await screen.findByRole('button', { name: /approve both/i })
+    // The API refuses it, and offering it here invites a misclick on the
+    // wrong row.
+    expect(screen.queryByRole('button', { name: /revoke/i })).not.toBeInTheDocument()
+  })
+
+  it('shows an empty state when the queue is clear', async () => {
     mockGetAdminSocialFollowSubmissions.mockResolvedValue({ submissions: [] })
     renderWithProviders(<SocialFollowReview />)
-    expect(await screen.findByText('No pending submissions.')).toBeInTheDocument()
-  })
-
-  it('approving a submission calls the API and refreshes the list', async () => {
-    const user = userEvent.setup()
-    renderWithProviders(<SocialFollowReview />)
-    await screen.findByText('@octocat')
-
-    await user.click(screen.getByTitle('Approve'))
-
-    await waitFor(() => expect(mockApproveSocialFollowSubmission).toHaveBeenCalledWith('sub-1'))
-    expect(mockGetAdminSocialFollowSubmissions).toHaveBeenCalledTimes(2)
-  })
-
-  it('rejecting a submission opens the reason modal and calls the API', async () => {
-    const user = userEvent.setup()
-    renderWithProviders(<SocialFollowReview />)
-    await screen.findByText('@octocat')
-
-    await user.click(screen.getByTitle('Reject'))
-    expect(await screen.findByText('Reject Submission')).toBeInTheDocument()
-
-    // Two "Reject"-named buttons exist once the modal is open: the row's
-    // icon button (accessible name from its title attribute) and the
-    // modal's own submit button, which renders after it in the DOM.
-    const rejectButtons = screen.getAllByRole('button', { name: 'Reject' })
-    await user.click(rejectButtons[rejectButtons.length - 1])
-
-    await waitFor(() => expect(mockRejectSocialFollowSubmission).toHaveBeenCalledWith('sub-1', ''))
+    expect(await screen.findByText('Nothing here.')).toBeInTheDocument()
   })
 })
