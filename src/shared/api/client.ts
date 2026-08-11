@@ -772,7 +772,20 @@ export const updateEcosystem = (id: string, data: {
   });
 
 // Leaderboard
-export const getLeaderboard = (limit = 10, offset = 0, ecosystem?: string) =>
+/**
+ * Contributors ranked by merged pull requests in verified projects.
+ *
+ * `window` defaults to the rolling 90-day season board; pass "all" for the
+ * cumulative view. `ecosystem` is an ecosystems.slug and now actually
+ * filters - it was previously sent on every request and ignored by the
+ * handler, so the dropdown appeared to work and did nothing.
+ */
+export const getLeaderboard = (
+  limit = 10,
+  offset = 0,
+  ecosystem?: string,
+  window: "season" | "all" = "season",
+) =>
   apiRequest<
     Array<{
       rank: number;
@@ -781,15 +794,47 @@ export const getLeaderboard = (limit = 10, offset = 0, ecosystem?: string) =>
       username: string;
       avatar: string;
       user_id: string;
-      contributions: number;
+      merged_prs: number;
       ecosystems: string[];
       score: number;
-      trend: "up" | "down" | "same";
-      trendValue: number;
     }>
   >(
-    `/leaderboard?limit=${limit}&offset=${offset}${ecosystem ? `&ecosystem=${ecosystem}` : ""
-    }`,
+    `/leaderboard?limit=${limit}&offset=${offset}&window=${window}` +
+    (ecosystem ? `&ecosystem=${encodeURIComponent(ecosystem)}` : ""),
+  );
+
+/**
+ * Organisations ranked by distinct contributors who landed a merged PR.
+ *
+ * Replaces deriving the projects board in the browser from
+ * /projects/recommended, which sampled only the top 50 repos and summed
+ * per-repo contributor counts (double-counting anyone active in two repos of
+ * the same org).
+ */
+export const getProjectLeaderboard = (
+  limit = 25,
+  offset = 0,
+  ecosystem?: string,
+  window: "season" | "all" = "season",
+) =>
+  apiRequest<{
+    projects: Array<{
+      rank: number;
+      name: string;
+      logo: string;
+      contributors: number;
+      merged_prs: number;
+      open_issues: number;
+      activity: string;
+      ecosystems: string[];
+      score: number;
+    }>;
+    total: number;
+    limit: number;
+    offset: number;
+  }>(
+    `/leaderboard/projects?limit=${limit}&offset=${offset}&window=${window}` +
+    (ecosystem ? `&ecosystem=${encodeURIComponent(ecosystem)}` : ""),
   );
 
 // Admin Bootstrap

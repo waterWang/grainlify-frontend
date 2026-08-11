@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus, Award } from 'lucide-react';
+import { Award } from 'lucide-react';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { ProjectData, FilterType } from '../types';
 import { getAvatarGradient } from '../data/leaderboardData';
@@ -8,12 +8,6 @@ interface ProjectsTableProps {
   activeFilter: FilterType;
   isLoaded: boolean;
 }
-
-const getTrendIcon = (trend: 'up' | 'down' | 'same') => {
-  if (trend === 'up') return <TrendingUp className="w-4 h-4 text-green-600" />;
-  if (trend === 'down') return <TrendingDown className="w-4 h-4 text-red-600" />;
-  return <Minus className="w-4 h-4 text-[#7a6b5a]" />;
-};
 
 function isLogoUrl(logo: string): boolean {
   return typeof logo === 'string' && (logo.startsWith('http://') || logo.startsWith('https://'));
@@ -31,10 +25,7 @@ export function ProjectsTable({ data, activeFilter, isLoaded }: ProjectsTablePro
         <div className={`col-span-1 text-[12px] font-bold uppercase tracking-wider transition-colors ${
           theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
         }`}>Rank</div>
-        <div className={`col-span-1 text-[12px] font-bold uppercase tracking-wider transition-colors ${
-          theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
-        }`}>Trend</div>
-        <div className={`col-span-5 text-[12px] font-bold uppercase tracking-wider transition-colors ${
+        <div className={`col-span-6 text-[12px] font-bold uppercase tracking-wider transition-colors ${
           theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
         }`}>Project</div>
         <div className={`col-span-2 text-[12px] font-bold uppercase tracking-wider text-right flex items-center justify-end gap-1 transition-colors ${
@@ -65,15 +56,8 @@ export function ProjectsTable({ data, activeFilter, isLoaded }: ProjectsTablePro
               </div>
             </div>
 
-            {/* Trend */}
-            <div className="col-span-1 flex items-center">
-              <div className="flex items-center justify-center w-7 h-7 rounded-[9px] bg-gradient-to-br from-white/[0.15] to-white/[0.08] border border-white/20 shadow-sm group-hover:scale-110 transition-all duration-300">
-                {getTrendIcon(project.trend)}
-              </div>
-            </div>
-
             {/* Project */}
-            <div className="col-span-5 flex items-center gap-2.5">
+            <div className="col-span-6 flex items-center gap-2.5">
               <div className={`relative w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(index)} flex items-center justify-center text-white font-bold text-[13px] shadow-md border-2 border-white/25 overflow-hidden group-hover:scale-125 group-hover:shadow-lg group-hover:rotate-12 transition-all duration-300`}>
                 {isLogoUrl(project.logo) ? (
                   <img src={project.logo} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
@@ -89,11 +73,11 @@ export function ProjectsTable({ data, activeFilter, isLoaded }: ProjectsTablePro
                 }`}>
                   {project.name}
                 </div>
-                {activeFilter === 'contributions' && project.contributors && (
+                {activeFilter === 'contributions' && project.contributors ? (
                   <div className={`text-[11px] transition-colors ${
                     theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
                   }`}>{project.contributors} contributors</div>
-                )}
+                ) : null}
                 {project.ecosystems && (
                   <div className="flex gap-1.5 mt-0.5">
                     {project.ecosystems.map((eco, idx) => (

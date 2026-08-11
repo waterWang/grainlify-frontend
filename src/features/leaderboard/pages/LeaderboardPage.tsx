@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
-import { LeaderboardType, FilterType, Petal, LeaderData, ProjectData } from "../types";
-import { getLeaderboard, getRecommendedProjects } from "../../../shared/api/client";
+import {
+  LeaderboardType,
+  FilterType,
+  LeaderboardWindow,
+  Petal,
+  LeaderData,
+  ProjectData,
+} from "../types";
+import { getLeaderboard, getProjectLeaderboard } from "../../../shared/api/client";
 import { getGitHubAvatarUrl } from "../../../shared/utils/avatar";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { FallingPetals } from "../components/FallingPetals";
@@ -23,6 +30,11 @@ export function LeaderboardPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("overall");
   const [leaderboardType, setLeaderboardType] =
     useState<LeaderboardType>("contributors");
+  // The season board is the default view. An all-time cumulative count is
+  // uncatchable for anyone who arrives after the first cohort, so the board
+  // people land on is the one they can actually climb.
+  const [leaderboardWindow, setLeaderboardWindow] =
+    useState<LeaderboardWindow>("season");
   const [showEcosystemDropdown, setShowEcosystemDropdown] = useState(false);
   const [selectedEcosystem, setSelectedEcosystem] = useState({
     label: "All Ecosystems",
@@ -59,6 +71,7 @@ export function LeaderboardPage() {
             selectedEcosystem.value !== "all"
               ? selectedEcosystem.value
               : undefined,
+            leaderboardWindow,
           );
           const hasNextPage = data.length > PAGE_SIZE;
           // Transform API data to match LeaderData type
@@ -72,9 +85,7 @@ export function LeaderboardPage() {
               avatar: item.avatar || getGitHubAvatarUrl(item.username, 200),
               user_id: item.user_id || "",
               score: item.score,
-              trend: item.trend,
-              trendValue: item.trendValue,
-              contributions: item.contributions,
+              merged_prs: item.merged_prs,
               ecosystems: item.ecosystems || [],
             }));
           setLeaderboardData(transformedData);
@@ -96,18 +107,29 @@ export function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-  }, [leaderboardType, activeFilter, selectedEcosystem.value, page]);
+    // activeFilter is deliberately absent: it only changes which secondary
+    // line each row renders, and including it refetched an identical page on
+    // every dropdown change.
+  }, [leaderboardType, selectedEcosystem.value, leaderboardWindow, page]);
 
-  // Reset pagination when switching leaderboard type, filter, or ecosystem -
+  // Reset pagination when switching leaderboard type, ecosystem, or window -
   // otherwise page 3 of contributors could carry over to a filtered result
   // that only has 1 page.
   useEffect(() => {
     setPage(1);
     setMaxKnownPage(1);
     setIsMaxPageFinal(false);
-  }, [leaderboardType, activeFilter, selectedEcosystem.value]);
+  }, [leaderboardType, selectedEcosystem.value, leaderboardWindow]);
 
-  // Fetch projects leaderboard (top projects by contributors count)
+  // Fetch the projects leaderboard.
+  //
+  // This used to be assembled here in the browser: fetch the top 50 repos
+  // from /projects/recommended, group by owner, and sum each repo's
+  // contributor count. That was wrong twice - an org whose repos all fell
+  // outside the top-50 sample never appeared at all, and anyone who
+  // contributed to two repos in the same org was counted once per repo, so an
+  // org could out-rank another on strictly fewer distinct people. The server
+  // now ranks the full set by COUNT(DISTINCT contributor).
   useEffect(() => {
     if (leaderboardType !== "projects") return;
     let cancelled = false;
@@ -115,45 +137,29 @@ export function LeaderboardPage() {
       setIsLoadingProjects(true);
       setProjectsPage(1);
       try {
-        const res = await getRecommendedProjects(50);
-        const projects = res?.projects ?? [];
+        const res = await getProjectLeaderboard(
+          100,
+          0,
+          selectedEcosystem.value !== "all"
+            ? selectedEcosystem.value
+            : undefined,
+          leaderboardWindow,
+        );
         if (cancelled) return;
-
-        // Rank by organization, not by individual repo - a maintainer with
-        // several repos would otherwise take up several leaderboard slots.
-        const byOwner = new Map<string, typeof projects>();
-        for (const p of projects) {
-          const [owner, repo] = p.github_full_name.split("/");
-          if (!owner || repo === ".github") continue;
-          const list = byOwner.get(owner) ?? [];
-          list.push(p);
-          byOwner.set(owner, list);
-        }
-
-        const mapped: ProjectData[] = Array.from(byOwner.entries())
-          .map(([owner, repos]) => {
-            const contributors = repos.reduce((sum, r) => sum + (r.contributors_count ?? 0), 0);
-            const openIssues = repos.reduce((sum, r) => sum + (r.open_issues_count ?? 0), 0);
-            const activity =
-              openIssues > 10 ? "Very High" : openIssues > 5 ? "High" : openIssues > 2 ? "Medium" : "Low";
-            const ecosystems = Array.from(
-              new Set(repos.map((r) => r.ecosystem_name).filter((e): e is string => Boolean(e))),
-            );
-            return {
-              name: owner,
-              logo: getGitHubAvatarUrl(owner, 200),
-              score: contributors,
-              trend: "same" as const,
-              trendValue: 0,
-              contributors,
-              ecosystems,
-              activity,
-            };
-          })
-          .sort((a, b) => b.score - a.score)
-          .map((org, idx) => ({ ...org, rank: idx + 1 }));
+        const mapped: ProjectData[] = (res?.projects ?? []).map((p) => ({
+          rank: p.rank,
+          name: p.name,
+          logo: p.logo || getGitHubAvatarUrl(p.name, 200),
+          score: p.score,
+          contributors: p.contributors,
+          merged_prs: p.merged_prs,
+          open_issues: p.open_issues,
+          ecosystems: p.ecosystems ?? [],
+          activity: p.activity,
+        }));
         setProjectsData(mapped);
       } catch (err) {
+        console.error("Failed to fetch project leaderboard:", err);
         if (!cancelled) setProjectsData([]);
       } finally {
         if (!cancelled) setIsLoadingProjects(false);
@@ -163,7 +169,7 @@ export function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [leaderboardType]);
+  }, [leaderboardType, selectedEcosystem.value, leaderboardWindow]);
 
   // Generate falling petals on mount
   useEffect(() => {
@@ -200,9 +206,7 @@ export function LeaderboardPage() {
         username: "-",
         avatar: "👤",
         score: 0,
-        trend: "same" as const,
-        trendValue: 0,
-        contributions: 0,
+        merged_prs: 0,
         ecosystems: [],
       })),
   ].slice(0, 3) as LeaderData[];
@@ -216,8 +220,6 @@ export function LeaderboardPage() {
         name: "-",
         logo: "📦",
         score: 0,
-        trend: "same" as const,
-        trendValue: 0,
         contributors: 0,
         ecosystems: [] as string[],
         activity: "Low",
@@ -237,7 +239,11 @@ export function LeaderboardPage() {
       />
 
       {/* Hero Header Section */}
-      <LeaderboardHero leaderboardType={leaderboardType} isLoaded={isLoaded}>
+      <LeaderboardHero
+        leaderboardType={leaderboardType}
+        isLoaded={isLoaded}
+        activeWindow={leaderboardWindow}
+      >
         {/* Top 3 Podium - Contributors. Reflects the true overall top 3
             (topThreeContributors, only ever set from page 1) so it stays put
             while the table below is paged - it only shows its own skeleton
@@ -297,6 +303,8 @@ export function LeaderboardPage() {
           setShowEcosystemDropdown(!showEcosystemDropdown)
         }
         isLoaded={isLoaded}
+        activeWindow={leaderboardWindow}
+        onWindowChange={setLeaderboardWindow}
       />
 
       {/* Leaderboard Table - Contributors */}

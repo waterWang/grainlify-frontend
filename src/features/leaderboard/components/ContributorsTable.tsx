@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus, Award } from "lucide-react";
+import { Award } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { LeaderData, FilterType } from "../types";
 import { getAvatarGradient } from "../data/leaderboardData";
@@ -10,13 +10,6 @@ interface ContributorsTableProps {
   isLoaded: boolean;
   onUserClick?: (username: string, userId?: string) => void;
 }
-
-const getTrendIcon = (trend: "up" | "down" | "same") => {
-  if (trend === "up") return <TrendingUp className="w-4 h-4 text-green-600" />;
-  if (trend === "down")
-    return <TrendingDown className="w-4 h-4 text-red-600" />;
-  return <Minus className="w-4 h-4 text-[#7a6b5a]" />;
-};
 
 export function ContributorsTable({
   data,
@@ -48,14 +41,7 @@ export function ContributorsTable({
           Rank
         </div>
         <div
-          className={`col-span-1 text-[12px] font-bold uppercase tracking-wider transition-colors ${
-            theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-          }`}
-        >
-          Trend
-        </div>
-        <div
-          className={`col-span-6 text-[12px] font-bold uppercase tracking-wider transition-colors ${
+          className={`col-span-7 text-[12px] font-bold uppercase tracking-wider transition-colors ${
             theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
           }`}
         >
@@ -98,15 +84,8 @@ export function ContributorsTable({
               </div>
             </div>
 
-            {/* Trend */}
-            <div className="col-span-1 flex items-center">
-              <div className="flex items-center justify-center w-7 h-7 rounded-[9px] bg-gradient-to-br from-white/[0.15] to-white/[0.08] border border-white/20 shadow-sm group-hover:scale-110 transition-all duration-300">
-                {getTrendIcon(leader.trend)}
-              </div>
-            </div>
-
             {/* Contributor */}
-            <div className="col-span-6 flex items-center gap-2.5">
+            <div className="col-span-7 flex items-center gap-2.5">
               <div
                 className={`relative w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(index)} flex items-center justify-center text-white font-bold text-[13px] shadow-md border-2 border-white/25 group-hover:scale-125 group-hover:shadow-lg group-hover:rotate-12 transition-all duration-300 overflow-hidden`}
               >
@@ -141,16 +120,16 @@ export function ContributorsTable({
                 >
                   {leader.username}
                 </div>
-                {activeFilter === "contributions" && leader.contributions && (
+                {activeFilter === "contributions" && leader.merged_prs ? (
                   <div
                     className={`text-[11px] transition-colors ${
                       theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
                     }`}
                   >
-                    {leader.contributions} contributions
+                    {leader.merged_prs} merged PRs
                   </div>
-                )}
-                {activeFilter === "ecosystems" && leader.ecosystems && (
+                ) : null}
+                {activeFilter === "ecosystems" && leader.ecosystems ? (
                   <div className="flex gap-1.5 mt-0.5">
                     {leader.ecosystems.map((eco, idx) => (
                       <span
@@ -161,7 +140,7 @@ export function ContributorsTable({
                       </span>
                     ))}
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
 

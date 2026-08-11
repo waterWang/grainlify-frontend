@@ -1,14 +1,16 @@
 import { Crown, Trophy, Star } from 'lucide-react';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
-import { LeaderboardType } from '../types';
+import { LeaderboardType, LeaderboardWindow } from '../types';
 
 interface LeaderboardHeroProps {
   leaderboardType: LeaderboardType;
   isLoaded: boolean;
+  /** Which period the board below is showing. Drives the subtitle. */
+  activeWindow: LeaderboardWindow;
   children: React.ReactNode;
 }
 
-export function LeaderboardHero({ leaderboardType, isLoaded, children }: LeaderboardHeroProps) {
+export function LeaderboardHero({ leaderboardType, isLoaded, activeWindow, children }: LeaderboardHeroProps) {
   const { theme } = useTheme();
 
   return (
@@ -56,7 +58,9 @@ export function LeaderboardHero({ leaderboardType, isLoaded, children }: Leaderb
             <h1 className={`text-[44px] font-bold drop-shadow-sm relative z-10 transition-colors ${
               theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
             }`}>
-              {leaderboardType === 'contributors' ? 'Seasonal Contributors' : 'Top Projects'}
+              {leaderboardType === 'contributors'
+                ? activeWindow === 'season' ? 'Seasonal Contributors' : 'All-Time Contributors'
+                : 'Top Projects'}
             </h1>
             {/* Golden Underline Animation */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#c9983a] to-transparent opacity-40 animate-shimmer" />
@@ -104,7 +108,9 @@ export function LeaderboardHero({ leaderboardType, isLoaded, children }: Leaderb
             <div className={`text-[13px] font-semibold transition-colors ${
               theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
             }`}>
-              Season {leaderboardType === 'contributors' ? '2025 Q1' : 'Champions'}
+              {leaderboardType === 'contributors'
+                ? activeWindow === 'season' ? 'Merged in the last 90 days' : 'Every merge on record'
+                : activeWindow === 'season' ? 'By contributors, last 90 days' : 'By contributors, all time'}
             </div>
             <Star className="w-4 h-4 text-[#c9983a] animate-pulse-slow" />
           </div>

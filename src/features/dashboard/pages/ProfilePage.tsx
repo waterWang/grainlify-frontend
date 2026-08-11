@@ -24,10 +24,26 @@ interface ProfileData {
   discord?: string;
    kyc_verified?: boolean;
   rank: {
+    /** Seasonal standing — matches the default public leaderboard. */
     position: number | null;
     tier: string;
     tier_name: string;
     tier_color: string;
+    merged_prs?: number;
+    /**
+     * All-time standing, carried alongside the seasonal one. The season board
+     * is a rolling 90-day window, so someone whose merges are older is
+     * genuinely unranked *this season* — but a bare "Unranked" reads as "you
+     * don't count", when the truth is that the season reset. Showing both
+     * turns that into "Unranked this season · Silver all-time".
+     */
+    all_time?: {
+      position: number | null;
+      tier: string;
+      tier_name: string;
+      tier_color: string;
+      merged_prs?: number;
+    };
   };
 }
 
@@ -828,8 +844,13 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                     </span>
                   </div>
                 ) : (
-                  <div className={`text-[48px] font-black leading-none ${theme === 'dark' ? 'text-[#e8dfd0]' : 'text-gray-400'}`}>
-                    Unranked
+                  <div>
+                    <div className={`text-[40px] font-black leading-none ${theme === 'dark' ? 'text-[#e8dfd0]' : 'text-gray-400'}`}>
+                      Unranked
+                    </div>
+                    <div className={`mt-1.5 text-[12px] font-semibold ${theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
+                      this season
+                    </div>
                   </div>
                 )}
               </div>
@@ -843,12 +864,30 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               {isLoadingProfile ? (
                 <SkeletonLoader variant="default" width="140px" height="36px" className="mx-auto rounded-[10px]" />
               ) : (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-white/[0.3] border-2 border-[#c9983a]/50 shadow-[0_3px_12px_rgba(201,152,58,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)]">
-                  {getRankIcon(profileData?.rank?.tier_name || 'Bronze')}
-                  <span className="text-[13px] font-black text-[#c9983a] uppercase tracking-[0.15em]">
-                    {profileData?.rank?.tier_name || 'Bronze'}
-                  </span>
-                </div>
+                <>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-white/[0.3] border-2 border-[#c9983a]/50 shadow-[0_3px_12px_rgba(201,152,58,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)]">
+                    {getRankIcon(profileData?.rank?.tier_name || 'Unranked')}
+                    <span className="text-[13px] font-black text-[#c9983a] uppercase tracking-[0.15em]">
+                      {profileData?.rank?.tier_name || 'Unranked'}
+                    </span>
+                  </div>
+
+                  {/* All-time, whenever it says something the seasonal line
+                      does not. Most important in exactly the case that reads
+                      worst without it: unranked this season, but ranked
+                      all-time. */}
+                  {profileData?.rank?.all_time?.position ? (
+                    <div className={`mt-2.5 text-[12px] font-semibold ${theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
+                      <span className="opacity-70">All time · </span>
+                      <span className="text-[#c9983a] font-bold">
+                        {profileData.rank.all_time.tier_name}
+                      </span>
+                      <span className="opacity-70">
+                        {' '}#{profileData.rank.all_time.position}
+                      </span>
+                    </div>
+                  ) : null}
+                </>
               )}
 
               {/* Shine Effect */}

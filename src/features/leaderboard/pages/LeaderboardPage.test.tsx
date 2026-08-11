@@ -3,21 +3,21 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '../../../test/renderWithProviders'
 import { LeaderboardPage } from './LeaderboardPage'
-import { getLeaderboard, getRecommendedProjects, getEcosystems } from '../../../shared/api/client'
+import { getLeaderboard, getProjectLeaderboard, getEcosystems } from '../../../shared/api/client'
 
 // LeaderboardPage itself fetches getLeaderboard (contributors, the default tab) and
-// getRecommendedProjects (only once the user switches to the "projects" tab, not on
+// getProjectLeaderboard (only once the user switches to the "projects" tab, not on
 // mount). Its child FiltersSection also independently calls getEcosystems() on mount
 // to populate the ecosystem filter dropdown, so that must be mocked here too even
 // though LeaderboardPage never imports it directly itself.
 vi.mock('../../../shared/api/client', () => ({
   getLeaderboard: vi.fn(),
-  getRecommendedProjects: vi.fn(),
+  getProjectLeaderboard: vi.fn(),
   getEcosystems: vi.fn(),
 }))
 
 const mockedGetLeaderboard = vi.mocked(getLeaderboard)
-const mockedGetRecommendedProjects = vi.mocked(getRecommendedProjects)
+const mockedGetProjectLeaderboard = vi.mocked(getProjectLeaderboard)
 const mockedGetEcosystems = vi.mocked(getEcosystems)
 
 type LeaderboardResponse = Awaited<ReturnType<typeof getLeaderboard>>
@@ -31,11 +31,9 @@ function makeLeaderRow(
     rank_tier_name: 'Gold',
     avatar: `https://github.com/${overrides.username}.png?size=200`,
     user_id: `user-${overrides.rank}`,
-    contributions: 0,
+    merged_prs: 0,
     ecosystems: [],
     score: 0,
-    trend: 'same',
-    trendValue: 0,
     ...overrides,
   }
 }
@@ -45,54 +43,48 @@ const row1 = makeLeaderRow({
   username: 'octocat',
   score: 980,
   user_id: 'u1',
-  contributions: 120,
+  merged_prs: 980,
   ecosystems: ['Web3'],
-  trend: 'up',
-  trendValue: 3,
 })
 const row2 = makeLeaderRow({
   rank: 2,
   username: 'hubot',
   score: 875,
   user_id: 'u2',
-  contributions: 98,
+  merged_prs: 875,
   ecosystems: ['AI'],
-  trend: 'down',
-  trendValue: -1,
 })
 const row3 = makeLeaderRow({
   rank: 3,
   username: 'monalisa',
   score: 760,
   user_id: 'u3',
-  contributions: 77,
+  merged_prs: 760,
   ecosystems: ['Data'],
-  trend: 'same',
-  trendValue: 0,
 })
 
-type RecommendedProjectsResponse = Awaited<ReturnType<typeof getRecommendedProjects>>
-type ApiProject = RecommendedProjectsResponse['projects'][number]
+type ProjectLeaderboardResponse = Awaited<ReturnType<typeof getProjectLeaderboard>>
+type ApiProject = ProjectLeaderboardResponse['projects'][number]
 
+// The projects board is now ranked by the server, so a fixture is a ranked
+// row rather than a repo the browser has to aggregate.
 function makeApiProject(
-  overrides: Partial<ApiProject> & Pick<ApiProject, 'id' | 'github_full_name'>,
+  overrides: Partial<ApiProject> & Pick<ApiProject, 'rank' | 'name'>,
 ): ApiProject {
   return {
-    language: 'TypeScript',
-    tags: [],
-    category: null,
-    stars_count: 0,
-    forks_count: 0,
-    contributors_count: 0,
-    open_issues_count: 0,
-    open_prs_count: 0,
-    ecosystem_name: null,
-    ecosystem_slug: null,
-    description: '',
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
+    logo: `https://github.com/${overrides.name}.png?size=200`,
+    contributors: 0,
+    merged_prs: 0,
+    open_issues: 0,
+    activity: 'Low',
+    ecosystems: [],
+    score: 0,
     ...overrides,
   }
+}
+
+function projectsResponse(projects: ApiProject[]): ProjectLeaderboardResponse {
+  return { projects, total: projects.length, limit: 100, offset: 0 }
 }
 
 describe('LeaderboardPage', () => {
@@ -127,10 +119,10 @@ describe('LeaderboardPage', () => {
     expect(container.querySelectorAll('.animate-shimmer').length).toBe(1)
     // Requests PAGE_SIZE+1 (26) so the response length can reveal whether a
     // next page exists, without the backend needing to return a total count.
-    expect(mockedGetLeaderboard).toHaveBeenCalledWith(26, 0, undefined)
+    expect(mockedGetLeaderboard).toHaveBeenCalledWith(26, 0, undefined, 'season')
     // The "projects" leaderboard type never loads on mount — only once the user
     // switches tabs — since the default leaderboardType is "contributors".
-    expect(mockedGetRecommendedProjects).not.toHaveBeenCalled()
+    expect(mockedGetProjectLeaderboard).not.toHaveBeenCalled()
   })
 
   it('renders an empty state (no podium) when the API returns zero contributors', async () => {
@@ -175,34 +167,27 @@ describe('LeaderboardPage', () => {
   })
 
   describe('Projects tab', () => {
-    it('ranks by organization, not by individual repo - multiple repos under one org become a single, aggregated entry', async () => {
+    // The org-vs-repo aggregation, the .github exclusion and the
+    // distinct-contributor count all moved into SQL (internal/ranking), where
+    // they are covered by the backend suite. What is left to assert here is
+    // that the page renders the server's ranking as given rather than
+    // re-deriving one of its own - the previous browser-side version summed
+    // per-repo counts off a top-50 sample and got both answers wrong.
+    it('renders the server-ranked org list verbatim, without re-ranking it', async () => {
       mockedGetLeaderboard.mockResolvedValue([])
-      mockedGetRecommendedProjects.mockResolvedValue({
-        projects: [
+      mockedGetProjectLeaderboard.mockResolvedValue(
+        projectsResponse([
           makeApiProject({
-            id: 'p1',
-            github_full_name: 'acme/widget-kit',
-            contributors_count: 30,
-            open_issues_count: 2,
-            ecosystem_name: 'Web3',
+            rank: 1,
+            name: 'acme',
+            contributors: 45,
+            merged_prs: 120,
+            score: 45,
+            ecosystems: ['Web3'],
           }),
-          makeApiProject({
-            id: 'p2',
-            github_full_name: 'acme/other-tool',
-            contributors_count: 15,
-            open_issues_count: 1,
-            ecosystem_name: 'Web3',
-          }),
-          makeApiProject({
-            id: 'p3',
-            github_full_name: 'globex/data-tool',
-            contributors_count: 10,
-            open_issues_count: 0,
-          }),
-          // Excluded as a special GitHub meta-repo, same as the existing per-repo filter.
-          makeApiProject({ id: 'p4', github_full_name: 'acme/.github', contributors_count: 999 }),
-        ],
-      })
+          makeApiProject({ rank: 2, name: 'globex', contributors: 10, score: 10 }),
+        ]),
+      )
       const user = userEvent.setup()
 
       renderWithProviders(<LeaderboardPage />)
@@ -210,14 +195,64 @@ describe('LeaderboardPage', () => {
 
       await waitFor(() => expect(screen.getAllByText('acme').length).toBeGreaterThan(0))
       expect(screen.getAllByText('globex').length).toBeGreaterThan(0)
-      // Repo names never appear - only the org.
-      expect(screen.queryByText('widget-kit')).not.toBeInTheDocument()
-      expect(screen.queryByText('other-tool')).not.toBeInTheDocument()
-
-      // acme's two repos are summed (30 + 15 = 45), ranking it above globex (10),
-      // and its .github meta-repo's contributor count is excluded entirely.
       expect(screen.getAllByText('45').length).toBeGreaterThan(0)
-      expect(screen.queryByText('999')).not.toBeInTheDocument()
+    })
+
+    it('asks the server for the projects board rather than deriving it from /projects/recommended', async () => {
+      mockedGetLeaderboard.mockResolvedValue([])
+      mockedGetProjectLeaderboard.mockResolvedValue(projectsResponse([]))
+      const user = userEvent.setup()
+
+      renderWithProviders(<LeaderboardPage />)
+      await user.click(screen.getByRole('button', { name: 'Projects' }))
+
+      await waitFor(() => expect(mockedGetProjectLeaderboard).toHaveBeenCalled())
+      expect(mockedGetProjectLeaderboard).toHaveBeenCalledWith(100, 0, undefined, 'season')
+    })
+  })
+
+  describe('Window toggle', () => {
+    it('defaults to the season board and refetches all-time on demand', async () => {
+      mockedGetLeaderboard.mockResolvedValue([row1, row2, row3])
+      const user = userEvent.setup()
+
+      renderWithProviders(<LeaderboardPage />)
+
+      // An all-time cumulative board is uncatchable for anyone who arrives
+      // after the first cohort, so the default view has to be the rolling one.
+      await waitFor(() =>
+        expect(mockedGetLeaderboard).toHaveBeenCalledWith(26, 0, undefined, 'season'),
+      )
+
+      await user.click(screen.getByRole('button', { name: 'All time' }))
+
+      await waitFor(() =>
+        expect(mockedGetLeaderboard).toHaveBeenLastCalledWith(26, 0, undefined, 'all'),
+      )
+    })
+  })
+
+  describe('Removed controls', () => {
+    it('does not offer a "Total Rewards" filter, which was backed by no data and changed nothing', async () => {
+      mockedGetLeaderboard.mockResolvedValue([row1])
+      const user = userEvent.setup()
+
+      renderWithProviders(<LeaderboardPage />)
+      await waitFor(() => expect(screen.getAllByText('octocat').length).toBeGreaterThan(0))
+
+      await user.click(screen.getByRole('button', { name: 'Overall Leaderboard' }))
+
+      expect(await screen.findByRole('button', { name: 'Total Contributions' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Total Rewards' })).not.toBeInTheDocument()
+    })
+
+    it('does not render a Trend column, which showed "no change" for every contributor forever', async () => {
+      mockedGetLeaderboard.mockResolvedValue([row1, row2, row3])
+
+      renderWithProviders(<LeaderboardPage />)
+      await waitFor(() => expect(screen.getAllByText('octocat').length).toBeGreaterThan(0))
+
+      expect(screen.queryByText('Trend')).not.toBeInTheDocument()
     })
   })
 
@@ -263,7 +298,7 @@ describe('LeaderboardPage', () => {
 
       await user.click(screen.getByRole('button', { name: 'Page 2' }))
 
-      await waitFor(() => expect(mockedGetLeaderboard).toHaveBeenCalledWith(26, 25, undefined))
+      await waitFor(() => expect(mockedGetLeaderboard).toHaveBeenCalledWith(26, 25, undefined, 'season'))
       expect(await screen.findByText('lastuser')).toBeInTheDocument()
     })
 
@@ -281,24 +316,24 @@ describe('LeaderboardPage', () => {
       await waitFor(() => expect(screen.getByRole('button', { name: 'Page 2' })).toBeInTheDocument())
 
       await user.click(screen.getByRole('button', { name: 'Page 2' }))
-      await waitFor(() => expect(mockedGetLeaderboard).toHaveBeenLastCalledWith(26, 25, undefined))
+      await waitFor(() => expect(mockedGetLeaderboard).toHaveBeenLastCalledWith(26, 25, undefined, 'season'))
 
       await user.click(screen.getByRole('button', { name: 'All Ecosystems' }))
       await user.click(await screen.findByRole('button', { name: 'Web3' }))
 
       // Filter changed while on page 2 - the request must go out for page 1
       // (offset 0) of the new filter, not page 2 of it.
-      await waitFor(() => expect(mockedGetLeaderboard).toHaveBeenLastCalledWith(26, 0, 'web3'))
+      await waitFor(() => expect(mockedGetLeaderboard).toHaveBeenLastCalledWith(26, 0, 'web3', 'season'))
     })
   })
 
   describe('Projects tab pagination', () => {
     it('paginates the already-loaded projects list client-side, 25 per page', async () => {
       const projects = Array.from({ length: 30 }, (_, i) =>
-        makeApiProject({ id: `p${i}`, github_full_name: `org${i}/repo`, contributors_count: 30 - i }),
+        makeApiProject({ rank: i + 1, name: `org${i}`, contributors: 30 - i, score: 30 - i }),
       )
       mockedGetLeaderboard.mockResolvedValue([])
-      mockedGetRecommendedProjects.mockResolvedValue({ projects })
+      mockedGetProjectLeaderboard.mockResolvedValue(projectsResponse(projects))
       const user = userEvent.setup()
 
       renderWithProviders(<LeaderboardPage />)
@@ -309,11 +344,11 @@ describe('LeaderboardPage', () => {
       await waitFor(() => expect(screen.getByRole('button', { name: 'Page 2' })).toBeInTheDocument())
       expect(screen.getAllByText('org0').length).toBeGreaterThan(0)
       expect(screen.queryByText('org29')).not.toBeInTheDocument()
-      // getRecommendedProjects is called once up front, not once per page.
-      expect(mockedGetRecommendedProjects).toHaveBeenCalledTimes(1)
+      // The board is fetched once up front, not once per page.
+      expect(mockedGetProjectLeaderboard).toHaveBeenCalledTimes(1)
 
       await user.click(screen.getByRole('button', { name: 'Page 2' }))
-      expect(mockedGetRecommendedProjects).toHaveBeenCalledTimes(1)
+      expect(mockedGetProjectLeaderboard).toHaveBeenCalledTimes(1)
       expect(screen.getAllByText('org29').length).toBeGreaterThan(0)
     })
   })

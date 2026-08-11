@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { getEcosystems } from "../../../shared/api/client";
-import { FilterType } from "../types";
+import { FilterType, LeaderboardWindow } from "../types";
 
 interface FiltersSectionProps {
   activeFilter: FilterType;
@@ -12,6 +12,8 @@ interface FiltersSectionProps {
   showDropdown: boolean;
   onToggleDropdown: () => void;
   isLoaded: boolean;
+  activeWindow: LeaderboardWindow;
+  onWindowChange: (w: LeaderboardWindow) => void;
 }
 
 interface EcosystemOption {
@@ -32,6 +34,8 @@ export function FiltersSection({
   showDropdown,
   onToggleDropdown,
   isLoaded,
+  activeWindow,
+  onWindowChange,
 }: FiltersSectionProps) {
   const { theme } = useTheme();
 
@@ -41,10 +45,11 @@ export function FiltersSection({
   const [loading, setLoading] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  // Define filter options
+  // "Total Rewards" used to sit between these two. No branch in either table
+  // handled it and no response field backed it, so choosing it re-fetched an
+  // identical page and changed nothing on screen.
   const filterOptions: FilterOption[] = [
     { label: "Overall Leaderboard", value: "overall" },
-    { label: "Total Rewards", value: "rewards" },
     { label: "Total Contributions", value: "contributions" },
   ];
 
@@ -90,6 +95,42 @@ export function FiltersSection({
       }`}
     >
       <div className="flex items-center justify-end flex-wrap gap-4">
+        {/* Window toggle: which period the board covers. Season is the
+            default and is listed first; all-time is the secondary view. */}
+        <div
+          role="group"
+          aria-label="Leaderboard period"
+          className={`flex items-center p-1 rounded-[12px] backdrop-blur-[30px] border mr-auto ${
+            theme === "dark"
+              ? "bg-white/[0.08] border-white/15"
+              : "bg-white/[0.15] border-white/25"
+          }`}
+        >
+          {(
+            [
+              { value: "season", label: "This season", hint: "Merged in the last 90 days" },
+              { value: "all", label: "All time", hint: "Every merge on record" },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              title={opt.hint}
+              aria-pressed={activeWindow === opt.value}
+              onClick={() => onWindowChange(opt.value)}
+              className={`px-3.5 py-1.5 rounded-[9px] text-[12.5px] font-semibold transition-all duration-300 ${
+                activeWindow === opt.value
+                  ? "bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white shadow-md"
+                  : theme === "dark"
+                    ? "text-[#d4d4d4] hover:bg-white/[0.08]"
+                    : "text-[#7a6b5a] hover:bg-white/[0.12]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         {/* Filter Dropdown Button */}
         <div className="relative z-[100]">
           <button
