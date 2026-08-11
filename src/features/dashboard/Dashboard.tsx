@@ -17,7 +17,6 @@ import {
   Shield,
   X,
   Menu,
-  ArrowLeftRight,
   Flag,
   Ticket
 } from "lucide-react";
@@ -62,7 +61,12 @@ const AdminPage = lazy(() => import("../admin/pages/AdminPage").then((m) => ({ d
 const GrainHackAdminPage = lazy(() => import("../grainhack/pages/GrainHackAdminPage").then((m) => ({ default: m.GrainHackAdminPage })));
 const MyGrainHackPage = lazy(() => import("../grainhack/pages/MyGrainHackPage").then((m) => ({ default: m.MyGrainHackPage })));
 const SearchPage = lazy(() => import("./pages/SearchPage").then((m) => ({ default: m.SearchPage })));
-const RedeemPage = lazy(() => import("./pages/RedeemPage").then((m) => ({ default: m.RedeemPage })));
+
+/** The Redeem page was removed with the points programme. Anything still
+ *  pointing at it is sent to the rewards settings tab, which explains what
+ *  replaced it. */
+const RETIRED_REDEEM_TAB = "redeem";
+const REDEEM_REPLACEMENT_TAB = "settings";
 
 export function Dashboard() {
   const { logout, login, user, userId, userRole } = useAuth();
@@ -185,10 +189,31 @@ export function Dashboard() {
   const [currentPage, setCurrentPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const tabFromUrl = params.get("tab");
+    // The Redeem page is gone with the points programme. Redirect rather than
+    // 404: links to it exist in the UI, in notifications, and possibly
+    // outside the product, and landing on "page not found" tells somebody
+    // their rewards vanished. Resolved here so a ?tab=redeem URL and a stale
+    // localStorage value both land in the same place.
+    if (tabFromUrl === RETIRED_REDEEM_TAB) return REDEEM_REPLACEMENT_TAB;
     if (tabFromUrl) return tabFromUrl;
 
-    return localStorage.getItem("dashboardTab") || "discover";
+    const stored = localStorage.getItem("dashboardTab");
+    if (stored === RETIRED_REDEEM_TAB) return REDEEM_REPLACEMENT_TAB;
+    return stored || "discover";
   });
+
+  // Rewrite a retired ?tab=redeem URL into the tab that replaced it, so the
+  // address bar, a reload, and a shared link all agree. Done as an effect
+  // rather than in the state initialiser because the router has already read
+  // the location by then, and setSearchParams is what it actually observes.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") !== RETIRED_REDEEM_TAB) return;
+    params.set("tab", REDEEM_REPLACEMENT_TAB);
+    params.set("subtab", "rewards");
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Admin password gating (bootstrap token)
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
@@ -430,7 +455,6 @@ export function Dashboard() {
       ? [{ id: "grainhack", icon: Flag, label: "GrainHack admin" }]
       : []),
     { id: "leaderboard", icon: Trophy, label: "Leaderboard" },
-    { id: "redeem", icon: ArrowLeftRight, label: "Redeem" },
     { id: "blog", icon: FileText, label: "Grainlify Blog" },
   ];
 
@@ -488,11 +512,6 @@ export function Dashboard() {
       targetId: "leaderboard",
       title: "Leaderboard",
       description: "Track rankings by contributions and compete for the top spot.",
-    },
-    {
-      targetId: "redeem",
-      title: "Redeem",
-      description: "Convert the points you've earned into real on-chain rewards.",
     },
     {
       targetId: "search",
@@ -993,7 +1012,6 @@ export function Dashboard() {
                 )}
                 {currentPage === "data" && adminAuthenticated && <DataPage />}
                 {currentPage === "leaderboard" && <LeaderboardPage />}
-                {currentPage === "redeem" && <RedeemPage />}
                 {currentPage === "blog" && <BlogPage />}
                 {currentPage === "settings" && (
                   <SettingsPage />

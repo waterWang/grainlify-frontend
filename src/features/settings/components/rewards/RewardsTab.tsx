@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { siGithub, siTelegram } from 'simple-icons';
-import { Linkedin, Loader2, Gift, CheckCircle2, Clock, XCircle, Upload, ExternalLink, ArrowLeftRight } from 'lucide-react';
+import { Linkedin, Loader2, Gift, CheckCircle2, Clock, XCircle, Upload, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import grainlifyCoin from '../../../../assets/grainlify_coin.svg';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import {
-  getPointsBalance,
   getSocialFollowStatus,
   submitSocialFollowProof,
   SOCIAL_FOLLOW_PLATFORMS,
-  type PointsBalance,
   type SocialFollowStatus,
   type SocialFollowPlatform,
 } from '../../../../shared/api/client';
@@ -152,17 +149,14 @@ function PlatformRow({
 
 export function RewardsTab() {
   const { theme } = useTheme();
-  const [balance, setBalance] = useState<PointsBalance | null>(null);
   const [socialFollow, setSocialFollow] = useState<SocialFollowStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingPlatform, setUploadingPlatform] = useState<string | null>(null);
 
-  const loadAll = () => {
-    return Promise.all([getPointsBalance(), getSocialFollowStatus()]).then(([b, s]) => {
-      setBalance(b);
-      setSocialFollow(s);
-    });
-  };
+  // No points balance is loaded any more. The programme is retired, so
+  // fetching a number whose only purpose was to be converted to USDC would
+  // just be a slower way of showing zero.
+  const loadAll = () => getSocialFollowStatus().then(setSocialFollow);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,7 +208,7 @@ export function RewardsTab() {
     );
   }
 
-  if (!balance || !socialFollow) {
+  if (!socialFollow) {
     return (
       <Card theme={theme}>
         <p className={theme === 'dark' ? 'text-[#d4c5b0]' : 'text-[#7a6b5a]'}>Couldn't load your rewards info. Please try again later.</p>
@@ -224,33 +218,6 @@ export function RewardsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Points balance */}
-      <Card theme={theme}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <img src={grainlifyCoin} alt="" className="w-10 h-10 drop-shadow-[0_2px_8px_rgba(201,152,58,0.4)]" />
-              <h2 className={`text-[28px] font-bold transition-colors ${theme === 'dark' ? 'text-[#f5efe5]' : 'text-[#2d2820]'}`}>
-                {balance.balance.toLocaleString()} points
-              </h2>
-            </div>
-            <p className={`text-[14px] transition-colors ${theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
-              ≈ ${(balance.balance * balance.usdc_per_point).toFixed(2)} USDC available to redeem
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = '/dashboard?tab=redeem';
-            }}
-            className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white font-semibold text-[14px] shadow-[0_6px_20px_rgba(162,121,44,0.35)] hover:shadow-[0_10px_30px_rgba(162,121,44,0.5)] transition-all"
-          >
-            <ArrowLeftRight className="w-4 h-4" />
-            Redeem for USDC
-          </button>
-        </div>
-      </Card>
-
       {/* Social Follow */}
       <Card theme={theme}>
         <div className="flex items-start gap-3 mb-6">
@@ -259,11 +226,16 @@ export function RewardsTab() {
           </div>
           <div>
             <h2 className={`text-[22px] font-bold mb-1 transition-colors ${theme === 'dark' ? 'text-[#f5efe5]' : 'text-[#2d2820]'}`}>
-              Social Follow Program
+              Social Follow
             </h2>
+            {/* Eligibility, never earning. Following is a requirement to
+                receive anything from the Founding Contributor Pool and is
+                worth zero shares - saying otherwise would re-make the exact
+                fixed-rate promise that was just retired. */}
             <p className={`text-[14px] transition-colors ${theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
-              Follow us on every platform below and upload a screenshot as proof. Once all three are approved,
-              you earn {socialFollow.points_reward} points.
+              Following us is required to be eligible for the Founding Contributor Pool. Upload a
+              screenshot for each platform and submit them together. It earns no shares by itself —
+              it's a requirement, not a payment.
             </p>
           </div>
         </div>

@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { renderWithProviders, screen, waitFor } from '../../../../test/renderWithProviders'
 import { RewardsTab } from './RewardsTab'
 
-const mockGetPointsBalance = vi.fn()
 const mockGetSocialFollowStatus = vi.fn()
 const mockSubmitSocialFollowProof = vi.fn()
 
@@ -11,13 +10,11 @@ vi.mock('../../../../shared/api/client', async () => {
   const actual = await vi.importActual<typeof import('../../../../shared/api/client')>('../../../../shared/api/client')
   return {
     ...actual,
-    getPointsBalance: (...args: unknown[]) => mockGetPointsBalance(...args),
     getSocialFollowStatus: (...args: unknown[]) => mockGetSocialFollowStatus(...args),
     submitSocialFollowProof: (...args: unknown[]) => mockSubmitSocialFollowProof(...args),
   }
 })
 
-const BASE_BALANCE = { balance: 600, usdc_per_point: 0.01, min_redemption_points: 100 }
 const BASE_SOCIAL_FOLLOW = {
   platforms: [
     { platform: 'github', status: 'approved' },
@@ -34,7 +31,6 @@ describe('RewardsTab', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGetPointsBalance.mockResolvedValue(BASE_BALANCE)
     mockGetSocialFollowStatus.mockResolvedValue(BASE_SOCIAL_FOLLOW)
     mockSubmitSocialFollowProof.mockResolvedValue({ ok: true })
     Object.defineProperty(window, 'location', {
@@ -52,20 +48,27 @@ describe('RewardsTab', () => {
     })
   })
 
-  it('loads and displays the points balance with its USDC equivalent', async () => {
+  it('shows no points balance, USDC estimate, or redeem button', async () => {
     renderWithProviders(<RewardsTab />)
-    expect(await screen.findByText('600 points')).toBeInTheDocument()
-    expect(screen.getByText(/\$6\.00 USDC available/)).toBeInTheDocument()
+    await screen.findByText('Social Follow')
+
+    // The points programme is retired. This tab advertising a balance, a USDC
+    // conversion, or a way to redeem would contradict the retirement that has
+    // already shipped everywhere else.
+    expect(screen.queryByText(/points/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/USDC/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /redeem/i })).not.toBeInTheDocument()
   })
 
-  it('the Redeem for USDC button navigates to the dedicated redeem page', async () => {
-    const user = userEvent.setup()
+  it('frames following as eligibility rather than something that earns', async () => {
     renderWithProviders(<RewardsTab />)
-    await screen.findByText('600 points')
+    await screen.findByText('Social Follow')
 
-    await user.click(screen.getByRole('button', { name: /Redeem for USDC/i }))
-
-    expect(window.location.href).toBe('/dashboard?tab=redeem')
+    expect(screen.getByText(/required to be eligible/i)).toBeInTheDocument()
+    expect(screen.getByText(/earns no shares/i)).toBeInTheDocument()
+    // No wording anywhere may suggest following pays - that is the exact
+    // promise just retired.
+    expect(screen.queryByText(/you earn/i)).not.toBeInTheDocument()
   })
 
   it('shows per-platform social-follow status', async () => {
@@ -84,7 +87,7 @@ describe('RewardsTab', () => {
   it('uploading a screenshot submits it as a data URL for that platform', async () => {
     const user = userEvent.setup()
     renderWithProviders(<RewardsTab />)
-    await screen.findByText('600 points')
+    await screen.findByText('Social Follow')
 
     const file = new File(['fake-image-bytes'], 'proof.png', { type: 'image/png' })
     // Platforms render in SOCIAL_FOLLOW_PLATFORMS order (github, telegram,
@@ -103,7 +106,7 @@ describe('RewardsTab', () => {
   it('rejects a non-image file before calling the API', async () => {
     const user = userEvent.setup()
     renderWithProviders(<RewardsTab />)
-    await screen.findByText('600 points')
+    await screen.findByText('Social Follow')
 
     const badFile = new File(['not an image'], 'notes.txt', { type: 'text/plain' })
     const inputs = document.querySelectorAll('input[type="file"]')
@@ -113,9 +116,9 @@ describe('RewardsTab', () => {
   })
 
   it('shows an error state and does not crash when loading fails', async () => {
-    mockGetPointsBalance.mockRejectedValueOnce(new Error('network error'))
+    mockGetSocialFollowStatus.mockRejectedValueOnce(new Error('network error'))
     renderWithProviders(<RewardsTab />)
-    await waitFor(() => expect(mockGetPointsBalance).toHaveBeenCalled())
+    await waitFor(() => expect(mockGetSocialFollowStatus).toHaveBeenCalled())
     expect(await screen.findByText(/Couldn't load your rewards info/)).toBeInTheDocument()
   })
 })
