@@ -29,7 +29,11 @@ describe('ReferralsTab', () => {
 
     expect(await screen.findByText('ABCD1234')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument() // total referred
-    expect(screen.getByText('200')).toBeInTheDocument() // points earned
+    // The "Points Earned" stat is gone: points are retired, and a running
+    // share total is not shown because a share only means something once the
+    // pool is divided.
+    expect(screen.queryByText('Points Earned')).not.toBeInTheDocument()
+    expect(screen.queryByText(/you earn \d+ points/i)).not.toBeInTheDocument()
   })
 
   it('renders the share link using the current origin and the code', async () => {

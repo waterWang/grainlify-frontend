@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Copy, CheckCircle2, Loader2, Gift, Users, Clock, Award } from 'lucide-react';
+import { Copy, CheckCircle2, Loader2, Gift, Users, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import { getReferralStats, type ReferralStats } from '../../../../shared/api/client';
@@ -160,8 +160,13 @@ export function ReferralsTab() {
                 theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'
               }`}
             >
+              {/* The points programme is retired. Referrals now earn shares in
+                  the Founding Contributor Pool, and a share's value is not
+                  knowable until settlement - so nothing here quotes a number
+                  a person could plan around. */}
               Share your link. When someone joins through it and completes GitHub sign-in + identity
-              verification, you earn {stats.points_per_referral} points.
+              verification, your referral counts toward the Founding Contributor Pool. They earn you
+              more if they go on to ship merged work.
             </p>
           </div>
         </div>
@@ -175,7 +180,9 @@ export function ReferralsTab() {
           <StatCard icon={<Users className="w-4 h-4" />} label="Total Referred" value={stats.total_referred} />
           <StatCard icon={<Clock className="w-4 h-4" />} label="Pending" value={stats.pending} />
           <StatCard icon={<CheckCircle2 className="w-4 h-4" />} label="Completed" value={stats.completed} />
-          <StatCard icon={<Award className="w-4 h-4" />} label="Points Earned" value={stats.points_earned} />
+          {/* Was "Points Earned". Points are retired, and shares are not
+              shown as a running total because they are only meaningful once
+              the pool is divided. */}
         </div>
       </div>
     </div>
