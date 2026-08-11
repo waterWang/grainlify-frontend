@@ -58,7 +58,7 @@ export function BlogPostView({ post, onBack }: BlogPostViewProps) {
         </div>
 
         <div className="relative z-10 p-8 md:p-12">
-          <header className="mb-8">
+          <header className="mb-8 max-w-[72ch] mx-auto">
             <div className="flex flex-wrap items-center gap-3 mb-5">
               {post.category && (
                 <span className="px-3 py-1 bg-[#c9983a]/20 border border-[#c9983a]/35 rounded-[8px] text-[11px] font-bold uppercase tracking-wider text-[#8b6f3a]">
@@ -90,7 +90,7 @@ export function BlogPostView({ post, onBack }: BlogPostViewProps) {
             <div className="h-[3px] w-24 mt-6 bg-gradient-to-r from-[#c9983a] via-[#d4af37] to-transparent rounded-full" />
           </header>
 
-          <div className={`max-w-[72ch] text-[16px] leading-[1.75] ${body}`}>
+          <div className={`max-w-[72ch] mx-auto text-[16px] leading-[1.75] ${body}`}>
             <ReactMarkdown
               // Tables are GitHub-Flavored Markdown, which react-markdown does
               // not parse on its own; without this the share and wave tables
