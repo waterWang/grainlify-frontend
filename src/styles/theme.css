@@ -317,11 +317,20 @@ body.modal-open aside {
      dashboard's content pane, dropdowns, modals, etc.), each of which
      bounces on its own and flashes whatever's behind it. Contain that
      locally wherever we use these overflow utilities. */
-  .overflow-y-auto,
+  /* Horizontal-only scrollers first, so the vertical rule below still wins
+     for anything carrying both classes. `overflow-x: auto` silently makes
+     the y axis a scroll container too, so containing y here would swallow
+     every wheel event over the element and freeze the page behind it
+     (the GrainHack rules tables did exactly that). Contain x only. */
   .overflow-x-auto,
+  .overflow-x-scroll {
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+  }
+
+  .overflow-y-auto,
   .overflow-auto,
   .overflow-y-scroll,
-  .overflow-x-scroll,
   .overflow-scroll {
     overscroll-behavior: contain;
   }

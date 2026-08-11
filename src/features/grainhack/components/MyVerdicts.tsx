@@ -107,9 +107,11 @@ export function MyVerdicts() {
     }
   };
 
+  // Same glass tier the sibling tabs use (MyAssignments/MyApplications) -
+  // a solid white card here read as a foreign element on the light theme.
   const cardClass = isDark
-    ? 'rounded-2xl border border-white/10 bg-white/[0.03] p-5'
-    : 'rounded-2xl border border-black/[0.06] bg-white p-5';
+    ? 'rounded-2xl border border-white/10 bg-white/[0.06] p-5'
+    : 'rounded-2xl border border-white/20 bg-white/[0.12] p-5';
   const mutedText = isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]';
   const strongText = isDark ? 'text-[#e8dcc8]' : 'text-[#3d2f24]';
 

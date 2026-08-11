@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { Dropdown } from "../../../shared/components/ui/Dropdown";
 import { ProjectCard, Project } from "../components/ProjectCard";
 import { ProjectCardSkeleton } from "../components/ProjectCardSkeleton";
+import { OrganizationCardSkeleton } from "../components/OrganizationCardSkeleton";
 import { OrganizationCard, Organization } from "../components/OrganizationCard";
 import { LanguageIcon } from "../../../shared/components/LanguageIcon";
 import { getPublicProjects, getEcosystems, getProjectFilters } from "../../../shared/api/client";
@@ -452,10 +453,16 @@ export function BrowsePage({ onProjectClick, onOrgClick }: BrowsePageProps) {
 
       {/* Projects / Organizations Grid */}
       {isLoading ? (
+        // The two view modes render very differently shaped cards, so each
+        // needs its own placeholder or the grid resizes on load.
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-          {[...Array(8)].map((_, idx) => (
-            <ProjectCardSkeleton key={idx} />
-          ))}
+          {[...Array(8)].map((_, idx) =>
+            viewMode === "repos" ? (
+              <ProjectCardSkeleton key={idx} />
+            ) : (
+              <OrganizationCardSkeleton key={idx} />
+            ),
+          )}
         </div>
       ) : hasError ? (
         <EmptyState
