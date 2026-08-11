@@ -35,6 +35,7 @@ import {
   ModalInput,
 } from "../../shared/components/ui/Modal";
 import { bootstrapAdmin } from "../../shared/api/client";
+import { AdminAccessRequired } from "./components/AdminAccessRequired";
 
 // Every "page" here is a currentPage state swap, not a router path (see App.tsx),
 // so without lazy-loading, the entire dashboard - Discover, Browse, Admin, Settings,
@@ -219,9 +220,11 @@ export function Dashboard() {
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [adminAuthenticated, setAdminAuthenticated] = useState(() => {
-    return sessionStorage.getItem("admin_authenticated") === "true";
-  });
+  // NOTE: there is deliberately no "admin session" flag any more. The Data
+  // page used to render on a sessionStorage boolean set by the password modal
+  // below. Once the role switch stopped opening that modal, nothing could set
+  // it, so Data rendered nothing at all for a real admin. Admin surfaces now
+  // gate on userRole, which the server re-checks on every admin request.
 
   // Check URL params for viewing other users' profiles (tab=profile or page=profile)
   // Re-run when location.search changes so profile user is correct after navigation or reload
@@ -349,8 +352,6 @@ export function Dashboard() {
 
   const handleLogout = () => {
     logout();
-    setAdminAuthenticated(false);
-    sessionStorage.removeItem("admin_authenticated");
     navigate("/");
   };
 
@@ -365,12 +366,10 @@ export function Dashboard() {
     try {
       const response = await bootstrapAdmin(adminPassword.trim());
       await login(response.token);
-      setAdminAuthenticated(true);
-      sessionStorage.setItem("admin_authenticated", "true");
       setShowAdminPasswordModal(false);
       setAdminPassword("");
       setActiveRole("admin");
-      handleNavigation("admin");
+      handleNavigation("data");
     } catch (error) {
       console.error("Admin authentication failed:", error);
       // Keep UI clean: show a simple message; avoid browser alert spam.
@@ -388,7 +387,9 @@ export function Dashboard() {
       // server re-checks the role on every admin request regardless.
       if (userRole === "admin") {
         setActiveRole("admin");
-        handleNavigation("admin");
+        // Data, not "admin": AdminPage is still a placeholder, and landing on
+        // it left the rail with no active item because it has no rail icon.
+        handleNavigation("data");
       }
       return;
     }
@@ -430,8 +431,14 @@ export function Dashboard() {
     setSelectedEcosystemLogoUrl(null);
   };
 
-  // Role-based navigation items
-  const navItems = [
+  // Role-based navigation items.
+  //
+  // allNavItems is every surface this user could reach; navItems below is the
+  // subset the sidebar actually renders for the role they are currently
+  // viewing as. The two are kept separate because the product tour indexes
+  // into the full list — filtering in place would leave it pointing at rail
+  // icons that are not on screen.
+  const allNavItems = [
     { id: "discover", icon: Compass, label: "Discover" },
     { id: "browse", icon: Grid3x3, label: "Browse" },
     { id: "osw", icon: Calendar, label: "Open-Source Week" },
@@ -458,6 +465,22 @@ export function Dashboard() {
     { id: "blog", icon: FileText, label: "Grainlify Blog" },
   ];
 
+  // Surfaces that belong to the admin view. Everything else on the rail —
+  // Discover, Browse, Ecosystems, Leaderboard, the Blog — is a contributor or
+  // maintainer surface, and showing all of it while ADMIN is selected made the
+  // role switch look decorative: the same ten icons in all three modes, with
+  // one extra. Switching role should change what you are looking at.
+  //
+  // Reading a non-admin page is still allowed; this hides the shortcuts, it is
+  // not an authorization boundary. The real boundary is the server, which
+  // re-reads the role on every admin request.
+  const ADMIN_NAV_IDS = new Set(["data", "grainhack"]);
+
+  const navItems =
+    activeRole === "admin"
+      ? allNavItems.filter((item) => ADMIN_NAV_IDS.has(item.id))
+      : allNavItems;
+
   const darkTheme = theme === "dark";
     const closeMobileNav = () => {
      if (showMobileNav){
@@ -483,7 +506,9 @@ export function Dashboard() {
     return () => clearTimeout(t);
   }, [userId, isSmallDevice]);
 
-  const roleNavItem = navItems.find((item) => item.id === "maintainers" || item.id === "contributors");
+  // From the full list, not the rendered subset: the tour describes the app
+  // rather than the current role's shortcuts.
+  const roleNavItem = allNavItems.find((item) => item.id === "maintainers" || item.id === "contributors");
   const tourSteps: TourStep[] = [
     {
       targetId: "center",
@@ -1011,7 +1036,15 @@ export function Dashboard() {
                     }}
                   />
                 )}
-                {currentPage === "data" && adminAuthenticated && <DataPage />}
+                {currentPage === "data" &&
+                  (userRole === "admin" ? (
+                    <DataPage />
+                  ) : (
+                    <AdminAccessRequired
+                      surface="the Data page"
+                      onAuthenticate={openAdminAuthModal}
+                    />
+                  ))}
                 {currentPage === "leaderboard" && <LeaderboardPage />}
                 {currentPage === "blog" && <BlogPage />}
                 {currentPage === "settings" && (
@@ -1019,54 +1052,18 @@ export function Dashboard() {
                 )}
                 {currentPage === "admin" && userRole === "admin" && <AdminPage />}
                 {currentPage === "admin" && userRole !== "admin" && (
-                  <div className="flex items-center justify-center min-h-[60vh]">
-                    <div
-                      className={`text-center p-8 rounded-[24px] backdrop-blur-[40px] border ${
-                        darkTheme
-                          ? "bg-white/[0.08] border-white/10 text-[#d4d4d4]"
-                          : "bg-white/[0.15] border-white/25 text-[#7a6b5a]"
-                      }`}
-                    >
-                      <Shield className="w-16 h-16 mx-auto mb-4 text-[#c9983a]" />
-                      <h2
-                        className={`text-2xl font-bold mb-2 ${darkTheme ? "text-[#f5f5f5]" : "text-[#2d2820]"}`}
-                      >
-                        Admin Access Required
-                      </h2>
-                      <p className="mb-4">
-                        Enter the admin password to continue.
-                      </p>
-                      <button
-                        onClick={() => openAdminAuthModal()}
-                        className="px-6 py-3 bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white rounded-[16px] font-semibold text-[14px] shadow-[0_6px_20px_rgba(162,121,44,0.35)] hover:shadow-[0_10px_30px_rgba(162,121,44,0.5)] transition-all"
-                      >
-                        Authenticate
-                      </button>
-                    </div>
-                  </div>
+                  <AdminAccessRequired
+                    surface="the admin dashboard"
+                    onAuthenticate={openAdminAuthModal}
+                  />
                 )}
                 {currentPage === "my-grainhack" && <MyGrainHackPage />}
                 {currentPage === "grainhack" && userRole === "admin" && <GrainHackAdminPage />}
                 {currentPage === "grainhack" && userRole !== "admin" && (
-                  <div className="flex items-center justify-center min-h-[60vh]">
-                    <div
-                      className={`text-center p-8 rounded-[24px] backdrop-blur-[40px] border ${
-                        darkTheme
-                          ? "bg-white/[0.08] border-white/10 text-[#d4d4d4]"
-                          : "bg-white/[0.15] border-white/25 text-[#7a6b5a]"
-                      }`}
-                    >
-                      <Shield className="w-16 h-16 mx-auto mb-4 text-[#c9983a]" />
-                      <h2
-                        className={`text-2xl font-bold mb-2 ${darkTheme ? "text-[#f5f5f5]" : "text-[#2d2820]"}`}
-                      >
-                        Admin Access Required
-                      </h2>
-                      <p className="mb-4">
-                        You don't have permission to view this page.
-                      </p>
-                    </div>
-                  </div>
+                  <AdminAccessRequired
+                    surface="GrainHack administration"
+                    onAuthenticate={openAdminAuthModal}
+                  />
                 )}
                 {currentPage === "search" && (
                   <SearchPage

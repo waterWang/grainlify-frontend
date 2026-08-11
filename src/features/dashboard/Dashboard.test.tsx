@@ -36,6 +36,11 @@ vi.mock('./pages/SearchPage', () => ({
 vi.mock('../grainhack/pages/GrainHackAdminPage', () => ({
   GrainHackAdminPage: () => <div data-testid="grainhack-page" />,
 }))
+// DataPage pulls in recharts and react-simple-maps, which are heavy and add
+// nothing to a shell-navigation test.
+vi.mock('./pages/DataPage', () => ({
+  DataPage: () => <div data-testid="data-page" />,
+}))
 
 // UserProfileDropdown pulls in Radix DropdownMenu internals that add nothing to a
 // Dashboard-shell test beyond opening/closing chrome. Replace it with a minimal
@@ -217,7 +222,12 @@ describe('Dashboard', () => {
       })
       expect(vi.mocked(bootstrapAdmin)).toHaveBeenCalledWith('correct-password')
       expect(mockLogin).toHaveBeenCalledWith('test-admin-token')
-      expect(sessionStorage.getItem('admin_authenticated')).toBe('true')
+      // What authentication does now is grant the role via login(), full stop.
+      // It used to also set an `admin_authenticated` sessionStorage flag that
+      // gated the Data page. That flag was removed: once the role switch
+      // stopped opening this modal, nothing could set it, so Data rendered
+      // nothing at all for a genuine admin. Admin surfaces gate on userRole.
+      expect(sessionStorage.getItem('admin_authenticated')).toBeNull()
     })
 
     it('failed submit keeps the modal open, clears the password field, and leaves admin session inactive', async () => {
@@ -239,20 +249,17 @@ describe('Dashboard', () => {
       await waitFor(() => {
         expect(passwordInput.value).toBe('')
       })
-      expect(sessionStorage.getItem('admin_authenticated')).not.toBe('true')
       expect(mockLogin).not.toHaveBeenCalled()
     })
   })
 
-  it('logout clears both the auth session and the admin session flag (regression: UserProfileDropdown must call the passed onLogout)', async () => {
-    sessionStorage.setItem('admin_authenticated', 'true')
+  it('logout clears the auth session (regression: UserProfileDropdown must call the passed onLogout)', async () => {
     const user = userEvent.setup()
     renderWithProviders(<Dashboard />)
 
     await user.click(screen.getByTestId('logout-button'))
 
     expect(mockLogout).toHaveBeenCalledTimes(1)
-    expect(sessionStorage.getItem('admin_authenticated')).toBeNull()
   })
 
   describe('GrainHack admin gating (real userRole, not the activeRole view-switcher)', () => {
@@ -283,6 +290,96 @@ describe('Dashboard', () => {
       await user.click(grainhackNavButton as HTMLButtonElement)
 
       expect(await screen.findByTestId('grainhack-page')).toBeInTheDocument()
+    })
+
+    it('renders the Data page for an admin instead of an empty screen', async () => {
+      // Regression. Data was gated on an `admin_authenticated` sessionStorage
+      // flag, and when it was false the JSX rendered *nothing* - not a message,
+      // not an error, just an empty content area. Since the role switch no
+      // longer opens the modal that set the flag, every admin who clicked Data
+      // got a blank page.
+      mockUseAuth.mockReturnValue({
+        userRole: 'admin',
+        userId: 'admin-user-id',
+        user: null,
+        isAuthenticated: true,
+        isLoading: false,
+        login: mockLogin,
+        logout: mockLogout,
+      })
+      window.history.pushState({}, '', '/dashboard?tab=data')
+
+      const { container } = renderWithProviders(<Dashboard />)
+
+      expect(await screen.findByTestId('data-page')).toBeInTheDocument()
+      expect(container.textContent).not.toBe('')
+    })
+
+    it('explains itself on the Data page for a non-admin rather than rendering blank', async () => {
+      window.history.pushState({}, '', '/dashboard?tab=data')
+
+      renderWithProviders(<Dashboard />)
+
+      expect(await screen.findByText('Admin Access Required')).toBeInTheDocument()
+      expect(screen.queryByTestId('data-page')).not.toBeInTheDocument()
+    })
+
+    it('shows only admin surfaces in the sidebar while the ADMIN view is selected', async () => {
+      // The rail used to render the same ten icons in every role, with Data
+      // appended for admins - so switching role changed almost nothing about
+      // what was on screen and the switch read as decorative.
+      mockUseAuth.mockReturnValue({
+        userRole: 'admin',
+        userId: 'admin-user-id',
+        user: null,
+        isAuthenticated: true,
+        isLoading: false,
+        login: mockLogin,
+        logout: mockLogout,
+      })
+      const user = userEvent.setup()
+      const { container } = renderWithProviders(<Dashboard />)
+      expect(await screen.findByTestId('discover-page')).toBeInTheDocument()
+
+      const railIds = () =>
+        Array.from(container.querySelectorAll('nav [data-tour-id]')).map((el) =>
+          el.getAttribute('data-tour-id'),
+        )
+
+      // Contributor view: the general surfaces are present.
+      expect(railIds()).toEqual(expect.arrayContaining(['discover', 'browse', 'leaderboard', 'blog']))
+
+      await user.click(screen.getByRole('button', { name: /ADMIN/i }))
+
+      // Admin view: only the admin surfaces remain.
+      await waitFor(() => {
+        expect(railIds()).toEqual(['data', 'grainhack'])
+      })
+      for (const gone of ['discover', 'browse', 'ecosystems', 'leaderboard', 'blog', 'my-grainhack']) {
+        expect(railIds()).not.toContain(gone)
+      }
+    })
+
+    it('lands the ADMIN view on Data rather than the unimplemented admin placeholder', async () => {
+      mockUseAuth.mockReturnValue({
+        userRole: 'admin',
+        userId: 'admin-user-id',
+        user: null,
+        isAuthenticated: true,
+        isLoading: false,
+        login: mockLogin,
+        logout: mockLogout,
+      })
+      const user = userEvent.setup()
+      renderWithProviders(<Dashboard />)
+      expect(await screen.findByTestId('discover-page')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: /ADMIN/i }))
+
+      // Previously navigated to "admin", whose page is a placeholder reading
+      // "Content to be implemented" and which has no rail icon, so the sidebar
+      // showed nothing selected.
+      expect(await screen.findByTestId('data-page')).toBeInTheDocument()
     })
 
     it('blocks the grainhack page for a non-admin even when navigated to directly via ?tab= (the nav item alone is not the security boundary)', async () => {
