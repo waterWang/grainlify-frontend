@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import userEvent from '@testing-library/user-event'
-import { renderWithProviders, screen, waitFor } from '../../../test/renderWithProviders'
+import { renderWithProviders, screen } from '../../../test/renderWithProviders'
 import { RedeemPage } from './RedeemPage'
 
 const mockGetPointsBalance = vi.fn()
@@ -25,10 +25,6 @@ const BASE_BALANCE = { balance: 600, usdc_per_point: 0.01, min_redemption_points
 // validation, which only the backend performs.
 const VALID_WALLET = 'G' + 'A'.repeat(55)
 
-async function fillValidForm(user: ReturnType<typeof userEvent.setup>, points = '300') {
-  await user.type(screen.getByLabelText('Points to redeem'), points)
-  await user.type(screen.getByLabelText('Stellar wallet address'), VALID_WALLET)
-}
 
 describe('RedeemPage', () => {
   beforeEach(() => {
@@ -73,52 +69,35 @@ describe('RedeemPage', () => {
     expect(screen.getByLabelText('Points to redeem')).toHaveValue('600')
   })
 
-  it('the CTA walks through each validation state in priority order', async () => {
+  it('closes redemptions: the CTA is disabled whatever is typed, and nothing is submitted', async () => {
     const user = userEvent.setup()
     renderWithProviders(<RedeemPage />)
     const pointsInput = await screen.findByLabelText('Points to redeem')
     const walletInput = screen.getByLabelText('Stellar wallet address')
 
-    // 1. no amount yet
-    expect(screen.getByRole('button', { name: 'Enter an amount' })).toBeDisabled()
+    // The points programme is retired and the API refuses new requests, so
+    // the page must never offer an action that cannot succeed - not even
+    // once every field is filled in perfectly.
+    const closed = () => screen.getByRole('button', { name: 'Redemptions are closed' })
+    expect(closed()).toBeDisabled()
 
-    // 2. below the minimum
-    await user.type(pointsInput, '50')
-    expect(screen.getByRole('button', { name: /Minimum 100 points/ })).toBeDisabled()
-
-    // 3. above the balance
-    await user.clear(pointsInput)
-    await user.type(pointsInput, '9999')
-    expect(screen.getByRole('button', { name: 'Insufficient points' })).toBeDisabled()
-
-    // 4. valid amount, no wallet yet
-    await user.clear(pointsInput)
     await user.type(pointsInput, '300')
-    expect(screen.getByRole('button', { name: /Enter your Stellar wallet address/ })).toBeDisabled()
-
-    // 5. malformed wallet
-    await user.type(walletInput, 'not-a-wallet')
-    expect(screen.getByRole('button', { name: /Enter a valid Stellar address/ })).toBeDisabled()
-
-    // 6. fully valid
-    await user.clear(walletInput)
     await user.type(walletInput, VALID_WALLET)
-    expect(screen.getByRole('button', { name: 'Redeem' })).toBeEnabled()
+    expect(closed()).toBeDisabled()
+
+    await user.click(closed())
+    expect(mockCreateRedemption).not.toHaveBeenCalled()
   })
 
-  it('submitting a valid redemption calls createRedemption and refreshes the balance', async () => {
-    const user = userEvent.setup()
+  it('explains where rewards went rather than leaving the balance unexplained', async () => {
     renderWithProviders(<RedeemPage />)
-    await screen.findByLabelText('Points to redeem')
 
-    await fillValidForm(user)
-    mockGetPointsBalance.mockResolvedValue({ ...BASE_BALANCE, balance: 300 })
-    await user.click(screen.getByRole('button', { name: 'Redeem' }))
-
-    await waitFor(() => expect(mockCreateRedemption).toHaveBeenCalledWith(300, VALID_WALLET))
-    // Inputs clear and the balance card reflects the post-redemption total.
-    await waitFor(() => expect(screen.getByLabelText('Points to redeem')).toHaveValue(''))
-    expect(await screen.findByText('300', { selector: 'span' })).toBeInTheDocument()
+    expect(await screen.findByText(/Founding Contributor Pool/)).toBeInTheDocument()
+    // The reassurance matters as much as the notice: a balance that simply
+    // stops working reads as something being taken away.
+    expect(screen.getByText(/nothing has been taken from anyone/i)).toBeInTheDocument()
+    // No conversion rate is advertised for a conversion that cannot happen.
+    expect(screen.queryByText(/100 points = \$1\.00 USDC/)).not.toBeInTheDocument()
   })
 
   it('renders redemption history with the right status badge per entry', async () => {
@@ -137,18 +116,4 @@ describe('RedeemPage', () => {
     expect(screen.getByText(/100 pts → \$1\.00 USDC/)).toBeInTheDocument()
   })
 
-  it('shows a toast and does not crash when the redemption request fails', async () => {
-    const { toast } = await import('sonner')
-    mockCreateRedemption.mockRejectedValue(new Error('wallet address rejected'))
-    const user = userEvent.setup()
-    renderWithProviders(<RedeemPage />)
-    await screen.findByLabelText('Points to redeem')
-
-    await fillValidForm(user)
-    await user.click(screen.getByRole('button', { name: 'Redeem' }))
-
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('wallet address rejected'))
-    // Amount is preserved so the user can retry rather than re-typing everything.
-    expect(screen.getByLabelText('Points to redeem')).toHaveValue('300')
-  })
 })

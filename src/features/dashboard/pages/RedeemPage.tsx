@@ -35,6 +35,11 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/** The points programme is retired and the backend refuses new redemption
+ *  requests (410 Gone). Mirrored here so the UI never offers an action the
+ *  API will reject. Flip both together if it is ever reopened. */
+const REDEMPTIONS_CLOSED = true;
+
 export function RedeemPage() {
   const { theme } = useTheme();
   const darkTheme = theme === 'dark';
@@ -76,6 +81,12 @@ export function RedeemPage() {
   const walletLooksValid = /^G[A-Z2-7]{55}$/.test(trimmedWallet);
 
   const cta = useMemo(() => {
+    // The backend refuses new redemptions outright, so every validation
+    // branch below would only lead someone to a request that cannot
+    // succeed. Saying so on the button is kinder than letting them fill the
+    // form in and discover it at submit. The rest is left intact rather than
+    // deleted so this page still works if the programme is ever reopened.
+    if (REDEMPTIONS_CLOSED) return { label: 'Redemptions are closed', disabled: true };
     if (!balance) return { label: 'Loading...', disabled: true };
     if (pointsValue <= 0) return { label: 'Enter an amount', disabled: true };
     if (pointsValue < balance.min_redemption_points) {
@@ -115,13 +126,46 @@ export function RedeemPage() {
     );
   }
 
+  // The points programme is retired: the backend refuses new redemptions
+  // outright, so the swap card below can no longer succeed. Rather than let
+  // someone fill it in and hit a wall, the page leads with what happened and
+  // where rewards live now. The card stays visible but disabled, because a
+  // balance that silently vanishes reads worse than one shown as frozen.
   return (
     <div className="max-w-[520px] mx-auto py-4 md:py-8">
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         <h1 className={`text-[28px] md:text-[32px] font-bold mb-2 transition-colors ${valueColor}`}>Redeem Points</h1>
         <p className={`text-[14px] transition-colors ${labelColor}`}>
-          Swap the points you've earned for real USDC on the Stellar network.
+          The points programme has been retired.
         </p>
+      </div>
+
+      <div
+        className={`rounded-[20px] border p-5 mb-6 transition-colors ${
+          darkTheme
+            ? 'bg-[#c9983a]/[0.08] border-[#c9983a]/25'
+            : 'bg-[#c9983a]/[0.06] border-[#c9983a]/25'
+        }`}
+      >
+        <p className={`text-[14px] font-bold mb-2 ${valueColor}`}>
+          Rewards have moved to the Founding Contributor Pool
+        </p>
+        <p className={`text-[13px] leading-relaxed ${labelColor}`}>
+          Points can no longer be earned or redeemed. Rewards are now shares in a single
+          fixed pool, earned mostly by getting pull requests merged, and shared out at the
+          end of the first GrainHack. No points were ever awarded and no redemption was
+          ever paid, so nothing has been taken from anyone.
+        </p>
+        <a
+          href="https://docs.grainlify.com/docs/rewards"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`inline-block mt-3 text-[13px] font-semibold underline ${
+            darkTheme ? 'text-[#e8c571]' : 'text-[#8b6f3a]'
+          }`}
+        >
+          How rewards work now
+        </a>
       </div>
 
       <motion.div
@@ -215,7 +259,9 @@ export function RedeemPage() {
 
       <div className={`flex items-center justify-between px-1.5 mt-3 text-[12px] transition-colors ${labelColor}`}>
         <span>Rate</span>
-        <span>100 points = $1.00 USDC</span>
+        {/* No rate is quoted while the programme is retired. Showing the old
+            one would advertise a conversion that no longer happens. */}
+        <span>Closed</span>
       </div>
 
       {/* Wallet address */}
