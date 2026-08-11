@@ -1,8 +1,11 @@
 export interface BlogPost {
   id: number;
+  /** Stable, URL-safe identifier. Survives reordering; ids do not. */
+  slug: string;
   title: string;
   excerpt: string;
-  content?: string; // Full content for individual post pages
+  /** Full article body, markdown. Rendered by BlogPostView. */
+  content: string;
   date: string;
   readTime: string;
   author?: string;
@@ -10,22 +13,4 @@ export interface BlogPost {
   icon?: string;
   image?: string;
   isFeatured?: boolean;
-}
-
-export interface BlogStatistic {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-}
-
-export interface BlogFeature {
-  number: number;
-  title: string;
-  description: string;
-}
-
-export interface BlogWhyChooseCard {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
 }

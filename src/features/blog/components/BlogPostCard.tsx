@@ -4,13 +4,20 @@ import { BlogPost } from '../types';
 
 interface BlogPostCardProps {
   post: BlogPost;
+  onOpen: () => void;
 }
 
-export function BlogPostCard({ post }: BlogPostCardProps) {
+export function BlogPostCard({ post, onOpen }: BlogPostCardProps) {
   const { theme } = useTheme();
 
+  // A button rather than a div with onClick: the whole card is the target, and
+  // it has to be reachable by keyboard like any other link to an article.
   return (
-    <div className="backdrop-blur-[30px] bg-white/[0.15] rounded-[20px] border border-white/25 p-6 hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all cursor-pointer group">
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Read: ${post.title}`}
+      className="text-left w-full h-full flex flex-col backdrop-blur-[30px] bg-white/[0.15] rounded-[20px] border border-white/25 p-6 hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9983a] transition-all cursor-pointer group">
       <div className="w-16 h-16 rounded-[16px] bg-gradient-to-br from-[#c9983a] to-[#a67c2e] flex items-center justify-center shadow-lg text-3xl mb-4 border border-white/15 group-hover:scale-110 transition-transform duration-300">
         {post.icon}
       </div>
@@ -29,7 +36,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
         {post.title}
       </h4>
 
-      <p className={`text-[14px] mb-4 leading-relaxed line-clamp-3 transition-colors ${
+      <p className={`text-[14px] mb-4 leading-relaxed line-clamp-4 flex-1 transition-colors ${
         theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#6b5d4d]'
       }`}>
         {post.excerpt}
@@ -49,10 +56,10 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
         </span>
       </div>
 
-      <button className="text-[14px] font-semibold text-[#c9983a] hover:text-[#a67c2e] transition-colors flex items-center gap-2">
-        Read More
+      <span className="text-[14px] font-semibold text-[#c9983a] group-hover:text-[#a67c2e] transition-colors flex items-center gap-2 mt-auto">
+        Read more
         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }

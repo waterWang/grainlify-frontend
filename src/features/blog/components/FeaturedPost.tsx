@@ -4,9 +4,10 @@ import { BlogPost } from '../types';
 
 interface FeaturedPostProps {
   post: BlogPost;
+  onOpen: () => void;
 }
 
-export function FeaturedPost({ post }: FeaturedPostProps) {
+export function FeaturedPost({ post, onOpen }: FeaturedPostProps) {
   const { theme } = useTheme();
 
   return (
@@ -68,8 +69,11 @@ export function FeaturedPost({ post }: FeaturedPostProps) {
                     }`}>{post.author}</span>
                   </div>
                 )}
-                <button className="px-6 py-3 bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white rounded-[14px] font-semibold text-[14px] shadow-[0_6px_20px_rgba(162,121,44,0.35)] hover:shadow-[0_8px_24px_rgba(162,121,44,0.5)] transition-all flex items-center gap-2 border border-white/10 group-hover:scale-105">
-                  Read Full Story
+                <button
+                  type="button"
+                  onClick={onOpen}
+                  className="px-6 py-3 bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white rounded-[14px] font-semibold text-[14px] shadow-[0_6px_20px_rgba(162,121,44,0.35)] hover:shadow-[0_8px_24px_rgba(162,121,44,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9983a] transition-all flex items-center gap-2 border border-white/10 group-hover:scale-105">
+                  Read full story
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
