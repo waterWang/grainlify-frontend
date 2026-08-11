@@ -96,10 +96,23 @@ vi.mock('../../shared/contexts/AuthContext', () => ({
   useAuth: mockUseAuth,
 }))
 
+/** The bootstrap prompt is no longer reachable from the ADMIN pill - that
+ *  pill only exists for people who already hold the role. What survives is
+ *  the fresh-install path: land on the admin tab as a non-admin and you get
+ *  "Admin Access Required" with an Authenticate button. That is the only way
+ *  a first admin can bootstrap through the UI. */
 async function openAdminModal(user: ReturnType<typeof userEvent.setup>) {
-  const adminButton = screen.getByRole('button', { name: 'ADMIN' })
-  await user.click(adminButton)
+  const authenticate = await screen.findByRole('button', { name: 'Authenticate' })
+  await user.click(authenticate)
   expect(await screen.findByText('Admin Authentication')).toBeInTheDocument()
+}
+
+/** Renders straight onto the admin tab as a non-admin, which is the only
+ *  remaining route to the bootstrap prompt. The URL has to be set before
+ *  render because Dashboard resolves its tab in the state initialiser. */
+function renderOnAdminTabAsNonAdmin() {
+  window.history.pushState({}, '', '/dashboard?tab=admin')
+  renderWithProviders(<Dashboard />)
 }
 
 describe('Dashboard', () => {
@@ -192,12 +205,12 @@ describe('Dashboard', () => {
         token: 'test-admin-token',
         role: 'admin',
       })
-      renderWithProviders(<Dashboard />)
+      renderOnAdminTabAsNonAdmin()
 
       await openAdminModal(user)
 
       await user.type(screen.getByPlaceholderText('Enter admin password'), 'correct-password')
-      await user.click(screen.getByRole('button', { name: 'Authenticate' }))
+      await user.click(screen.getByRole('button', { name: 'Grant admin access' }))
 
       await waitFor(() => {
         expect(screen.queryByText('Admin Authentication')).not.toBeInTheDocument()
@@ -210,13 +223,13 @@ describe('Dashboard', () => {
     it('failed submit keeps the modal open, clears the password field, and leaves admin session inactive', async () => {
       const user = userEvent.setup()
       vi.mocked(bootstrapAdmin).mockRejectedValueOnce(new Error('Invalid bootstrap token'))
-      renderWithProviders(<Dashboard />)
+      renderOnAdminTabAsNonAdmin()
 
       await openAdminModal(user)
 
       const passwordInput = screen.getByPlaceholderText('Enter admin password') as HTMLInputElement
       await user.type(passwordInput, 'wrong-password')
-      await user.click(screen.getByRole('button', { name: 'Authenticate' }))
+      await user.click(screen.getByRole('button', { name: 'Grant admin access' }))
 
       await waitFor(() => {
         expect(vi.mocked(bootstrapAdmin)).toHaveBeenCalledWith('wrong-password')
@@ -280,5 +293,45 @@ describe('Dashboard', () => {
       expect(await screen.findByText('Admin Access Required')).toBeInTheDocument()
       expect(screen.queryByTestId('grainhack-page')).not.toBeInTheDocument()
     })
+  })
+})
+
+describe('Dashboard admin pill visibility', () => {
+  beforeEach(() => {
+    window.history.pushState({}, '', '/dashboard')
+    sessionStorage.clear()
+    localStorage.clear()
+  })
+
+  it('hides the ADMIN pill from users without the role', async () => {
+    mockUseAuth.mockReset().mockReturnValue({
+      userRole: 'contributor',
+      userId: 'user-1',
+      user: { id: 'user-1' },
+      isAuthenticated: true,
+      isLoading: false,
+      login: mockLogin,
+      logout: mockLogout,
+    })
+    renderWithProviders(<Dashboard />)
+
+    // Previously every user saw ADMIN, and clicking it prompted for the shared
+    // bootstrap token - which promoted whoever typed it.
+    await screen.findByRole('button', { name: 'CONTRIBUTOR' })
+    expect(screen.queryByRole('button', { name: 'ADMIN' })).not.toBeInTheDocument()
+  })
+
+  it('shows the ADMIN pill to a real admin', async () => {
+    mockUseAuth.mockReset().mockReturnValue({
+      userRole: 'admin',
+      userId: 'user-1',
+      user: { id: 'user-1' },
+      isAuthenticated: true,
+      isLoading: false,
+      login: mockLogin,
+      logout: mockLogout,
+    })
+    renderWithProviders(<Dashboard />)
+    expect(await screen.findByRole('button', { name: 'ADMIN' })).toBeInTheDocument()
   })
 })

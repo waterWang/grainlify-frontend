@@ -7,12 +7,19 @@ interface RoleSwitcherProps {
   showMobileNav: boolean;
   isSmallDevice: boolean;
   closeMobileNav:()=>void
+  /** Whether the signed-in user actually holds the admin role, per the
+   *  server. The pill is hidden otherwise.
+   *
+   *  This is cosmetic only. Every admin endpoint re-reads the role from the
+   *  database on each request, so hiding the pill removes an invitation, not
+   *  a capability - someone who forges this flag gains nothing. */
+  canAccessAdmin?: boolean;
 }
 
-export function RoleSwitcher({ currentRole, onRoleChange , showMobileNav , isSmallDevice: _isSmallDevice, closeMobileNav}: RoleSwitcherProps) {
+export function RoleSwitcher({ currentRole, onRoleChange , showMobileNav , isSmallDevice: _isSmallDevice, closeMobileNav, canAccessAdmin = false}: RoleSwitcherProps) {
   const { theme } = useTheme();
 
-  const roles = [
+  const allRoles = [
     {
       id: 'contributor' as const,
       label: 'CONTRIBUTOR',
@@ -29,6 +36,11 @@ export function RoleSwitcher({ currentRole, onRoleChange , showMobileNav , isSma
       icon: Shield,
     },
   ];
+
+  // Previously every user saw ADMIN, and clicking it opened a prompt for the
+  // shared bootstrap token - which promoted whoever typed it. That path is
+  // gone; the pill now only appears for people who already hold the role.
+  const roles = allRoles.filter((r) => r.id !== 'admin' || canAccessAdmin);
 
   return (
     <div 

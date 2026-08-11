@@ -383,12 +383,12 @@ export function Dashboard() {
 
   const handleRoleChange = (role: "contributor" | "maintainer" | "admin") => {
     if (role === "admin") {
-      if (adminAuthenticated) {
+      // The pill is only rendered for users who hold the role, so there is no
+      // longer a "type the shared token to become an admin" path here. The
+      // server re-checks the role on every admin request regardless.
+      if (userRole === "admin") {
         setActiveRole("admin");
         handleNavigation("admin");
-      } else {
-        // Non-admin users can click admin, but must authenticate first.
-        openAdminAuthModal();
       }
       return;
     }
@@ -788,6 +788,7 @@ export function Dashboard() {
               showMobileNav={!!showMobileNav}
               closeMobileNav={closeMobileNav}
               onRoleChange={handleRoleChange}
+              canAccessAdmin={userRole === "admin"}
             />
 
             {/* Theme Toggle - Separate Pill Button (animated) */}
@@ -1016,8 +1017,8 @@ export function Dashboard() {
                 {currentPage === "settings" && (
                   <SettingsPage />
                 )}
-                {currentPage === "admin" && adminAuthenticated && <AdminPage />}
-                {currentPage === "admin" && !adminAuthenticated && (
+                {currentPage === "admin" && userRole === "admin" && <AdminPage />}
+                {currentPage === "admin" && userRole !== "admin" && (
                   <div className="flex items-center justify-center min-h-[60vh]">
                     <div
                       className={`text-center p-8 rounded-[24px] backdrop-blur-[40px] border ${
@@ -1143,7 +1144,10 @@ export function Dashboard() {
               type="submit"
               disabled={isAuthenticating || !adminPassword.trim()}
             >
-              {isAuthenticating ? "Authenticating..." : "Authenticate"}
+              {/* Named distinctly from the "Authenticate" button on the page
+                  behind it: two visible controls with the same accessible
+                  name are ambiguous to anyone navigating by label. */}
+              {isAuthenticating ? "Granting access..." : "Grant admin access"}
             </ModalButton>
           </ModalFooter>
         </form>
