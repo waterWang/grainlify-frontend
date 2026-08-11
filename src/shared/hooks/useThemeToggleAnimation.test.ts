@@ -98,8 +98,10 @@ describe('useThemeToggleAnimation', () => {
 
     const onToggle = vi.fn()
     const { result } = renderHook(() => useThemeToggleAnimation({ onToggle }))
-    // Center of this rect is (225, 120), fully deterministic given the mocked
-    // rect and window dimensions above.
+    // The rect only has to exist - the hook bails without a ref. Its position
+    // no longer affects the animation: the wipe is anchored at the viewport's
+    // top-left corner, not at the toggle, so unlike the old circle reveal
+    // there is no geometry here to assert against.
     attachFakeRef(result.current.ref, { top: 100, left: 200, width: 50, height: 40 })
 
     result.current.toggleWithAnimation()
@@ -112,18 +114,35 @@ describe('useThemeToggleAnimation', () => {
     await waitFor(() => expect(animateSpy).toHaveBeenCalledTimes(1))
 
     const [keyframes, options] = animateSpy.mock.calls[0]
-    // The real implementation passes a single property-indexed keyframes
-    // object (`{ clipPath: [from, to] }`), not an array of keyframe objects.
+    // A single property-indexed keyframes object (`{ clipPath: [...] }`),
+    // not an array of keyframe objects.
     expect(Array.isArray(keyframes)).toBe(false)
-    expect(keyframes).toHaveProperty('clipPath')
+
+    // The animation is a diagonal gold wipe: a triangle anchored at the
+    // top-left whose legs grow past the viewport, so its hypotenuse sweeps
+    // across as a straight edge. Three keyframes, not two - the middle one is
+    // the moment the edge crosses the corner, and dropping it would turn the
+    // sweep into a linear scale of the final triangle.
     const clipPath = (keyframes as { clipPath: string[] }).clipPath
-    expect(clipPath).toHaveLength(2)
-    expect(clipPath[0]).toBe('circle(0px at 225px 120px)')
-    expect(clipPath[1]).toMatch(/^circle\(\d+(\.\d+)?px at 225px 120px\)$/)
+    expect(clipPath).toEqual([
+      'polygon(0% 0%, 0% 0%, 0% 0%)',
+      'polygon(0% 0%, 100% 0%, 0% 100%)',
+      'polygon(0% 0%, 200% 0%, 0% 200%)',
+    ])
+
+    // The glow rides the edge via a filter on the same pseudo-element rather
+    // than a separate DOM node: ::view-transition-* render in the browser's
+    // top layer, above any normal element, so an overlay div would be
+    // invisible for the whole transition.
+    const filter = (keyframes as { filter: string[] }).filter
+    expect(filter).toHaveLength(3)
+    expect(filter[0]).toMatch(/^drop-shadow\(0 0 0px /)
+    expect(filter[1]).toMatch(/^drop-shadow\(0 0 36px /)
+    expect(filter[2]).toMatch(/^drop-shadow\(0 0 8px /)
 
     expect(options).toMatchObject({
-      duration: 600,
-      easing: 'ease-in-out',
+      duration: 2000,
+      easing: 'cubic-bezier(0.19, 1, 0.22, 1)',
       pseudoElement: '::view-transition-new(root)',
     })
   })
