@@ -19,6 +19,9 @@ import {
   getUserProfile,
 } from "../../../shared/api/client";
 import { getGitHubAvatarUrl } from "../../../shared/utils/avatar";
+import { AuroraBackground } from "../../../shared/components/ui/aceternity/AuroraBackground";
+import { GridBackground } from "../../../shared/components/ui/aceternity/GridBackground";
+import { SpotlightCard } from "../../../shared/components/ui/aceternity/SpotlightCard";
 import { SkeletonLoader } from "../../../shared/components/SkeletonLoader";
 import { useOptimisticData } from "../../../shared/hooks/useOptimisticData";
 import { EmptyState } from "../../../shared/components/EmptyState";
@@ -447,18 +450,14 @@ export function DiscoverPage({
       </motion.div>
 
       {/* Embark on GrainHack — an elevated feature banner: a real moment, but not a second full hero */}
-      <motion.div
-        variants={sectionVariants}
-        className={`relative overflow-hidden backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-colors ${isDark
+      <motion.div variants={sectionVariants}>
+      <AuroraBackground
+        subtle
+        className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-colors ${isDark
           ? 'bg-white/[0.08] border-white/10'
           : 'bg-white/[0.12] border-white/20'
           }`}>
-        {/* Aurora accent */}
-        <motion.div
-          className="absolute -top-16 right-[-60px] w-[360px] h-[360px] rounded-full bg-[#c9983a]/25 blur-[100px] pointer-events-none"
-          animate={prefersReducedMotion ? undefined : { x: [0, -20, 20, 0], y: [0, 20, -10, 0] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-        />
+        <GridBackground variant="grid" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 px-6 md:px-12 py-10 md:py-14">
           <div className="flex-1 text-center md:text-left">
@@ -468,7 +467,7 @@ export function DiscoverPage({
             </h3>
             <p className={`text-sm md:text-[16px] mb-6 max-w-md mx-auto md:mx-0 transition-colors ${isDark ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
               }`}>
-              Track your Open Source Week progress directly from your dashboard and compete for a spot on the leaderboard.
+              Track your GrainHack progress directly from your dashboard and compete for a spot on the leaderboard.
             </p>
             <button
               onClick={onGoToOpenSourceWeek}
@@ -483,17 +482,16 @@ export function DiscoverPage({
 
           {/* Radar-ping badge */}
           <div className="relative flex-shrink-0 w-28 h-28 md:w-36 md:h-36 flex items-center justify-center">
+            {/* CSS-driven, not motion.div: see .animate-ping-ring in theme.css.
+                As a JS animation this pair was the whole idle cost of the page.
+                Reduced motion is honoured by the stylesheet, and the guard here
+                is kept so the nodes are not even mounted in that case. */}
             {!prefersReducedMotion && (
               <>
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-[#c9983a]/40"
-                  animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
-                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
-                />
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-[#c9983a]/40"
-                  animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
-                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut', delay: 1.2 }}
+                <span className="absolute inset-[8%] rounded-full border-2 border-[#c9983a]/40 animate-ping-ring" />
+                <span
+                  className="absolute inset-0 rounded-full border-2 border-[#c9983a]/30 animate-ping-ring"
+                  style={{ animationDelay: '1.2s' }}
                 />
               </>
             )}
@@ -502,6 +500,7 @@ export function DiscoverPage({
             </div>
           </div>
         </div>
+      </AuroraBackground>
       </motion.div>
 
       {/* Recommended Projects */}
@@ -579,8 +578,11 @@ export function DiscoverPage({
             animate="visible"
           >
             {projects.map((project) => (
+              // Wrapped rather than folded into DiscoverProjectCard: that card
+              // is shared, and a hover treatment tuned for this grid should not
+              // silently change it everywhere else it is used.
+              <SpotlightCard key={project.id} className="rounded-[16px] h-full">
               <DiscoverProjectCard
-                key={project.id}
                 project={project}
                 onClick={() => {
                   // Each card here represents a whole org (deduped to one
@@ -594,6 +596,7 @@ export function DiscoverPage({
                 }}
                 variants={cardVariants}
               />
+              </SpotlightCard>
             ))}
           </motion.div>
         )}

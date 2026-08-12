@@ -1,6 +1,8 @@
 import { CheckCircle2, CreditCard, ShieldCheck, Sparkles, ArrowUpRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
+import { AuroraBackground } from "../../../shared/components/ui/aceternity/AuroraBackground";
+import { GridBackground } from "../../../shared/components/ui/aceternity/GridBackground";
 
 interface DiscoverHeroProps {
   login?: string;
@@ -41,28 +43,49 @@ export function DiscoverHero({
 
   return (
     <>
-      {/* Welcome bar — compact, always visible, never a full-screen takeover */}
-      <div className="flex items-center gap-4 px-1">
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={login || "Your avatar"}
-            className="w-11 h-11 rounded-full border-2 border-[#c9983a]/40 flex-shrink-0"
-          />
-        ) : (
-          <div className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white font-bold border-2 border-[#c9983a]/40">
-            {(login || "?").charAt(0).toUpperCase()}
+      {/* Welcome — an aurora panel rather than a bare row. Still compact: this
+          is seen after every login, not just the first, so it earns a band of
+          the screen, not a full one. */}
+      <AuroraBackground
+        className={`rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-[40px] transition-colors ${
+          isDark ? "bg-white/[0.06] border-white/10" : "bg-white/[0.14] border-white/25"
+        }`}
+      >
+        <GridBackground variant="dots" />
+        <div className="relative z-10 flex items-center gap-4 px-5 md:px-8 py-6 md:py-8">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={login || "Your avatar"}
+              className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[#c9983a]/50 flex-shrink-0 shadow-[0_4px_16px_rgba(162,121,44,0.25)]"
+            />
+          ) : (
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white font-bold text-lg border-2 border-[#c9983a]/50 shadow-[0_4px_16px_rgba(162,121,44,0.25)]">
+              {(login || "?").charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0">
+            {/* No `truncate`: at the larger size this clipped the user's own
+                name to "Good morning, j…" on a 390px screen. It wraps instead. */}
+            <h1 className={`text-xl sm:text-2xl md:text-[34px] font-bold leading-tight tracking-[-0.01em] break-words transition-colors ${isDark ? "text-[#f5f5f5]" : "text-[#2d2820]"}`}>
+              {getGreeting()}
+              {login ? (
+                <>
+                  ,{" "}
+                  <span className="bg-gradient-to-r from-[#c9983a] to-[#d4af37] bg-clip-text text-transparent">
+                    {login}
+                  </span>
+                </>
+              ) : (
+                ""
+              )}
+            </h1>
+            <p className={`text-[13px] md:text-[15px] mt-0.5 transition-colors ${isDark ? "text-[#b8a898]" : "text-[#7a6b5a]"}`}>
+              Here's what's matched to you today.
+            </p>
           </div>
-        )}
-        <div className="min-w-0">
-          <h1 className={`text-xl md:text-2xl font-bold leading-tight truncate transition-colors ${isDark ? "text-[#f5f5f5]" : "text-[#2d2820]"}`}>
-            {getGreeting()}{login ? `, ${login}` : ""}
-          </h1>
-          <p className={`text-[13px] md:text-sm transition-colors ${isDark ? "text-[#b8a898]" : "text-[#7a6b5a]"}`}>
-            Here's what's matched to you today.
-          </p>
         </div>
-      </div>
+      </AuroraBackground>
 
       {/* Setup nudge — only while something's actually incomplete; disappears for good
           once billing + KYC are both done, handing this space back to real content. */}
