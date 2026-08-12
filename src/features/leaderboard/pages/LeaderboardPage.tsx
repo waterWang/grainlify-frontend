@@ -3,14 +3,12 @@ import {
   LeaderboardType,
   FilterType,
   LeaderboardWindow,
-  Petal,
   LeaderData,
   ProjectData,
 } from "../types";
 import { getLeaderboard, getProjectLeaderboard } from "../../../shared/api/client";
 import { getGitHubAvatarUrl } from "../../../shared/utils/avatar";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
-import { FallingPetals } from "../components/FallingPetals";
 import { LeaderboardTypeToggle } from "../components/LeaderboardTypeToggle";
 import { LeaderboardHero } from "../components/LeaderboardHero";
 import { ContributorsPodium } from "../components/ContributorsPodium";
@@ -40,7 +38,6 @@ export function LeaderboardPage() {
     label: "All Ecosystems",
     value: "all",
   });
-  const [petals, setPetals] = useState<Petal[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState<LeaderData[]>([]);
   const [topThreeContributors, setTopThreeContributors] = useState<LeaderData[]>([]);
@@ -171,29 +168,15 @@ export function LeaderboardPage() {
     };
   }, [leaderboardType, selectedEcosystem.value, leaderboardWindow]);
 
-  // Generate falling petals on mount
+  // Thirty animated SVG petals used to fall down this page, each carrying a
+  // drop-shadow filter, with the whole set torn down and rebuilt every 15
+  // seconds. They are gone: this is a page people open to find their own name
+  // in a list, and decoration drifting across a table you are scanning is
+  // working against the one thing the page is for. It also cost real frames -
+  // see the measurements in the commit that removed it.
   useEffect(() => {
-    const generatePetals = () => {
-      const newPetals: Petal[] = [];
-      for (let i = 0; i < 30; i++) {
-        newPetals.push({
-          id: i,
-          left: Math.random() * 100,
-          delay: Math.random() * 5,
-          duration: 8 + Math.random() * 6,
-          rotation: Math.random() * 360,
-          size: 0.6 + Math.random() * 0.8,
-        });
-      }
-      setPetals(newPetals);
-    };
-
-    generatePetals();
-    setTimeout(() => setIsLoaded(true), 100);
-
-    // Regenerate petals every 15 seconds for continuous effect
-    const interval = setInterval(generatePetals, 15000);
-    return () => clearInterval(interval);
+    const t = setTimeout(() => setIsLoaded(true), 100);
+    return () => clearTimeout(t);
   }, []);
 
   // Ensure we have at least 3 items for the podium (pad with empty data if needed)
@@ -228,9 +211,6 @@ export function LeaderboardPage() {
 
   return (
     <div className="space-y-6 relative">
-      {/* Falling Golden Petals - Full Page */}
-      <FallingPetals petals={petals} />
-
       {/* Leaderboard Type Toggle - Floating Above Everything */}
       <LeaderboardTypeToggle
         leaderboardType={leaderboardType}

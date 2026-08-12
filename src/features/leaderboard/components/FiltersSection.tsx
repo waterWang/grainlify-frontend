@@ -90,7 +90,7 @@ export function FiltersSection({
 
   return (
     <div
-      className={`backdrop-blur-[40px] bg-white/[0.12] rounded-[20px] border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.06)] p-5 transition-all duration-700 delay-900 relative z-50 ${
+      className={`bg-white/[0.12] rounded-[20px] border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.06)] p-5 transition-all duration-700 delay-900 relative z-50 ${
         isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >
@@ -100,7 +100,7 @@ export function FiltersSection({
         <div
           role="group"
           aria-label="Leaderboard period"
-          className={`flex items-center p-1 rounded-[12px] backdrop-blur-[30px] border mr-auto ${
+          className={`flex items-center p-1 rounded-[12px] border mr-auto ${
             theme === "dark"
               ? "bg-white/[0.08] border-white/15"
               : "bg-white/[0.15] border-white/25"
@@ -141,7 +141,7 @@ export function FiltersSection({
                 onToggleDropdown();
               }
             }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border transition-all duration-300 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] border transition-all duration-300 ${
               theme === "dark"
                 ? "bg-white/[0.08] border-white/15 hover:bg-white/[0.12]"
                 : "bg-white/[0.15] border-white/25 hover:bg-white/[0.2]"
@@ -194,7 +194,7 @@ export function FiltersSection({
                 setShowFilterDropdown(false);
               }
             }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border transition-all duration-300 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-[12px] border transition-all duration-300 ${
               theme === "dark"
                 ? "bg-white/[0.08] border-white/15 hover:bg-white/[0.12]"
                 : "bg-white/[0.15] border-white/25 hover:bg-white/[0.2]"

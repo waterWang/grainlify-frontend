@@ -113,10 +113,11 @@ describe('LeaderboardPage', () => {
     // Rank numbers appear in the table's rank column.
     expect(screen.getByText('Rank')).toBeInTheDocument()
 
-    // LeaderboardHero has one permanent decorative "animate-shimmer" underline
-    // unrelated to loading state, so the skeletons clearing means the count drops
-    // to exactly that 1 (not 0).
-    expect(container.querySelectorAll('.animate-shimmer').length).toBe(1)
+    // Once the skeletons clear, nothing on this page shimmers. There used to be
+    // one permanent decorative "animate-shimmer" underline in the hero, so this
+    // expected 1; that underline is gone with the rest of the hero's persistent
+    // animation, which makes this a cleaner assertion than it was.
+    expect(container.querySelectorAll('.animate-shimmer').length).toBe(0)
     // Requests PAGE_SIZE+1 (26) so the response length can reveal whether a
     // next page exists, without the backend needing to return a total count.
     expect(mockedGetLeaderboard).toHaveBeenCalledWith(26, 0, undefined, 'season')
@@ -147,8 +148,8 @@ describe('LeaderboardPage', () => {
     await waitFor(() => {
       expect(screen.getByText('No contributors yet. Be the first to contribute!')).toBeInTheDocument()
     })
-    // Same permanent decorative underline noted above — 1, not 0, once skeletons clear.
-    expect(container.querySelectorAll('.animate-shimmer').length).toBe(1)
+    // Same as above: nothing shimmers once the skeletons clear.
+    expect(container.querySelectorAll('.animate-shimmer').length).toBe(0)
     expect(consoleErrorSpy).toHaveBeenCalled()
 
     consoleErrorSpy.mockRestore()

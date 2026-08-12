@@ -12,7 +12,7 @@ export function LeaderboardTypeToggle({ leaderboardType, onToggle, isLoaded }: L
     <div className={`sticky top-6 z-[200] flex justify-center transition-all duration-1000 ${
       isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
     }`}>
-      <div className="backdrop-blur-[40px] bg-gradient-to-br from-white/[0.25] to-white/[0.15] rounded-[20px] border-2 border-white/30 shadow-[0_12px_48px_rgba(0,0,0,0.15)] p-2 flex gap-2">
+      <div className="bg-gradient-to-br from-white/[0.25] to-white/[0.15] rounded-[20px] border-2 border-white/30 shadow-[0_12px_48px_rgba(0,0,0,0.15)] p-2 flex gap-2">
         <button
           onClick={() => onToggle('contributors')}
           className={`flex items-center gap-2 px-6 py-3 rounded-[14px] font-bold text-[15px] transition-all duration-300 ${

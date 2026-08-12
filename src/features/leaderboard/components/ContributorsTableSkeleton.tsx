@@ -2,9 +2,9 @@ import { SkeletonLoader } from '../../../shared/components/SkeletonLoader';
 
 export function ContributorsTableSkeleton() {
   return (
-    <div className={`backdrop-blur-[40px] bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden`}>
+    <div className={`bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden`}>
       {/* Table Header */}
-      <div className="grid grid-cols-12 gap-4 px-8 py-4 border-b border-white/10 backdrop-blur-[30px] bg-white/[0.08]">
+      <div className="grid grid-cols-12 gap-4 px-8 py-4 border-b border-white/10 bg-white/[0.08]">
         <div className="col-span-1">
           <SkeletonLoader className="h-4 w-12" />
         </div>

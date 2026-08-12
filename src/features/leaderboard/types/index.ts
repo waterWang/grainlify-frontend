@@ -36,11 +36,3 @@ export interface ProjectData {
   activity?: string;
 }
 
-export interface Petal {
-  id: number;
-  left: number;
-  delay: number;
-  duration: number;
-  rotation: number;
-  size: number;
-}
