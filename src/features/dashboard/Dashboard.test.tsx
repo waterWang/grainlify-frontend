@@ -82,6 +82,9 @@ vi.mock('../../shared/api/client', () => ({
 // The admin-activation flow below renders the real AdminPage, which in turn
 // renders these two - unrelated to what this suite tests (shell nav/auth),
 // and covered by their own SocialFollowReview.test.tsx / RedemptionsReview.test.tsx.
+vi.mock('../admin/pages/AdminPage', () => ({
+  AdminPage: () => <div data-testid="admin-page" />,
+}))
 vi.mock('../admin/components/SocialFollowReview', () => ({
   SocialFollowReview: () => null,
 }))
@@ -396,16 +399,18 @@ describe('Dashboard', () => {
 
       await user.click(screen.getByRole('button', { name: /ADMIN/i }))
 
-      // Admin view: only the admin surfaces remain.
+      // Admin view: only the admin surfaces remain. 'admin' is the console
+      // where social-follow proofs and redemptions are reviewed — it was
+      // briefly missing from this list, which made that queue unreachable.
       await waitFor(() => {
-        expect(railIds()).toEqual(['data', 'grainhack'])
+        expect(railIds()).toEqual(['admin', 'data', 'grainhack'])
       })
       for (const gone of ['discover', 'browse', 'ecosystems', 'leaderboard', 'blog', 'my-grainhack']) {
         expect(railIds()).not.toContain(gone)
       }
     })
 
-    it('lands the ADMIN view on Data rather than the unimplemented admin placeholder', async () => {
+    it('lands the ADMIN view on the admin console, where the review queues live', async () => {
       mockUseAuth.mockReturnValue({
         userRole: 'admin',
         userId: 'admin-user-id',
@@ -421,10 +426,13 @@ describe('Dashboard', () => {
 
       await user.click(screen.getByRole('button', { name: /ADMIN/i }))
 
-      // Previously navigated to "admin", whose page is a placeholder reading
-      // "Content to be implemented" and which has no rail icon, so the sidebar
-      // showed nothing selected.
-      expect(await screen.findByTestId('data-page')).toBeInTheDocument()
+      // Regression guard. This briefly navigated to Data, because
+      // features/dashboard/pages/AdminPage.tsx is a stub reading "Content to be
+      // implemented" and was mistaken for the real page. Dashboard actually
+      // renders features/admin/pages/AdminPage, which holds SocialFollowReview
+      // and RedemptionsReview. Routing away from it left admins with no way to
+      // approve a social-follow proof. The stub is deleted.
+      expect(await screen.findByTestId('admin-page')).toBeInTheDocument()
     })
 
     it('blocks the grainhack page for a non-admin even when navigated to directly via ?tab= (the nav item alone is not the security boundary)', async () => {

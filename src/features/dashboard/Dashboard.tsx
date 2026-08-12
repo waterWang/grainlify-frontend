@@ -382,7 +382,7 @@ export function Dashboard() {
       setShowAdminPasswordModal(false);
       setAdminPassword("");
       setActiveRole("admin");
-      handleNavigation("data");
+      handleNavigation("admin");
     } catch (error) {
       console.error("Admin authentication failed:", error);
       // Keep UI clean: show a simple message; avoid browser alert spam.
@@ -400,9 +400,9 @@ export function Dashboard() {
       // server re-checks the role on every admin request regardless.
       if (userRole === "admin") {
         setActiveRole("admin");
-        // Data, not "admin": AdminPage is still a placeholder, and landing on
-        // it left the rail with no active item because it has no rail icon.
-        handleNavigation("data");
+        // The admin dashboard, which is where ecosystems, events, social-follow
+        // proofs and redemptions are managed.
+        handleNavigation("admin");
       }
       return;
     }
@@ -460,7 +460,12 @@ export function Dashboard() {
     activeRole === "maintainer" || activeRole === "admin"
       ? { id: "maintainers", icon: Users, label: "Maintainers" }
       : { id: "contributors", icon: Users, label: "Contributors" },
-    // Data page is only visible to admin
+    // Admin surfaces. Both are gated on the real backend role, not activeRole.
+    // "admin" is the ecosystem/event console and, importantly, the only place
+    // social-follow proofs and redemptions get reviewed.
+    ...(userRole === "admin"
+      ? [{ id: "admin", icon: Shield, label: "Admin" }]
+      : []),
     ...(activeRole === "admin"
       ? [{ id: "data", icon: Database, label: "Data" }]
       : []),
@@ -487,7 +492,7 @@ export function Dashboard() {
   // Reading a non-admin page is still allowed; this hides the shortcuts, it is
   // not an authorization boundary. The real boundary is the server, which
   // re-reads the role on every admin request.
-  const ADMIN_NAV_IDS = new Set(["data", "grainhack"]);
+  const ADMIN_NAV_IDS = new Set(["admin", "data", "grainhack"]);
 
   const navItems =
     activeRole === "admin"
