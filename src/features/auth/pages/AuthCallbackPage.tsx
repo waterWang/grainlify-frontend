@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
+import { clearStoredReferralCode } from '../../../shared/api/client';
 
 export function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -71,6 +72,11 @@ export function AuthCallbackPage() {
         // Login with the token
         console.log('Attempting login with token...');
         await login(token);
+        // The signup has landed, so the stored referral code has done its
+        // job. Left in place, a second account created in this browser would
+        // credit the same referrer again - a farming path, and referrals now
+        // pay shares.
+        clearStoredReferralCode();
         console.log('Login successful! Auth state should update shortly...');
         setIsProcessing(false);
         // The redirect will happen via the useEffect watching isAuthenticated

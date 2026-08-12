@@ -9,6 +9,7 @@ import {
   bootstrapAdmin,
   getGitHubLoginUrl,
   captureReferralCodeFromURL,
+  readStoredReferralCode,
 } from './client'
 
 // This codebase's convention is 100% manual fetch mocking (no msw). The base
@@ -292,7 +293,10 @@ describe('referral code capture and injection', () => {
   it('captureReferralCodeFromURL stores a "ref" query param into localStorage', () => {
     window.history.pushState({}, '', '/?ref=ABC123')
     captureReferralCodeFromURL()
-    expect(window.localStorage.getItem('grainlify_ref_code')).toBe('ABC123')
+    // Stored with its capture time, which is what the 30-day window is
+    // measured against. Round-tripped through the reader rather than asserting
+    // the raw shape, so this test does not pin the storage format.
+    expect(readStoredReferralCode()).toBe('ABC123')
   })
 
   it('captureReferralCodeFromURL does nothing when there is no "ref" param', () => {

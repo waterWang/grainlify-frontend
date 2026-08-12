@@ -217,12 +217,71 @@ export const resyncGitHubProfile = () =>
 
 // Referral code storage: captured from a "?ref=" URL param at app root
 // (see App.tsx) and persisted here so it survives navigation to whatever
-// page the user actually clicks "Sign in" from.
+// page the user actually clicks "Sign in" from, and the GitHub round trip.
+//
+// Two rules govern it, and both exist because a referral now pays real
+// shares from the Founding Contributor Pool:
+//
+//  1. **It expires after 30 days**, measured from when it was CAPTURED, not
+//     when it is used. Someone who clicked a link eight months ago and signs
+//     up today from an unrelated source has not been referred in any
+//     meaningful sense, and an unbounded window is undisputable-by-design in
+//     the wrong direction.
+//  2. **It is cleared the moment a signup succeeds.** Left in place, a second
+//     account created in the same browser would credit the same referrer
+//     again - which is a farming path, not an edge case.
 const REFERRAL_CODE_STORAGE_KEY = "grainlify_ref_code";
+
+/** How long a captured referral code stays valid. Published in the referral
+ *  copy: a rule nobody can read is a rule you argue about later. */
+export const REFERRAL_CODE_TTL_DAYS = 30;
+const REFERRAL_CODE_TTL_MS = REFERRAL_CODE_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+interface StoredReferralCode {
+  code: string;
+  capturedAt: number;
+}
 
 export const captureReferralCodeFromURL = (): void => {
   const ref = new URLSearchParams(window.location.search).get("ref");
-  if (ref) localStorage.setItem(REFERRAL_CODE_STORAGE_KEY, ref);
+  if (!ref) return;
+  const entry: StoredReferralCode = { code: ref, capturedAt: Date.now() };
+  localStorage.setItem(REFERRAL_CODE_STORAGE_KEY, JSON.stringify(entry));
+};
+
+/** Reads the stored code if it is still within the window, clearing it
+ *  otherwise so an expired code cannot linger and be honoured later.
+ *
+ *  Values written before this format existed were bare strings with no
+ *  capture time. Their age is unknowable, so they are dropped rather than
+ *  assumed recent - honouring an unbounded-age code is the exact thing the
+ *  window exists to stop. */
+export const readStoredReferralCode = (): string | null => {
+  const raw = localStorage.getItem(REFERRAL_CODE_STORAGE_KEY);
+  if (!raw) return null;
+
+  let entry: StoredReferralCode;
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.code !== "string" || typeof parsed?.capturedAt !== "number") {
+      throw new Error("unrecognised shape");
+    }
+    entry = parsed;
+  } catch {
+    clearStoredReferralCode();
+    return null;
+  }
+
+  if (Date.now() - entry.capturedAt > REFERRAL_CODE_TTL_MS) {
+    clearStoredReferralCode();
+    return null;
+  }
+  return entry.code;
+};
+
+/** Called once a signup completes. See rule 2 above. */
+export const clearStoredReferralCode = (): void => {
+  localStorage.removeItem(REFERRAL_CODE_STORAGE_KEY);
 };
 
 export const getGitHubLoginUrl = () => {
@@ -230,7 +289,7 @@ export const getGitHubLoginUrl = () => {
   // This allows the backend to redirect back to the correct frontend after OAuth
   const redirectAfterLogin = window.location.origin;
   const params = new URLSearchParams({ redirect: redirectAfterLogin });
-  const refCode = localStorage.getItem(REFERRAL_CODE_STORAGE_KEY);
+  const refCode = readStoredReferralCode();
   if (refCode) params.set("ref", refCode);
   return `${API_BASE_URL}/auth/github/login/start?${params.toString()}`;
 };
