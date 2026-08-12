@@ -6,8 +6,6 @@ import { ReferralsTab } from './ReferralsTab'
 const mockGetReferralStats = vi.fn()
 vi.mock('../../../../shared/api/client', () => ({
   getReferralStats: (...args: unknown[]) => mockGetReferralStats(...args),
-  // The tab publishes the capture window, so the mock has to carry it too.
-  REFERRAL_CODE_TTL_DAYS: 30,
 }))
 
 const BASE_STATS = {
@@ -17,6 +15,8 @@ const BASE_STATS = {
   completed: 2,
   points_earned: 200,
   points_per_referral: 100,
+  // Served by the backend from the same constant it enforces the window with.
+  referral_window_days: 30,
 }
 
 describe('ReferralsTab', () => {

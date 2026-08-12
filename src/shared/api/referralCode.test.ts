@@ -3,10 +3,14 @@ import {
   captureReferralCodeFromURL,
   readStoredReferralCode,
   clearStoredReferralCode,
-  REFERRAL_CODE_TTL_DAYS,
 } from './client'
 
 const KEY = 'grainlify_ref_code'
+
+/** The window the stubbed server issues tokens under. There is no constant
+ *  for this in the frontend any more - the backend serves the figure and the
+ *  client stores whatever it was told, which is the whole point. */
+const SERVER_WINDOW_DAYS = 30
 
 /** Stubs the capture endpoint, which now signs the code server-side. The
  *  token is opaque to the client, so tests assert on what is stored and sent
@@ -17,7 +21,7 @@ function stubCapture(tokenFor: (code: string) => string = (c) => `signed(${c})`)
     return {
       ok: true,
       status: 200,
-      json: async () => ({ token: tokenFor(code) }),
+      json: async () => ({ token: tokenFor(code), valid_days: SERVER_WINDOW_DAYS }),
     } as unknown as Response
   }))
 }
@@ -48,6 +52,58 @@ describe('referral code capture window', () => {
     // client must not be able to backdate or edit its own capture.
     expect(stored.token).toBe('signed(ABC123)')
     expect(typeof stored.capturedAt).toBe('number')
+    // The window is stored as the server issued it, not read from a constant
+    // in this codebase that could disagree with the backend.
+    expect(stored.validDays).toBe(SERVER_WINDOW_DAYS)
+  })
+
+  it('honours a window the server changes, rather than a hardcoded 30', async () => {
+    // Proves the client is not carrying its own copy of the number: a
+    // 7-day server window expires on day 8, with nothing in the frontend
+    // edited to make that happen.
+    stubCapture((c) => `signed(${c})`)
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: 'signed(SHORT)', valid_days: 7 }),
+    } as unknown as Response)))
+
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
+    await landOn('/?ref=SHORT')
+    vi.useFakeTimers()
+
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z').getTime() + 6 * 86400_000)
+    expect(readStoredReferralCode()).toBe('signed(SHORT)')
+
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z').getTime() + 8 * 86400_000)
+    expect(readStoredReferralCode()).toBeNull()
+  })
+
+  it('stores nothing and throws nothing when the capture call fails', async () => {
+    // The visitor sees a working page either way. A failed capture costs the
+    // attribution, never the page load - and never the session.
+    localStorage.setItem('patchwork_jwt', 'a-live-session')
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      throw new TypeError('Failed to fetch')
+    }))
+    await expect(landOn('/?ref=NETWORKDOWN')).resolves.toBeUndefined()
+    expect(localStorage.getItem(KEY)).toBeNull()
+    expect(localStorage.getItem('patchwork_jwt')).toBe('a-live-session')
+  })
+
+  it('stores nothing when the capture call 401s, and keeps the session', async () => {
+    // Regression guard: routed through the shared apiRequest helper, ANY 401
+    // clears the stored JWT - so a hiccup on this public call would log out a
+    // signed-in user who opened a referral link. It must not go through it.
+    localStorage.setItem('patchwork_jwt', 'a-live-session')
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({}),
+    } as unknown as Response)))
+    await landOn('/?ref=UNAUTHORISED')
+    expect(localStorage.getItem(KEY)).toBeNull()
+    expect(localStorage.getItem('patchwork_jwt')).toBe('a-live-session')
   })
 
   it('ignores a URL with no ref, leaving any existing capture alone', async () => {
@@ -63,12 +119,12 @@ describe('referral code capture window', () => {
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
 
     // One day inside the window: still good.
-    vi.setSystemTime(new Date('2026-01-01T00:00:00Z').getTime() + (REFERRAL_CODE_TTL_DAYS - 1) * 86400_000)
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z').getTime() + (SERVER_WINDOW_DAYS - 1) * 86400_000)
     expect(readStoredReferralCode()).toBe('signed(OLDCODE)')
 
     // Past it: dropped. Someone who clicked a link months ago and signs up
     // today from an unrelated source has not been referred.
-    vi.setSystemTime(new Date('2026-01-01T00:00:00Z').getTime() + (REFERRAL_CODE_TTL_DAYS + 1) * 86400_000)
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z').getTime() + (SERVER_WINDOW_DAYS + 1) * 86400_000)
     expect(readStoredReferralCode()).toBeNull()
     // And it is cleared, not merely ignored, so it cannot be honoured later.
     expect(localStorage.getItem(KEY)).toBeNull()

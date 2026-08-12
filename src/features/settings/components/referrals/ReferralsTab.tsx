@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Copy, CheckCircle2, Loader2, Gift, Users, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
-import { getReferralStats, REFERRAL_CODE_TTL_DAYS, type ReferralStats } from '../../../../shared/api/client';
+import { getReferralStats, type ReferralStats } from '../../../../shared/api/client';
 
 function StatCard({
   icon,
@@ -169,13 +169,15 @@ export function ReferralsTab() {
               more if they go on to ship merged work.
             </p>
             {/* The window is published rather than left implicit: a rule
-                nobody can read is a rule you argue about later. */}
+                nobody can read is a rule you argue about later. The number
+                comes from the response, not from a constant here, so the
+                sentence cannot drift from what the backend enforces. */}
             <p
               className={`text-[13px] mt-2 transition-colors ${
                 theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'
               }`}
             >
-              A click counts for <strong>{REFERRAL_CODE_TTL_DAYS} days</strong>. If they sign up
+              A click counts for <strong>{stats.referral_window_days} days</strong>. If they sign up
               after that, or sign up without using your link, the referral doesn't count.
             </p>
           </div>

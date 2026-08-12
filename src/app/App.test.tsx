@@ -84,7 +84,7 @@ describe('App routing', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
       ok: true,
       status: 200,
-      json: async () => ({ token: 'signed-capture-token' }),
+      json: async () => ({ token: 'signed-capture-token', valid_days: 30 }),
     } as unknown as Response)))
     renderAppAt('/?ref=WELCOME42')
     await waitFor(() =>

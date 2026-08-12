@@ -232,17 +232,20 @@ export const resyncGitHubProfile = () =>
 //     again - which is a farming path, not an edge case.
 const REFERRAL_CODE_STORAGE_KEY = "grainlify_ref_code";
 
-/** How long a captured referral code stays valid. Published in the referral
- *  copy: a rule nobody can read is a rule you argue about later. */
-export const REFERRAL_CODE_TTL_DAYS = 30;
-const REFERRAL_CODE_TTL_MS = REFERRAL_CODE_TTL_DAYS * 24 * 60 * 60 * 1000;
-
+/** The window is NOT a constant here. It is whatever the backend says when
+ *  it issues the capture, because the backend is what enforces it - a second
+ *  copy of the number in this file is a copy that can silently disagree with
+ *  the rule. Everything user-visible reads the server's figure. */
 interface StoredReferralCode {
   /** Server-signed. The client cannot backdate or extend it. */
   token: string;
   /** Local capture time. Only used to drop obviously-stale entries early -
    *  the authoritative expiry is the token's own, checked server-side. */
   capturedAt: number;
+  /** The window the server issued this token under, in days. Stored with the
+   *  token so the local sweep uses the same figure the token was signed for,
+   *  even if the server's window changes afterwards. */
+  validDays: number;
 }
 
 export const captureReferralCodeFromURL = async (): Promise<void> => {
@@ -253,15 +256,30 @@ export const captureReferralCodeFromURL = async (): Promise<void> => {
     // the window is enforced where it cannot be edited. Storing the bare code
     // with a local timestamp left the 30 days bypassable by calling the
     // login endpoint directly with a stale code.
-    const res = await apiRequest<{ token: string }>(
-      `/referrals/capture?ref=${encodeURIComponent(ref)}`,
+    //
+    // Deliberately a bare fetch rather than apiRequest: this is a public
+    // endpoint that runs on every page load, and apiRequest treats ANY 401 as
+    // "your session died" and clears the stored JWT. A signed-in user opening
+    // a referral link must never be logged out by a hiccup on a call that has
+    // nothing to do with their session.
+    const res = await fetch(
+      `${API_BASE_URL}/referrals/capture?ref=${encodeURIComponent(ref)}`,
     );
-    const entry: StoredReferralCode = { token: res.token, capturedAt: Date.now() };
+    if (!res.ok) return;
+    const body = (await res.json()) as { token?: unknown; valid_days?: unknown };
+    if (typeof body.token !== "string" || typeof body.valid_days !== "number") return;
+
+    const entry: StoredReferralCode = {
+      token: body.token,
+      capturedAt: Date.now(),
+      validDays: body.valid_days,
+    };
     localStorage.setItem(REFERRAL_CODE_STORAGE_KEY, JSON.stringify(entry));
   } catch {
     // A failed capture means no attribution rather than an unverifiable one.
     // Silent because this runs on every page load and the visitor has no
-    // action to take.
+    // action to take: no toast, no thrown error, no cleared session. The link
+    // still works, it just does not carry credit.
   }
 };
 
@@ -279,7 +297,11 @@ export const readStoredReferralCode = (): string | null => {
   let entry: StoredReferralCode;
   try {
     const parsed = JSON.parse(raw);
-    if (typeof parsed?.token !== "string" || typeof parsed?.capturedAt !== "number") {
+    if (
+      typeof parsed?.token !== "string" ||
+      typeof parsed?.capturedAt !== "number" ||
+      typeof parsed?.validDays !== "number"
+    ) {
       throw new Error("unrecognised shape");
     }
     entry = parsed;
@@ -288,7 +310,7 @@ export const readStoredReferralCode = (): string | null => {
     return null;
   }
 
-  if (Date.now() - entry.capturedAt > REFERRAL_CODE_TTL_MS) {
+  if (Date.now() - entry.capturedAt > entry.validDays * 24 * 60 * 60 * 1000) {
     clearStoredReferralCode();
     return null;
   }
@@ -955,6 +977,10 @@ export interface ReferralStats {
   completed: number;
   points_earned: number;
   points_per_referral: number;
+  /** The attribution window, in days, straight from the constant the backend
+   *  enforces. Rendered in the copy so the published rule and the enforced
+   *  rule are the same number by construction. */
+  referral_window_days: number;
 }
 
 export const getReferralStats = () =>
