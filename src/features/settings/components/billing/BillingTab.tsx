@@ -7,6 +7,9 @@ import { PaymentMethodsTab } from './PaymentMethodsTab';
 import { InvoicesTab } from './InvoicesTab';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import { startKYCVerification, getKYCStatus } from '../../../../shared/api/client';
+// From its own module, not from the client: this file's tests mock the client,
+// and a mock does not carry exports it was not told about. See apiError.ts.
+import { isApiError } from '../../../../shared/api/apiError';
 import { useBillingProfiles } from '../../contexts/BillingProfilesContext';
 
 interface ProfileTypeOption {
@@ -135,6 +138,10 @@ export function BillingTab() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const [kycWindowOpened, setKycWindowOpened] = useState(false);
+  // Set when the server says a verification session already exists and hands
+  // back its link. That is not an error - it is the user's way back in - so it
+  // gets its own affordance rather than the red box.
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
 
   const handleCreateProfile = () => {
     if (!profileName.trim()) return;
@@ -216,6 +223,7 @@ export function BillingTab() {
 
     setIsVerifying(true);
     setKycWindowOpened(false);
+    setResumeUrl(null);
     try {
       // Start KYC verification
       const response = await startKYCVerification();
@@ -269,8 +277,21 @@ export function BillingTab() {
         }, 5 * 60 * 1000);
       }
     } catch (error) {
-      console.error('Failed to start KYC verification:', error);
-      setErrorMessage("Could not start verification. Please try again later.");
+      // 409 means a session already exists. The response carries its URL, so
+      // the honest response is "carry on where you left off", not "try again
+      // later" - the one thing that would never have worked.
+      if (isApiError(error) && error.status === 409) {
+        const url = typeof error.data?.url === 'string' ? error.data.url : null;
+        if (url) {
+          setResumeUrl(url);
+          setErrorMessage(null);
+        } else {
+          setErrorMessage(error.message);
+        }
+      } else {
+        console.error('Failed to start KYC verification:', error);
+        setErrorMessage("Could not start verification. Please try again later.");
+      }
       setIsVerifying(false);
       setKycWindowOpened(false);
     }
@@ -332,6 +353,20 @@ export function BillingTab() {
     // Profile Detail View
     return (
       <div className="space-y-6">
+        {resumeUrl && (
+          <div className="mb-4 p-3 rounded-[12px] border text-[14px]"
+               style={{ borderColor: 'var(--brand-surface-border)', backgroundColor: 'var(--brand-surface)', color: 'var(--brand-ink)' }}>
+            <p className="mb-2">
+              You already have a verification session open. Continue where you left off.
+            </p>
+            <button
+              onClick={() => { window.open(resumeUrl, '_blank', 'width=800,height=600'); setKycWindowOpened(true); }}
+              className="px-4 py-2 rounded-[10px] bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white font-semibold text-[13px]"
+            >
+              Continue verification
+            </button>
+          </div>
+        )}
         {errorMessage && (
           <div className="text-red-500 bg-red-100 p-2 rounded mb-4 border border-red-200">
             {errorMessage}

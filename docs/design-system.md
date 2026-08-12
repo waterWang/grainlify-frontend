@@ -313,6 +313,39 @@ wrong question looked like a pass.**
     is anything clipped?              is any box narrower than its content
     does scrolling stay smooth?       how fast frames run while scrollBy no-ops
     did the page render correctly?    did a JS exception reach window.onerror
+    what does this page do?           what does a file with that name contain
+    is this host reachable?           what does an intercepted resolver claim
+
+### The same shape, in reading code: follow the import, not the filename
+
+Not a harness bug, but the identical failure: I checked a thing that answered a
+slightly different question, and the wrong answer looked like confirmation.
+
+Two files in this repo export `AdminPage`:
+
+    src/features/dashboard/pages/AdminPage.tsx   2 lines, imported by nothing
+    src/features/admin/pages/AdminPage.tsx       the real console, with
+                                                 SocialFollowReview and
+                                                 RedemptionsReview
+
+I searched for the filename, opened the first hit, found
+`"Admin Page - Content to be implemented"`, and concluded the admin page was a
+placeholder. Dashboard.tsx line 61 says
+`lazy(() => import("../admin/pages/AdminPage"))` — the other one.
+
+On the strength of that I rerouted the ADMIN pill away from the console and
+built an admin sidebar without an entry for it, which left social-follow proofs
+arriving into a review queue with no reachable screen. The user found it, not a
+test.
+
+**The rule: follow the import, never the filename.** And when two files share an
+export name, assume the one nothing imports is the one lying to you — dead code
+is where stale content survives, precisely because nothing exercises it.
+
+The tell was available and free: a two-line file confirmed a story I had already
+formed, and I did not ask why a page in active use would be two lines long. A
+result that agrees with you too easily deserves the same suspicion as one that
+disagrees.
 
 A second harness trap, same family: a page shorter than the viewport cannot
 scroll, so `window.scrollBy()` does nothing and the scroll sample degenerates
