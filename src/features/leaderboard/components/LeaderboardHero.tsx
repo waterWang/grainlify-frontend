@@ -12,6 +12,17 @@ interface LeaderboardHeroProps {
   children: React.ReactNode;
 }
 
+/** Fixed so the field does not jump on re-render — a randomised one animates
+ *  by accident every time the component updates. */
+const STARFIELD = [
+  [6,9,3,0.55],[13,22,2,0.4],[9,38,2,0.35],[18,54,3,0.5],[7,71,2,0.3],[15,86,3,0.45],
+  [24,4,2,0.35],[29,17,3,0.5],[22,31,2,0.3],[33,47,2,0.4],[27,63,3,0.55],[35,78,2,0.35],
+  [31,93,3,0.45],[42,7,2,0.3],[47,20,3,0.5],[39,35,2,0.4],[52,52,2,0.3],[44,68,3,0.5],
+  [56,81,2,0.35],[49,95,2,0.4],[62,12,3,0.45],[68,26,2,0.3],[59,41,2,0.4],[73,57,3,0.5],
+  [64,72,2,0.35],[77,88,2,0.3],[82,15,2,0.4],[87,33,3,0.45],[79,49,2,0.3],[91,64,2,0.4],
+  [84,79,3,0.5],[94,92,2,0.35],[71,3,2,0.3],[88,45,2,0.35],[96,25,3,0.45],
+].map(([top,left,size,opacity]) => ({ top, left, size, opacity }));
+
 export function LeaderboardHero({ leaderboardType, isLoaded, activeWindow, children }: LeaderboardHeroProps) {
   const { theme } = useTheme();
 
@@ -30,13 +41,37 @@ export function LeaderboardHero({ leaderboardType, isLoaded, activeWindow, child
           page scrolled worse than any other. The shapes are kept; only the
           motion is gone. See docs/design-system.md. */}
       <GridBackground variant="dots" />
-      <div className="absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true">
+
+      {/* Static starfield. The 35 twinkling dots that used to live here were
+          removed for cost, and the page went flat with them: the atmosphere was
+          coming from the dots being *present*, not from them twinkling. These
+          are the same dots with the animation taken out and the positions fixed
+          rather than randomised per render. 35 nodes, zero animation, zero
+          measurable cost. */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        {STARFIELD.map((s, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              top: `${s.top}%`,
+              left: `${s.left}%`,
+              width: s.size,
+              height: s.size,
+              backgroundColor: 'var(--brand-gold)',
+              opacity: s.opacity,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="absolute inset-0 opacity-40 pointer-events-none" aria-hidden="true">
         <div
-          className="absolute top-10 left-10 w-40 h-40 rounded-full blur-[80px]"
+          className="absolute -top-10 left-0 w-[520px] h-[520px] rounded-full blur-[110px]"
           style={{ backgroundColor: 'var(--brand-aurora-1)' }}
         />
         <div
-          className="absolute bottom-20 right-1/4 w-36 h-36 rounded-full blur-[70px]"
+          className="absolute -bottom-20 right-0 w-[460px] h-[460px] rounded-full blur-[100px]"
           style={{ backgroundColor: 'var(--brand-aurora-2)' }}
         />
       </div>
@@ -56,9 +91,11 @@ export function LeaderboardHero({ leaderboardType, isLoaded, activeWindow, child
             <h1 className={`text-[44px] font-bold drop-shadow-sm relative z-10 transition-colors ${
               theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
             }`}>
-              {leaderboardType === 'contributors'
-                ? activeWindow === 'season' ? 'Seasonal Contributors' : 'All-Time Contributors'
-                : 'Top Projects'}
+              <span className="bg-gradient-to-br from-[#e8c87a] via-[#c9983a] to-[#a67c2e] bg-clip-text text-transparent">
+                {leaderboardType === 'contributors'
+                  ? activeWindow === 'season' ? 'Seasonal Contributors' : 'All-Time Contributors'
+                  : 'Top Projects'}
+              </span>
             </h1>
             {/* Golden Underline Animation */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#c9983a] to-transparent opacity-40" />

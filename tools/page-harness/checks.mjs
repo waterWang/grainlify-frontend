@@ -136,10 +136,24 @@ export async function sampleFps(page, { ms = 3000, scroll = false } = {}) {
  * returns false while the Leaderboard podium was visibly cut in half.
  */
 export async function auditLayout(page) {
-  return page.evaluate(() => ({
-    documentOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    clippedChildren: [...document.querySelectorAll('*')].filter((e) => e.scrollWidth > e.clientWidth + 2).length,
-  }));
+  return page.evaluate(() => {
+    // scrollWidth > clientWidth only means *clipped* if the element actually
+    // clips. On overflow:visible the content simply spills and stays on screen,
+    // so counting those reports phantom clipping — this check flagged four
+    // "clipped" podium columns that were nothing of the sort, and chasing them
+    // would have been chasing a measurement artefact.
+    const clipped = [...document.querySelectorAll('*')].filter((e) => {
+      if (e.scrollWidth <= e.clientWidth + 2) return false;
+      const o = getComputedStyle(e);
+      return o.overflowX !== 'visible' || o.overflowY !== 'visible';
+    });
+    return {
+      documentOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      clippedChildren: clipped.length,
+      clippedExamples: clipped.slice(0, 3).map((e) =>
+        e.tagName.toLowerCase() + '.' + String(e.className || '').trim().split(/\s+/).slice(0, 2).join('.')),
+    };
+  });
 }
 
 export const fmt = (v) => (v === null ? '   n/a' : String(v.fps).padStart(6));

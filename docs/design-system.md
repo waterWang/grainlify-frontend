@@ -204,9 +204,9 @@ commit.
 | Page | Tier | Offences before | FPS before | FPS after | Commit |
 |---|---|---|---|---|---|
 | Discover | A | 2 | 38 / 27 | 120 / 120 | `6eeaa7b` |
-| Leaderboard | B | 71 | 16 / 15 | 121 / 121 | `1a33d5d` |
+| Leaderboard | B | 71 | 16 / 15 | 121 / 122 | `1a33d5d` + richness |
 | Browse | B | 0 | 120 / 40 | 120 / 120 | (this commit) |
-| Ecosystems | B | — | — | — | — |
+| Ecosystems | B | 0 | 120 / 42 | 120 / 120 | (this commit) |
 | Ecosystem detail | B | — | — | — | — |
 | Contributors | B | — | — | — | — |
 | Open-Source Week | B | — | — | — | — |
@@ -226,6 +226,12 @@ commit.
 | Data | D | — | — | — | — |
 | Landing | A | — | — | — | — |
 | Sign in / Sign up | A | — | — | — | — |
+
+Deltas marked *pre-paid* were partly earned by an earlier page: the shared
+ProjectCard / OrganizationCard were de-glassed during Browse, so Discover,
+EcosystemDetail and OrgProfile will show smaller numbers than the work they
+actually received. A small delta there means the page was already fixed, not
+that it needed nothing.
 
 Browse is the useful counter-example to Leaderboard: **zero** animations, but
 12 glass panels, and it still scrolled at 40 FPS. The two failure modes are
