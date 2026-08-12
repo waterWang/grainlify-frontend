@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import App from './App'
 
 // App.tsx renders its own <BrowserRouter> internally, so wrapping it in
@@ -78,8 +78,20 @@ describe('App routing', () => {
     expect(await screen.findByTestId('dashboard-page')).toBeInTheDocument()
   })
 
-  it('captures a "ref" query param from the landing URL into localStorage', () => {
+  it('captures a "ref" query param from the landing URL into localStorage', async () => {
+    // Capture round-trips through the server, which signs the code with its
+    // capture time - so this asserts a stored token rather than a bare code.
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: 'signed-capture-token' }),
+    } as unknown as Response)))
     renderAppAt('/?ref=WELCOME42')
-    expect(JSON.parse(window.localStorage.getItem('grainlify_ref_code')!).code).toBe('WELCOME42')
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem('grainlify_ref_code')!).token).toBe(
+        'signed-capture-token',
+      ),
+    )
+    vi.unstubAllGlobals()
   })
 })

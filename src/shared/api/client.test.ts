@@ -286,31 +286,42 @@ describe('endpoint exports (table-driven spot checks)', () => {
 })
 
 describe('referral code capture and injection', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+    // Capture is a server call now: the backend signs the code with its
+    // capture time so the 30-day window is enforced where it cannot be edited.
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ token: 'signed-capture-token' }),
+    } as unknown as Response)))
+  })
   afterEach(() => {
     window.history.pushState({}, '', '/')
+    vi.unstubAllGlobals()
   })
 
-  it('captureReferralCodeFromURL stores a "ref" query param into localStorage', () => {
+  it('captureReferralCodeFromURL stores a signed token from the server', async () => {
     window.history.pushState({}, '', '/?ref=ABC123')
-    captureReferralCodeFromURL()
-    // Stored with its capture time, which is what the 30-day window is
-    // measured against. Round-tripped through the reader rather than asserting
-    // the raw shape, so this test does not pin the storage format.
-    expect(readStoredReferralCode()).toBe('ABC123')
+    await captureReferralCodeFromURL()
+    expect(readStoredReferralCode()).toBe('signed-capture-token')
   })
 
-  it('captureReferralCodeFromURL does nothing when there is no "ref" param', () => {
+  it('captureReferralCodeFromURL does nothing when there is no "ref" param', async () => {
     window.history.pushState({}, '', '/?foo=bar')
-    captureReferralCodeFromURL()
+    await captureReferralCodeFromURL()
     expect(window.localStorage.getItem('grainlify_ref_code')).toBeNull()
   })
 
-  it('getGitHubLoginUrl includes "ref" when a code was previously captured', () => {
+  it('getGitHubLoginUrl sends the signed token, never a bare code', async () => {
     window.history.pushState({}, '', '/?ref=XYZ789')
-    captureReferralCodeFromURL()
+    await captureReferralCodeFromURL()
 
     const url = new URL(getGitHubLoginUrl())
-    expect(url.searchParams.get('ref')).toBe('XYZ789')
+    // ref_token, not ref: login-start no longer honours a bare code, because
+    // a bare code carries no capture time and so cannot be expired.
+    expect(url.searchParams.get('ref_token')).toBe('signed-capture-token')
+    expect(url.searchParams.get('ref')).toBeNull()
     expect(url.searchParams.get('redirect')).toBe(window.location.origin)
   })
 

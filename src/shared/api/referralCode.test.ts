@@ -8,9 +8,23 @@ import {
 
 const KEY = 'grainlify_ref_code'
 
-function landOn(url: string) {
+/** Stubs the capture endpoint, which now signs the code server-side. The
+ *  token is opaque to the client, so tests assert on what is stored and sent
+ *  rather than on its contents. */
+function stubCapture(tokenFor: (code: string) => string = (c) => `signed(${c})`) {
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    const code = new URL(url, 'http://localhost').searchParams.get('ref') ?? ''
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ token: tokenFor(code) }),
+    } as unknown as Response
+  }))
+}
+
+async function landOn(url: string) {
   window.history.pushState({}, '', url)
-  captureReferralCodeFromURL()
+  await captureReferralCodeFromURL()
 }
 
 describe('referral code capture window', () => {
@@ -18,36 +32,39 @@ describe('referral code capture window', () => {
     localStorage.clear()
     vi.useRealTimers()
     window.history.pushState({}, '', '/')
+    stubCapture()
   })
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
-  it('captures a code from the landing URL with its capture time', () => {
-    landOn('/?ref=ABC123')
-    expect(readStoredReferralCode()).toBe('ABC123')
+  it('captures a code from the landing URL with its capture time', async () => {
+    await landOn('/?ref=ABC123')
+    expect(readStoredReferralCode()).toBe('signed(ABC123)')
 
     const stored = JSON.parse(localStorage.getItem(KEY)!)
-    // The timestamp is what the expiry is measured against, so it has to be
-    // recorded at capture rather than inferred at use.
-    expect(stored.code).toBe('ABC123')
+    // What is stored is the SERVER-SIGNED token, not the bare code: the
+    // client must not be able to backdate or edit its own capture.
+    expect(stored.token).toBe('signed(ABC123)')
     expect(typeof stored.capturedAt).toBe('number')
   })
 
-  it('ignores a URL with no ref, leaving any existing capture alone', () => {
-    landOn('/?ref=KEEPME')
-    landOn('/some/other/page')
-    expect(readStoredReferralCode()).toBe('KEEPME')
+  it('ignores a URL with no ref, leaving any existing capture alone', async () => {
+    await landOn('/?ref=KEEPME')
+    await landOn('/some/other/page')
+    expect(readStoredReferralCode()).toBe('signed(KEEPME)')
   })
 
-  it('expires the code after the published window, measured from capture', () => {
+  it('expires the code after the published window, measured from capture', async () => {
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
+    await landOn('/?ref=OLDCODE')
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
-    landOn('/?ref=OLDCODE')
 
     // One day inside the window: still good.
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z').getTime() + (REFERRAL_CODE_TTL_DAYS - 1) * 86400_000)
-    expect(readStoredReferralCode()).toBe('OLDCODE')
+    expect(readStoredReferralCode()).toBe('signed(OLDCODE)')
 
     // Past it: dropped. Someone who clicked a link months ago and signs up
     // today from an unrelated source has not been referred.
@@ -57,9 +74,9 @@ describe('referral code capture window', () => {
     expect(localStorage.getItem(KEY)).toBeNull()
   })
 
-  it('clears the code once a signup completes', () => {
-    landOn('/?ref=ONESHOT')
-    expect(readStoredReferralCode()).toBe('ONESHOT')
+  it('clears the code once a signup completes', async () => {
+    await landOn('/?ref=ONESHOT')
+    expect(readStoredReferralCode()).toBe('signed(ONESHOT)')
 
     clearStoredReferralCode()
 
@@ -76,21 +93,25 @@ describe('referral code capture window', () => {
     expect(localStorage.getItem(KEY)).toBeNull()
   })
 
+  it('drops the previous {code, capturedAt} shape, which held an unsigned code', () => {
+    // Written by the first version of the window fix. It carries a bare code
+    // the server will no longer accept, so honouring it would silently lose
+    // the attribution at login instead of here.
+    localStorage.setItem(KEY, JSON.stringify({ code: 'UNSIGNED', capturedAt: Date.now() }))
+    expect(readStoredReferralCode()).toBeNull()
+  })
+
   it('drops a corrupted value rather than throwing', () => {
     localStorage.setItem(KEY, '{not json')
     expect(readStoredReferralCode()).toBeNull()
   })
 
-  it('a newer capture replaces an older one and restarts the window', () => {
-    vi.useFakeTimers()
+  it('a newer capture replaces an older one and restarts the window', async () => {
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
-    landOn('/?ref=FIRST')
+    await landOn('/?ref=FIRST')
+    await landOn('/?ref=SECOND')
 
-    vi.setSystemTime(new Date('2026-01-20T00:00:00Z'))
-    landOn('/?ref=SECOND')
-
-    // 25 days after the FIRST capture but only 6 after the second.
-    vi.setSystemTime(new Date('2026-01-26T00:00:00Z'))
-    expect(readStoredReferralCode()).toBe('SECOND')
+    // The stored entry is the later capture, and its window runs from then.
+    expect(readStoredReferralCode()).toBe('signed(SECOND)')
   })
 })

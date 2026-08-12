@@ -238,15 +238,31 @@ export const REFERRAL_CODE_TTL_DAYS = 30;
 const REFERRAL_CODE_TTL_MS = REFERRAL_CODE_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 interface StoredReferralCode {
-  code: string;
+  /** Server-signed. The client cannot backdate or extend it. */
+  token: string;
+  /** Local capture time. Only used to drop obviously-stale entries early -
+   *  the authoritative expiry is the token's own, checked server-side. */
   capturedAt: number;
 }
 
-export const captureReferralCodeFromURL = (): void => {
+export const captureReferralCodeFromURL = async (): Promise<void> => {
   const ref = new URLSearchParams(window.location.search).get("ref");
   if (!ref) return;
-  const entry: StoredReferralCode = { code: ref, capturedAt: Date.now() };
-  localStorage.setItem(REFERRAL_CODE_STORAGE_KEY, JSON.stringify(entry));
+  try {
+    // The server signs {code, capturedAt} and we store the signed token, so
+    // the window is enforced where it cannot be edited. Storing the bare code
+    // with a local timestamp left the 30 days bypassable by calling the
+    // login endpoint directly with a stale code.
+    const res = await apiRequest<{ token: string }>(
+      `/referrals/capture?ref=${encodeURIComponent(ref)}`,
+    );
+    const entry: StoredReferralCode = { token: res.token, capturedAt: Date.now() };
+    localStorage.setItem(REFERRAL_CODE_STORAGE_KEY, JSON.stringify(entry));
+  } catch {
+    // A failed capture means no attribution rather than an unverifiable one.
+    // Silent because this runs on every page load and the visitor has no
+    // action to take.
+  }
 };
 
 /** Reads the stored code if it is still within the window, clearing it
@@ -263,7 +279,7 @@ export const readStoredReferralCode = (): string | null => {
   let entry: StoredReferralCode;
   try {
     const parsed = JSON.parse(raw);
-    if (typeof parsed?.code !== "string" || typeof parsed?.capturedAt !== "number") {
+    if (typeof parsed?.token !== "string" || typeof parsed?.capturedAt !== "number") {
       throw new Error("unrecognised shape");
     }
     entry = parsed;
@@ -276,7 +292,7 @@ export const readStoredReferralCode = (): string | null => {
     clearStoredReferralCode();
     return null;
   }
-  return entry.code;
+  return entry.token;
 };
 
 /** Called once a signup completes. See rule 2 above. */
@@ -289,8 +305,9 @@ export const getGitHubLoginUrl = () => {
   // This allows the backend to redirect back to the correct frontend after OAuth
   const redirectAfterLogin = window.location.origin;
   const params = new URLSearchParams({ redirect: redirectAfterLogin });
-  const refCode = readStoredReferralCode();
-  if (refCode) params.set("ref", refCode);
+  // Sent as ref_token: the login endpoint no longer honours a bare code.
+  const refToken = readStoredReferralCode();
+  if (refToken) params.set("ref_token", refToken);
   return `${API_BASE_URL}/auth/github/login/start?${params.toString()}`;
 };
 
