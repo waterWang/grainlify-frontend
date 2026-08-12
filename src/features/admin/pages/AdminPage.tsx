@@ -946,8 +946,35 @@ export function AdminPage() {
         )}
       </div>
 
-      <SocialFollowReview />
-      <RedemptionsReview />
+      {/* Review queues. These used to render bare - three unlabelled filter
+          pills under the events card - which is a poor place to put the only
+          screen where a contributor's submission gets a decision. Titled like
+          every other section so it can be found by scrolling. */}
+      <div className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 transition-colors ${theme === 'dark'
+        ? 'bg-white/[0.08] border-white/10'
+        : 'bg-white/[0.15] border-white/20'
+        }`}>
+        <div className="mb-6">
+          <h2 className={`text-[24px] font-bold mb-2 transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
+            }`}>Social Follow Review</h2>
+          <p className={`text-[14px] transition-colors ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
+            }`}>Approve or reject follow proofs. Approving grants eligibility for the Founding Contributor Pool.</p>
+        </div>
+        <SocialFollowReview />
+      </div>
+
+      <div className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 transition-colors ${theme === 'dark'
+        ? 'bg-white/[0.08] border-white/10'
+        : 'bg-white/[0.15] border-white/20'
+        }`}>
+        <div className="mb-6">
+          <h2 className={`text-[24px] font-bold mb-2 transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
+            }`}>Redemption Requests</h2>
+          <p className={`text-[14px] transition-colors ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
+            }`}>Points-to-USDC requests awaiting payout or rejection.</p>
+        </div>
+        <RedemptionsReview />
+      </div>
 
       {/* Add Ecosystem Modal */}
       <Modal
