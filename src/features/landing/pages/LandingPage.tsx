@@ -118,9 +118,11 @@ function Features() {
   const features = [
     {
       icon: Code,
-      title: "Smart Matching",
+      // No AI matches anyone. Assignment is a weighted draw computed by the
+      // backend; the AI stages sit behind ai_judging_enabled, which is false.
+      title: "Assignment by Weighted Draw",
       description:
-        "AI-powered algorithm matches contributors with projects that fit their skills and interests.",
+        "Applications open for a fixed window, then one applicant is drawn. Weight comes from fit for that specific issue - not from how fast you applied.",
       className: "md:col-span-2 md:row-span-2",
       large: true,
     },
@@ -138,9 +140,11 @@ function Features() {
     },
     {
       icon: Shield,
-      title: "Secure & Transparent",
+      // Not "near-instant USDC payouts": nothing sends USDC yet. There is no
+      // funded treasury account, and the escrow contract is not deployed.
+      title: "Published Rules",
       description:
-        "Built on Stellar for secure, auditable, near-instant USDC payouts.",
+        "Every draw weight, cap, gate and curve is public before an event starts, served from the same values the backend enforces.",
     },
     {
       icon: Zap,
@@ -208,9 +212,11 @@ function HowItWorks() {
     },
     {
       number: "04",
-      title: "Earn Rewards",
+      // The points programme was retired and the Redeem page removed, so
+      // there is no threshold to clear and nothing to redeem.
+      title: "Share the Pool",
       description:
-        "Redeem points for USDC on Stellar once you clear the minimum threshold.",
+        "Accepted work earns a share of the event pool, decided after the event against published rules.",
     },
   ];
 

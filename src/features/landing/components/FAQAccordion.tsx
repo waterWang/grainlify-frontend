@@ -8,19 +8,20 @@ interface FAQItem {
   answer: string;
 }
 
-// Grounded in the platform's actual mechanics (same facts as the in-app Terms
-// page: Didit KYC, points -> USDC-on-Stellar redemption, admin-reviewed
-// payouts) rather than generic SaaS FAQ filler.
+// Grounded in the platform's actual mechanics rather than generic SaaS FAQ
+// filler - and in what is true TODAY. Four of these answers previously
+// described the points-to-USDC redemption programme, which was retired: there
+// are no points to hold, no threshold to clear and no redemption to request.
 const FAQS: FAQItem[] = [
   {
     question: "How do I actually get paid for contributing?",
     answer:
-      "You earn points for merged contributions and other platform activity. Once you've hit the minimum threshold, you request a redemption from your points balance - an admin reviews it, and approved requests are paid out in USDC on the Stellar network to the wallet address you provide.",
+      "There is no per-task rate. Accepted work earns a share of a pool, and the pool is divided after the event against rules published before it starts - so what a contribution earns depends on what everyone else contributed. Payouts settle in USDC on Stellar. No event has completed yet, so nothing has been paid out.",
   },
   {
     question: "Why do you need KYC?",
     answer:
-      "Because real money moves through the platform. We use a third-party provider (Didit) to verify identity before your first redemption, which keeps the reward pool compliant and protects against fraud - it's a one-time step, not something you repeat per payout.",
+      "Because real money will move through the platform. We use a third-party provider (Didit) to verify identity before a first payout, which keeps the reward pool compliant and protects against fraud - it's a one-time step, not something you repeat.",
   },
   {
     question: "I maintain a project - how do I list it?",
@@ -30,17 +31,17 @@ const FAQS: FAQItem[] = [
   {
     question: "Do I need any crypto experience to start?",
     answer:
-      "No. You sign in with GitHub, browse or get matched to issues, and contribute like you normally would. The only place crypto comes in is at redemption time, when you provide a Stellar wallet address to receive USDC.",
+      "No. You sign in with GitHub, apply to issues, and contribute like you normally would. The only place crypto comes in is at payout, when you provide a Stellar wallet address to receive USDC.",
   },
   {
-    question: "What if I'm not ready to redeem yet?",
+    question: "How is an issue assigned?",
     answer:
-      "Your points stay on your account - there's no expiry for simply holding them. Redeem whenever you've cleared the minimum threshold and are ready to add a wallet address.",
+      "By a weighted draw, not first-come. Applications open for a fixed window, and when it closes one applicant is drawn. Weight comes from fit for that specific issue, plus a bonus for contributors who have never been assigned one. Your follower count, star count, total pull requests and merge rate are deliberately not counted - they are farmable, and they push newcomers down.",
   },
   {
     question: "Is Grainlify free to use?",
     answer:
-      "Yes, for both contributors and maintainers. There's no cost to browse issues, apply, or list a repository - we don't currently charge fees on redemptions either, though that's disclosed up front if it ever changes.",
+      "Yes, for both contributors and maintainers. There's no cost to browse issues, apply, or list a repository. A platform fee can be taken from a sponsor's total before an event's pool is set; the rate and the amount are published on the event's rules page rather than buried.",
   },
 ];
 
