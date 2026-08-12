@@ -3,6 +3,7 @@ import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { Search, Globe, Plus, ArrowUpRight, Sparkles, Send } from 'lucide-react';
 import { Modal, ModalFooter, ModalButton, ModalInput, ModalSelect } from '../../../shared/components/ui/Modal';
 import { getEcosystems } from '../../../shared/api/client';
+import { EcosystemLogo } from '../../../shared/components/EcosystemLogo';
 
 interface EcosystemsPageProps {
   onEcosystemClick: (id: string, name: string, description?: string | null, logoUrl?: string | null) => void;
@@ -296,24 +297,14 @@ export function EcosystemsPage({ onEcosystemClick }: EcosystemsPageProps) {
           >
             {/* Header with Icon */}
             <div className="flex items-start justify-between mb-4 md:mb-5">
-              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-[12px] md:rounded-[14px] flex items-center justify-center shadow-lg border border-white/20 overflow-hidden ${ecosystem.logo_url ? 'bg-white' : `bg-gradient-to-br ${ecosystem.color}`}`}>
-                {ecosystem.logo_url ? (
-                  <img
-                    src={ecosystem.logo_url}
-                    alt={`${ecosystem.name} logo`}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover"
-                    onError={(event) => {
-                      (event.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <span className="text-white text-[20px] md:text-[24px] font-bold">
-                    {ecosystem.letter}
-                  </span>
-                )}
-              </div>
+              <EcosystemLogo
+                name={ecosystem.name}
+                slug={ecosystem.slug}
+                logoUrl={ecosystem.logo_url}
+                className="w-12 h-12 md:w-14 md:h-14 rounded-[12px] md:rounded-[14px]"
+                fallbackBackground={`bg-gradient-to-br ${ecosystem.color}`}
+                letterClassName="text-[20px] md:text-[24px]"
+              />
             </div>
 
             {/* Title */}

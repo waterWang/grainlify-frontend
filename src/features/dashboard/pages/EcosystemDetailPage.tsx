@@ -5,6 +5,7 @@ import { ProjectCard, Project } from '../components/ProjectCard';
 import { SearchWithFilter } from '../components/SearchWithFilter';
 import { getPublicProjects, getEcosystemDetail, type EcosystemDetail } from '../../../shared/api/client';
 import { SkeletonLoader } from '../../../shared/components/SkeletonLoader';
+import { EcosystemLogo } from '../../../shared/components/EcosystemLogo';
 import { getGitHubAvatarUrl } from '../../../shared/utils/avatar';
 
 const formatNumber = (num: number): string => {
@@ -266,13 +267,16 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
           {/* Ecosystem Header */}
           <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
             <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-              <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${ecosystemData.logoUrl ? 'bg-white' : 'bg-gradient-to-br from-[#c9983a] to-[#d4af37]'}`}>
-                {ecosystemData.logoUrl ? (
-                  <img src={ecosystemData.logoUrl} alt="" className="w-full h-full object-contain p-0.5" />
-                ) : (
-                  <span className="text-[18px] md:text-[24px] font-bold text-white">{ecosystemData.logo}</span>
-                )}
-              </div>
+              {/* Same tile as the ecosystems list, so clicking a card does not
+                  swap a brand logo for a letter. */}
+              <EcosystemLogo
+                name={ecosystemData.name}
+                slug={hasDetail ? detail?.slug : undefined}
+                logoUrl={ecosystemData.logoUrl}
+                className="w-12 h-12 md:w-16 md:h-16 rounded-full flex-shrink-0"
+                fallbackBackground="bg-gradient-to-br from-[#c9983a] to-[#d4af37]"
+                letterClassName="text-[18px] md:text-[24px]"
+              />
               <div className="flex-1 min-w-0">
                 <h1 className={`text-[16px] md:text-[20px] font-bold transition-colors ${
                   isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
