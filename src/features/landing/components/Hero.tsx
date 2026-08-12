@@ -47,7 +47,7 @@ export function Hero() {
               theme === "dark" ? "text-[#e8dfd0]" : "text-[#2d2820]"
             }`}
           >
-            Web3 Contributors Platform
+            Open source, allocated by rule
           </span>
         </motion.div>
 
@@ -60,13 +60,13 @@ export function Hero() {
             theme === "dark" ? "text-[#e8dfd0]" : "text-[#2d2820]"
           }`}
         >
-          Connect with
+          Assignment by
           <span className="bg-gradient-to-r from-[#c9983a] to-[#d4af37] bg-clip-text text-transparent">
             {" "}
-            Open Source
+            weighted draw
           </span>
           <br />
-          Opportunities
+          Rewards decided after the work
         </motion.h1>
 
         {/* Description */}
@@ -78,8 +78,10 @@ export function Hero() {
             theme === "dark" ? "text-[#b8a898]" : "text-[#7a6b5a]"
           }`}
         >
-          Grainlify bridges the gap between talented contributors and innovative
-          projects, making open-source collaboration seamless and rewarding.
+          A contribution platform whose allocation rules are published in full -
+          102 of them - because the design doesn't reward gaming them. Nobody
+          wins an issue by refreshing fastest, and nobody can compute their
+          payout in advance.
         </motion.p>
 
         {/* CTA Buttons */}
@@ -96,11 +98,11 @@ export function Hero() {
             bgClassName="bg-gradient-to-r from-[#c9983a] to-[#d4af37]"
             className="w-full sm:w-auto flex items-center justify-center gap-2 font-medium group"
           >
-            <span>Get Started</span>
+            <span>Start contributing</span>
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </HoverBorderGradient>
           <a
-            href="https://docs.grainlify.com"
+            href="https://docs.grainlify.com/docs/contributors/grainhack"
             target="_blank"
             rel="noopener noreferrer"
             className={`w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-[16px] backdrop-blur-[30px] border font-medium transition-all inline-flex items-center justify-center ${
@@ -109,7 +111,7 @@ export function Hero() {
                 : "bg-white/[0.15] border-white/25 text-[#2d2820] hover:bg-white/[0.2] hover:border-[#c9983a]/30"
             }`}
           >
-            Docs
+            Read the rules
           </a>
         </motion.div>
 

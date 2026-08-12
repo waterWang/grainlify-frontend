@@ -45,8 +45,13 @@ describe('LandingPage', () => {
 
     renderWithProviders(<LandingPage />, { withAuth: true })
 
-    expect(screen.getByText(/Grainlify bridges the gap/i)).toBeInTheDocument()
+    expect(screen.getByText(/allocation rules are published in full/i)).toBeInTheDocument()
     expect(screen.getByText('Built for Every Blockchain Ecosystem')).toBeInTheDocument()
+    // The mechanism and the built/planned split are what the page leads with
+    // for a reviewer; if either disappears the page is a feature list again.
+    expect(screen.getByText("Why this isn't another bounty board")).toBeInTheDocument()
+    expect(screen.getByText('Built, and planned')).toBeInTheDocument()
+    expect(screen.getByText(/No event has run yet/i)).toBeInTheDocument()
     expect(screen.getByText('Everything You Need to Succeed')).toBeInTheDocument()
     expect(screen.getByText('How It Works')).toBeInTheDocument()
     expect(screen.getByText('Why Choose Grainlify?')).toBeInTheDocument()
