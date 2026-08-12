@@ -3,7 +3,6 @@ import { Navbar } from "../components/Navbar";
 import { Hero } from "../components/Hero";
 import { EcosystemNetwork } from "../components/EcosystemNetwork";
 import { BentoGrid, BentoGridItem } from "../components/BentoGrid";
-import { TestimonialsMarquee, type MarqueeTestimonial } from "../components/TestimonialsMarquee";
 import { FAQAccordion } from "../components/FAQAccordion";
 import { Footer } from "../components/Footer";
 import { motion } from "motion/react";
@@ -58,7 +57,6 @@ export function LandingPage() {
       <Features />
       <HowItWorks />
       <WhyChooseUs />
-      <Testimonials />
       <FAQ />
       <Footer />
     </div>
@@ -421,85 +419,6 @@ function WhyChooseUs() {
   );
 }
 
-// Placeholder photos (pravatar.cc - a stock placeholder-avatar service built
-// for exactly this purpose) until Grainlify has real contributor photos to
-// swap in for these testimonials.
-const TESTIMONIALS: MarqueeTestimonial[] = [
-  {
-    name: "Sarah Chen",
-    designation: "Full Stack Developer",
-    photo: "https://i.pravatar.cc/150?img=47",
-    quote:
-      "Grainlify helped me find amazing projects that align with my interests. The grant system is transparent and fair!",
-  },
-  {
-    name: "Marcus Johnson",
-    designation: "Project Maintainer",
-    photo: "https://i.pravatar.cc/150?img=12",
-    quote:
-      "As a maintainer, this platform has been incredible for finding talented contributors. Installing the GitHub App took minutes, and issues sync automatically.",
-  },
-  {
-    name: "Emily Rodriguez",
-    designation: "Open Source Contributor",
-    photo: "https://i.pravatar.cc/150?img=32",
-    quote:
-      "The community here is amazing. I've learned so much and made great connections through Grainlify.",
-  },
-  {
-    name: "Chinedu Okafor",
-    designation: "Smart Contract Developer",
-    photo: "https://i.pravatar.cc/150?img=13",
-    quote:
-      "First time getting paid in crypto for open-source work. KYC was a one-time step, and the USDC landed in my wallet on Stellar within minutes of approval.",
-  },
-  {
-    name: "Priya Nair",
-    designation: "Open Source Maintainer",
-    photo: "https://i.pravatar.cc/150?img=44",
-    quote:
-      "We migrated three repositories to Grainlify in an afternoon. Contributors started showing up within the week.",
-  },
-  {
-    name: "Alex Kim",
-    designation: "Frontend Contributor",
-    photo: "https://i.pravatar.cc/150?img=51",
-    quote:
-      "The matching actually works - every issue I've been shown fits my skills. No more scrolling through hundreds of repos hoping for a good first issue.",
-  },
-  {
-    name: "Fatima Zaidi",
-    designation: "Backend Engineer",
-    photo: "https://i.pravatar.cc/150?img=45",
-    quote:
-      "Clean API, clear docs, and the points system makes sense from day one. Redeeming for USDC was straightforward once I'd done KYC.",
-  },
-  {
-    name: "Diego Fernandes",
-    designation: "Student Contributor",
-    photo: "https://i.pravatar.cc/150?img=14",
-    quote:
-      "My first open-source contribution ever was through Grainlify. Got guidance from the maintainer and actually got paid for it.",
-  },
-];
-
-function Testimonials() {
-  return (
-    <section id="testimonials" className="relative py-20 sm:py-24 md:py-32 px-4 sm:px-6">
-      <div className="max-w-7xl mx-auto">
-        <SectionHeader
-          eyebrow="Testimonials"
-          title="What Builders Say"
-          subtitle="Hear from our community of contributors and maintainers"
-        />
-
-        <Reveal delay={0.1}>
-          <TestimonialsMarquee testimonials={TESTIMONIALS} />
-        </Reveal>
-      </div>
-    </section>
-  );
-}
 
 function FAQ() {
   return (

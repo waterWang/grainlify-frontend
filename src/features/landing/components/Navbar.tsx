@@ -74,16 +74,6 @@ export function Navbar() {
               Why Choose Us
             </a>
             <a
-              href="#testimonials"
-              className={`transition-colors font-medium ${
-                theme === "dark"
-                  ? "text-[#b8a898] hover:text-[#c9983a]"
-                  : "text-[#7a6b5a] hover:text-[#c9983a]"
-              }`}
-            >
-              Testimonials
-            </a>
-            <a
               href="#faq"
               className={`transition-colors font-medium ${
                 theme === "dark"
@@ -200,17 +190,6 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Why Choose Us
-            </a>
-            <a
-              href="#testimonials"
-              className={`block transition-colors py-2 font-medium ${
-                theme === "dark"
-                  ? "text-[#b8a898] hover:text-[#c9983a]"
-                  : "text-[#7a6b5a] hover:text-[#c9983a]"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Testimonials
             </a>
             <a
               href="#faq"

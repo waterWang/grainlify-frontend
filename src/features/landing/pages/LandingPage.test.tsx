@@ -50,7 +50,9 @@ describe('LandingPage', () => {
     expect(screen.getByText('Everything You Need to Succeed')).toBeInTheDocument()
     expect(screen.getByText('How It Works')).toBeInTheDocument()
     expect(screen.getByText('Why Choose Grainlify?')).toBeInTheDocument()
-    expect(screen.getByText('What Builders Say')).toBeInTheDocument()
+    // No testimonials section: the quotes it carried were invented, and the
+    // page must not claim social proof the platform has not earned.
+    expect(screen.queryByText('What Builders Say')).not.toBeInTheDocument()
     expect(screen.getByText('Frequently Asked Questions')).toBeInTheDocument()
 
     // Placeholder dashes render before the two independent useLandingStats()
