@@ -18,7 +18,8 @@ import {
   X,
   Menu,
   Flag,
-  Ticket
+  Ticket,
+  ClipboardCheck
 } from "lucide-react";
 import { useThemeToggleAnimation } from "../../shared/hooks/useThemeToggleAnimation";
 import { useAuth } from "../../shared/contexts/AuthContext";
@@ -400,7 +401,12 @@ export function Dashboard() {
       // server re-checks the role on every admin request regardless.
       if (userRole === "admin") {
         setActiveRole("admin");
-        // Data, not "admin": AdminPage is still a placeholder, and landing on
+        // Data, not "admin": Data is the overview. The admin page is reachable
+        // from its own rail icon ("Reviews"), which is where the review queues
+        // are. An earlier version of this comment called that page a
+        // placeholder - that was a misread of a same-named stub in
+        // features/dashboard/pages; the page Dashboard imports is the real one.
+        // Landing on
         // it left the rail with no active item because it has no rail icon.
         handleNavigation("data");
       }
@@ -474,6 +480,13 @@ export function Dashboard() {
     ...(userRole === "admin"
       ? [{ id: "grainhack", icon: Flag, label: "GrainHack admin" }]
       : []),
+    // The review queues (social-follow proofs, redemptions) and ecosystem
+    // management live on this page. It had no rail icon and nothing navigated
+    // to it, so the only way in was typing ?tab=admin by hand - which is how
+    // submitted proofs end up waiting on a screen nobody can open.
+    ...(userRole === "admin"
+      ? [{ id: "admin", icon: ClipboardCheck, label: "Reviews" }]
+      : []),
     { id: "leaderboard", icon: Trophy, label: "Leaderboard" },
     { id: "blog", icon: FileText, label: "Grainlify Blog" },
   ];
@@ -487,7 +500,7 @@ export function Dashboard() {
   // Reading a non-admin page is still allowed; this hides the shortcuts, it is
   // not an authorization boundary. The real boundary is the server, which
   // re-reads the role on every admin request.
-  const ADMIN_NAV_IDS = new Set(["data", "grainhack"]);
+  const ADMIN_NAV_IDS = new Set(["data", "grainhack", "admin"]);
 
   const navItems =
     activeRole === "admin"

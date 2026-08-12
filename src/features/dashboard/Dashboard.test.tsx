@@ -396,13 +396,48 @@ describe('Dashboard', () => {
 
       await user.click(screen.getByRole('button', { name: /ADMIN/i }))
 
-      // Admin view: only the admin surfaces remain.
+      // Admin view: only the admin surfaces remain - including Reviews, which
+      // is the way in to the social-follow and redemption queues. It had no
+      // rail icon for a day, and nothing else navigated to it, so a submitted
+      // proof sat on a screen no admin could open without typing ?tab=admin.
       await waitFor(() => {
-        expect(railIds()).toEqual(['data', 'grainhack'])
+        expect(railIds()).toEqual(['data', 'grainhack', 'admin'])
       })
       for (const gone of ['discover', 'browse', 'ecosystems', 'leaderboard', 'blog', 'my-grainhack']) {
         expect(railIds()).not.toContain(gone)
       }
+    })
+
+    it('gives the review queues a way in from the rail, not just a hand-typed URL', async () => {
+      // Regression. The review queues (social-follow proofs, redemptions) live
+      // on the admin page. When the ADMIN pill was pointed at Data, nothing
+      // navigated there and it had no rail icon, so the screen existed but
+      // could not be opened - and a submitted proof waits until someone does.
+      mockUseAuth.mockReturnValue({
+        userRole: 'admin',
+        userId: 'admin-user-id',
+        user: null,
+        isAuthenticated: true,
+        isLoading: false,
+        login: mockLogin,
+        logout: mockLogout,
+      })
+      const user = userEvent.setup()
+      const { container } = renderWithProviders(<Dashboard />)
+      expect(await screen.findByTestId('discover-page')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: /ADMIN/i }))
+
+      const reviews = await waitFor(() => {
+        const el = container.querySelector('nav [data-tour-id="admin"]')
+        expect(el).not.toBeNull()
+        return el as HTMLElement
+      })
+      await user.click(reviews)
+
+      // The admin page renders - the queues it hosts are mocked out above, so
+      // its own heading is what proves we landed on it.
+      expect(await screen.findByRole('heading', { name: 'Admin Panel' })).toBeInTheDocument()
     })
 
     it('lands the ADMIN view on Data rather than the unimplemented admin placeholder', async () => {
@@ -421,9 +456,8 @@ describe('Dashboard', () => {
 
       await user.click(screen.getByRole('button', { name: /ADMIN/i }))
 
-      // Previously navigated to "admin", whose page is a placeholder reading
-      // "Content to be implemented" and which has no rail icon, so the sidebar
-      // showed nothing selected.
+      // Previously navigated to "admin" with nothing selected in the sidebar.
+      // Data is the overview; the admin page has its own "Reviews" icon.
       expect(await screen.findByTestId('data-page')).toBeInTheDocument()
     })
 
