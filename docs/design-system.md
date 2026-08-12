@@ -41,6 +41,17 @@ Two 2px rings pulsing opacity inside Discover's GrainHack banner, on a
 Two thirds of the idle frame budget, for an effect most people would not
 notice was gone. It was removed in commit `6eeaa7b`.
 
+And that was the *small* case. **The Leaderboard was carrying 55 infinite
+animations, 71 of them inside backdrop-blur surfaces, and sat at 16 FPS idle
+and 15 FPS scrolling.** Thirty-five twinkling dots, four pulsing glow blobs and
+three floating rings, all inside the hero's blurred panel, plus thirty falling
+petals rebuilt every fifteen seconds.
+
+That is the number to remember before adding one back. No single animation
+there was expensive. The page was unusable because fifty-five cheap ones were
+each multiplying the cost of the glass they sat in — which is why the rule is
+categorical rather than a budget.
+
 ### The wrong diagnosis, recorded so it isn't repeated
 
 The first explanation was that scaling a bordered element forces its border to
@@ -183,13 +194,65 @@ Not taste — each has a concrete reason.
 
 ---
 
+## The sweep
+
+One row per page as it is done. Audit count is persistently-animated elements
+found inside backdrop-blur surfaces by the runtime check, before any changes.
+FPS is idle / scrolling, 4x CPU throttle, measured A/B against the previous
+commit.
+
+| Page | Tier | Offences before | FPS before | FPS after | Commit |
+|---|---|---|---|---|---|
+| Discover | A | 2 | 38 / 27 | 120 / 120 | `6eeaa7b` |
+| Leaderboard | B | 71 | 16 / 15 | 121 / 121 | `1a33d5d` |
+| Browse | B | — | — | — | — |
+| Ecosystems | B | — | — | — | — |
+| Ecosystem detail | B | — | — | — | — |
+| Contributors | B | — | — | — | — |
+| Open-Source Week | B | — | — | — | — |
+| OSW detail | B | — | — | — | — |
+| Maintainers | B | — | — | — | — |
+| Org profile | B | — | — | — | — |
+| Profile | B | — | — | — | — |
+| Search | B | — | — | — | — |
+| GrainHack rules | B | — | — | — | — |
+| Blog | B | — | — | — | — |
+| Issue detail | C | — | — | — | — |
+| Project detail | C | — | — | — | — |
+| My GrainHack | C | — | — | — | — |
+| Settings | C | — | — | — | — |
+| Admin | D | — | — | — | — |
+| GrainHack admin | D | — | — | — | — |
+| Data | D | — | — | — | — |
+| Landing | A | — | — | — | — |
+| Sign in / Sign up | A | — | — | — | — |
+
+Fill a row when the page lands. If the offence counts stop being interesting —
+a run of pages at zero — that is the signal the remaining sweep is not paying
+for itself, and worth saying so rather than finishing it out of tidiness.
+
 ## Verifying a page
 
 Per page, before commit:
 
+0. **Run the audit first, before changing anything**, and record the count. If
+   Leaderboard had 55 animations, its neighbours were not written differently,
+   and knowing the number up front beats discovering it mid-redesign.
 1. Screenshots at desktop (1440) and mobile (390), both themes.
 2. FPS idle and while scrolling, CPU throttled 4x, **A/B against the previous
    commit** — not a single reading.
 3. `prefers-reduced-motion` honoured.
 4. Existing accessible names unchanged.
 5. Same data, same props, tests passing.
+
+### Do not trust the overflow check on its own
+
+`document.documentElement.scrollWidth > clientWidth` reports **false** while
+content is visibly clipped, because clipping inside a container with
+`overflow: hidden` never reaches the document. The Leaderboard podium was cut
+off on both edges at 390px with that check reporting no overflow, and the
+Discover greeting truncated a user's own name with the same check clean.
+
+Both were caught by looking at the mobile screenshot. The check is worth
+running — it catches genuine document-level overflow — but it is a floor, and a
+green result is not evidence that the layout fits. Look at the picture.
