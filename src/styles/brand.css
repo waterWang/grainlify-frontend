@@ -62,6 +62,19 @@
   --brand-glass-strong: rgba(255, 255, 255, 0.14);
   --brand-glass-border: rgba(255, 255, 255, 0.25);
 
+  /* --- Card surfaces.
+         --brand-glass is used with a backdrop filter (Tier A only).
+         --brand-surface is the same card without one: measured at 4x the
+         scroll rate, and visually near-identical because the page behind these
+         panels is a flat gradient, so the blur had nothing to blur. Slightly
+         higher alpha than the glass to make up the lightening the blur used to
+         contribute. See docs/design-system.md. */
+  --brand-surface: rgba(255, 255, 255, 0.16);
+  --brand-surface-raised: rgba(255, 255, 255, 0.24);
+  /* Tier D wants a control panel, not a card: opaque, no lift. */
+  --brand-surface-flat: rgba(255, 255, 255, 0.30);
+  --brand-surface-border: rgba(201, 152, 58, 0.18);
+
   /* --- Effect layers, alpha included. */
   --brand-aurora-1: rgba(201, 152, 58, 0.30);
   --brand-aurora-2: rgba(212, 175, 55, 0.28);
@@ -80,6 +93,11 @@
   --brand-glass: rgba(255, 255, 255, 0.08);
   --brand-glass-strong: rgba(255, 255, 255, 0.06);
   --brand-glass-border: rgba(255, 255, 255, 0.10);
+
+  --brand-surface: rgba(255, 255, 255, 0.055);
+  --brand-surface-raised: rgba(255, 255, 255, 0.085);
+  --brand-surface-flat: rgba(255, 255, 255, 0.04);
+  --brand-surface-border: rgba(255, 255, 255, 0.09);
 
   /* Same reasoning: a gold wash over dark ground needs less alpha to read. */
   --brand-aurora-1: rgba(201, 152, 58, 0.25);

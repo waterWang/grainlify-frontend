@@ -68,6 +68,58 @@ Two lessons, both cheap:
 
 ---
 
+## Card surfaces: `solid` is the default, and why
+
+`GlassCard` defaults to `tone="solid"` — the translucent card without a
+backdrop filter. Real glass is Tier A only.
+
+**The reason is not that blur is expensive.** Blur is expensive, but that alone
+would not settle it; plenty of worthwhile effects cost something. The reason is
+that on these pages **the blur has nothing to blur.**
+
+A backdrop filter samples what is painted behind an element and smears it. That
+is only visible when what is behind it has detail — an image, a photograph, a
+busy gradient, overlapping content scrolling past. Behind our Tier B panels is
+a flat two-stop gradient. The filter was sampling a near-solid colour and
+producing a near-solid colour, at 40px, every frame.
+
+So the condition, stated so it can be re-evaluated rather than obeyed:
+
+> Use real glass where there is detail behind the panel worth blurring.
+> Everywhere else the filter is invisible and should be dropped.
+
+If someone later puts a photographic or heavily-patterned background behind a
+Tier B page, **this rule stops applying to that page** and `tone="glass"` may
+be the right call again — measure it. The rule is a conclusion drawn from a
+condition that currently holds, not a prohibition on a technique.
+
+### The evidence
+
+Scroll FPS at 4x CPU throttle, blur dialled at runtime on an otherwise
+identical DOM:
+
+| | current (40px) | 8px | outer panels only | none |
+|---|---|---|---|---|
+| Discover | 26.8 | 38.7 | 39.3 | **120.0** |
+| Leaderboard | 21.2 | 33.4 | 29.1 | **85.8** |
+
+Lightening the blur or un-nesting it buys ~45%. Removing it is 4x. It was the
+largest single cost on both pages — larger than everything else combined.
+
+Visually, with the filter removed, mean per-channel difference was 3.9 (light)
+to 18.9 (dark).
+
+### A trap in comparing them
+
+The first side-by-side appeared to show the glass panel looking warmer and
+richer. It did not. The page background has an aurora hotspot in one corner,
+and the glass panel happened to sit under it. Swapping the two panels swapped
+the warmth with them.
+
+If you are comparing two surface treatments over a non-uniform background,
+swap their positions and shoot again. A difference that moves when you move the
+panels is a property of the background, not of the treatment.
+
 ## Colour
 
 Shared design components carry no colour. Every value comes from a `--brand-*`
