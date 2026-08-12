@@ -186,21 +186,36 @@ export function Dashboard() {
   }, []);
   // ******************************************
 
-  // Persist current tab across reload
+  // Which tab to open on. The URL is the only input.
+  //
+  // There used to be a second input: a `dashboardTab` localStorage value
+  // written on every navigation and read whenever the URL had no ?tab=. It was
+  // described as "persist current tab across reload", but reloads never needed
+  // it — the effect below writes ?tab= into the URL on every navigation, so a
+  // reload always carries its own tab.
+  //
+  // What it actually did was decide where you landed after signing in.
+  // AuthCallbackPage navigates to a bare /dashboard, which has no ?tab=, so the
+  // stored value won and you arrived on whatever tab you last had open — in any
+  // previous session, on any day, since logout never cleared it. Land on the
+  // Leaderboard once and every future sign-in started there. Finish account
+  // setup and you would be dropped back into Settings.
+  //
+  // Removing it makes a bare /dashboard mean Discover, always: after sign-in,
+  // after onboarding, and from the "Dashboard" link in the landing navbar.
+  // Deep links are unaffected because they carry ?tab= and are handled above
+  // it — see the returnTo chain in App.tsx -> SignInPage -> AuthCallbackPage.
   const [currentPage, setCurrentPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const tabFromUrl = params.get("tab");
     // The Redeem page is gone with the points programme. Redirect rather than
     // 404: links to it exist in the UI, in notifications, and possibly
     // outside the product, and landing on "page not found" tells somebody
-    // their rewards vanished. Resolved here so a ?tab=redeem URL and a stale
-    // localStorage value both land in the same place.
+    // their rewards vanished.
     if (tabFromUrl === RETIRED_REDEEM_TAB) return REDEEM_REPLACEMENT_TAB;
     if (tabFromUrl) return tabFromUrl;
 
-    const stored = localStorage.getItem("dashboardTab");
-    if (stored === RETIRED_REDEEM_TAB) return REDEEM_REPLACEMENT_TAB;
-    return stored || "discover";
+    return "discover";
   });
 
   // Rewrite a retired ?tab=redeem URL into the tab that replaced it, so the
@@ -306,8 +321,6 @@ export function Dashboard() {
     else params.delete("issue");
     setSearchParams(params, { replace: isFirstUrlSync.current });
     isFirstUrlSync.current = false;
-
-    localStorage.setItem("dashboardTab", currentPage);
   }, [currentPage, selectedProjectId, selectedIssue, viewingUserId, viewingUserLogin, viewingOrgLogin, projectBackTarget, setSearchParams]);
 
   // Forget the viewed org once the user has navigated away from its page -

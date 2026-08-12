@@ -41,6 +41,9 @@ vi.mock('../grainhack/pages/GrainHackAdminPage', () => ({
 vi.mock('./pages/DataPage', () => ({
   DataPage: () => <div data-testid="data-page" />,
 }))
+vi.mock('./pages/IssueDetailPage', () => ({
+  IssueDetailPage: () => <div data-testid="issue-detail-page" />,
+}))
 
 // UserProfileDropdown pulls in Radix DropdownMenu internals that add nothing to a
 // Dashboard-shell test beyond opening/closing chrome. Replace it with a minimal
@@ -181,7 +184,49 @@ describe('Dashboard', () => {
     await waitFor(() => {
       expect(screen.getByTestId('location-spy').textContent).toContain('tab=browse')
     })
-    expect(localStorage.getItem('dashboardTab')).toBe('browse')
+    // The URL is now the only record of which tab is open. A `dashboardTab`
+    // localStorage mirror used to be written here too; it is gone, because the
+    // only thing it actually decided was where you landed after signing in.
+    expect(localStorage.getItem('dashboardTab')).toBeNull()
+  })
+
+  describe('landing tab', () => {
+    it('opens Discover on a bare /dashboard, whatever tab was open last', async () => {
+      // Regression: signing in navigates to a bare /dashboard, which had no
+      // ?tab=, so a stored value won and users landed on whatever they last
+      // viewed — the Leaderboard, Settings after finishing setup, and so on.
+      // Nothing cleared it, not even logout.
+      localStorage.setItem('dashboardTab', 'leaderboard')
+      window.history.pushState({}, '', '/dashboard')
+
+      renderWithProviders(<Dashboard />)
+
+      expect(await screen.findByTestId('discover-page')).toBeInTheDocument()
+    })
+
+    it('still honours a ?tab= deep link rather than forcing Discover', async () => {
+      // The returnTo chain (App.tsx -> SignInPage -> AuthCallbackPage) replays
+      // the original URL, so the tab arrives as ?tab=. That has to keep beating
+      // the Discover default or signing in would strand people.
+      localStorage.setItem('dashboardTab', 'leaderboard')
+      window.history.pushState({}, '', '/dashboard?tab=browse')
+
+      renderWithProviders(<Dashboard />)
+
+      expect(await screen.findByTestId('browse-page')).toBeInTheDocument()
+      expect(screen.queryByTestId('discover-page')).not.toBeInTheDocument()
+    })
+
+    it('lands someone who deep-linked to an issue on that issue, not on Discover', async () => {
+      // The case the brief calls out: click a link to a specific issue, get
+      // bounced to sign-in, come back. The replayed URL opens the issue overlay.
+      window.history.pushState({}, '', '/dashboard?tab=browse&project=proj-1&issue=issue-1')
+
+      renderWithProviders(<Dashboard />)
+
+      expect(await screen.findByTestId('issue-detail-page')).toBeInTheDocument()
+      expect(screen.queryByTestId('discover-page')).not.toBeInTheDocument()
+    })
   })
 
   it('opens Search on Cmd+K', async () => {
