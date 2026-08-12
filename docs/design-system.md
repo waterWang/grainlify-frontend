@@ -205,7 +205,7 @@ commit.
 |---|---|---|---|---|---|
 | Discover | A | 2 | 38 / 27 | 120 / 120 | `6eeaa7b` |
 | Leaderboard | B | 71 | 16 / 15 | 121 / 121 | `1a33d5d` |
-| Browse | B | — | — | — | — |
+| Browse | B | 0 | 120 / 40 | 120 / 120 | (this commit) |
 | Ecosystems | B | — | — | — | — |
 | Ecosystem detail | B | — | — | — | — |
 | Contributors | B | — | — | — | — |
@@ -226,6 +226,11 @@ commit.
 | Data | D | — | — | — | — |
 | Landing | A | — | — | — | — |
 | Sign in / Sign up | A | — | — | — | — |
+
+Browse is the useful counter-example to Leaderboard: **zero** animations, but
+12 glass panels, and it still scrolled at 40 FPS. The two failure modes are
+independent — a page can be quiet and still slow, so run the audit *and* the
+FPS pass rather than treating a clean audit as a clean bill of health.
 
 Fill a row when the page lands. If the offence counts stop being interesting —
 a run of pages at zero — that is the signal the remaining sweep is not paying
@@ -252,6 +257,13 @@ content is visibly clipped, because clipping inside a container with
 `overflow: hidden` never reaches the document. The Leaderboard podium was cut
 off on both edges at 390px with that check reporting no overflow, and the
 Discover greeting truncated a user's own name with the same check clean.
+
+A second harness trap, same family: a page shorter than the viewport cannot
+scroll, so `window.scrollBy()` does nothing and the scroll sample degenerates
+into an idle sample reading a perfect ~120 FPS. Browse first measured
+"120 FPS scrolling" for exactly that reason. The harness now checks
+`scrollHeight > innerHeight` and reports *not scrollable* rather than a score.
+Give the page realistic data volume before believing any scroll figure.
 
 Both were caught by looking at the mobile screenshot. The check is worth
 running — it catches genuine document-level overflow — but it is a floor, and a

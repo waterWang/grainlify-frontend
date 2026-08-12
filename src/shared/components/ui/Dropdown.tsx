@@ -63,8 +63,8 @@ export function Dropdown({
               ? 'bg-[#a17932] border-[#c9983a] text-white'
               : 'bg-[#b8872f] border-[#a17932] text-white'
             : theme === 'dark'
-            ? 'bg-white/[0.08] border-white/15 text-[#d4d4d4] hover:bg-white/[0.12] hover:text-[#f5f5f5] backdrop-blur-[30px]'
-            : 'bg-white/[0.15] border-white/25 text-[#6b5d4d] hover:bg-white/[0.2] hover:text-[#2d2820] backdrop-blur-[30px]'
+            ? 'bg-white/[0.08] border-white/15 text-[#d4d4d4] hover:bg-white/[0.12] hover:text-[#f5f5f5] '
+            : 'bg-white/[0.15] border-white/25 text-[#6b5d4d] hover:bg-white/[0.2] hover:text-[#2d2820] '
         }`}
       >
         <span>
@@ -76,7 +76,7 @@ export function Dropdown({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className={`absolute top-full left-0 mt-2 w-[340px] rounded-[16px] border-[1.5px] shadow-[0_20px_60px_rgba(0,0,0,0.4)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-[40px] ${
+        <div className={`absolute top-full left-0 mt-2 w-[340px] rounded-[16px] border-[1.5px] shadow-[0_20px_60px_rgba(0,0,0,0.4)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ${
           theme === 'dark'
             ? 'bg-[#2d2820]/[0.95] border-[#c9983a]/30'
             : 'bg-[#d4c5b0]/[0.95] border-[#c9983a]/30'
@@ -123,7 +123,7 @@ export function Dropdown({
                 className={`w-full pl-10 pr-3 py-2.5 rounded-[11px] border-[1.5px] focus:outline-none transition-all text-[14px] placeholder:text-[14px] font-normal ${
                   theme === 'dark'
                     ? 'bg-[#1a1512] border-white/[0.2] text-[#f5f5f5] placeholder-[#9a8a7a] focus:bg-[#1a1512] focus:border-[#c9983a] focus:shadow-[0_0_0_3px_rgba(201,152,58,0.15)]'
-                    : 'bg-white/[0.3] backdrop-blur-[20px] border-white/[0.4] text-[#2d2820] placeholder-[#8a7a6a] focus:bg-white/[0.4] focus:border-[#c9983a] focus:shadow-[0_0_0_3px_rgba(201,152,58,0.1)]'
+                    : 'bg-white/[0.3] border-white/[0.4] text-[#2d2820] placeholder-[#8a7a6a] focus:bg-white/[0.4] focus:border-[#c9983a] focus:shadow-[0_0_0_3px_rgba(201,152,58,0.1)]'
                 }`}
               />
             </div>

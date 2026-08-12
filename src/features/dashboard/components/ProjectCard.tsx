@@ -24,7 +24,7 @@ interface ProjectCardProps {
   variants?: Variants;
 }
 
-// Inner-content-card tier: rounded-[16px] + backdrop-blur-[30px] + resting/hover shadow.
+// Inner-content-card tier: rounded-[16px] + + resting/hover shadow.
 export function ProjectCard({ project, onClick, variants }: ProjectCardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -37,7 +37,7 @@ export function ProjectCard({ project, onClick, variants }: ProjectCardProps) {
   return (
     <motion.div
       variants={variants}
-      className={`flex flex-col h-full backdrop-blur-[30px] rounded-[16px] border p-5 transition-all cursor-pointer motion-safe:hover:-translate-y-1 active:scale-[0.98] ${
+      className={`flex flex-col h-full rounded-[16px] border p-5 transition-all cursor-pointer motion-safe:hover:-translate-y-1 active:scale-[0.98] ${
         isDark
           ? 'bg-white/[0.08] border-white/15 shadow-[0_4px_16px_rgba(0,0,0,0.24)] hover:bg-white/[0.12] hover:shadow-[0_8px_24px_rgba(201,152,58,0.15)]'
           : 'bg-white/[0.15] border-white/25 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]'
