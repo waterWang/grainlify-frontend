@@ -264,7 +264,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
         {/* Left Sidebar - Ecosystem Info */}
         <div className="flex-[1] flex-shrink-0 space-y-4 md:space-y-6">
           {/* Ecosystem Header */}
-          <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
+          <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
             <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
               <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${ecosystemData.logoUrl ? 'bg-white' : 'bg-gradient-to-br from-[#c9983a] to-[#d4af37]'}`}>
                 {ecosystemData.logoUrl ? (
@@ -298,7 +298,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
           </div>
 
           {/* Description */}
-          <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
+          <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
             <h2 className={`text-[14px] md:text-[16px] font-bold mb-2 md:mb-3 transition-colors ${
               isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
             }`}>
@@ -313,7 +313,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
 
           {/* Languages - only show when configured (optional for future) */}
           {ecosystemData.languages.length > 0 && (
-            <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
+            <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
               <h2 className={`text-[14px] md:text-[16px] font-bold mb-2 md:mb-3 transition-colors ${
                 isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
               }`}>
@@ -323,7 +323,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                 {ecosystemData.languages.map((lang, idx) => (
                   <div
                     key={idx}
-                    className="px-2.5 md:px-3 py-1 md:py-1.5 rounded-[6px] md:rounded-[8px] backdrop-blur-[20px] border border-white/25 bg-white/[0.08]"
+                    className="px-2.5 md:px-3 py-1 md:py-1.5 rounded-[6px] md:rounded-[8px] border border-white/25 bg-white/[0.08]"
                   >
                     <span className="text-[11px] md:text-[12px] font-semibold text-[#c9983a]">{lang.name}</span>
                     <span className={`ml-1.5 md:ml-2 text-[10px] md:text-[11px] ${isDark ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'}`}>
@@ -336,7 +336,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
           )}
 
           {/* Links */}
-          <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
+          <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
             <h2 className={`text-[14px] md:text-[16px] font-bold mb-3 md:mb-4 transition-colors ${
               isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
             }`}>
@@ -349,7 +349,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                   href={/^https?:\/\//i.test(link.url) ? link.url : `https://${link.url}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2.5 md:p-3 rounded-[10px] md:rounded-[12px] backdrop-blur-[20px] border border-white/25 bg-white/[0.08] hover:bg-white/[0.15] active:bg-white/[0.2] transition-all group touch-manipulation min-h-[44px]"
+                  className="flex items-center justify-between p-2.5 md:p-3 rounded-[10px] md:rounded-[12px] border border-white/25 bg-white/[0.08] hover:bg-white/[0.15] active:bg-white/[0.2] transition-all group touch-manipulation min-h-[44px]"
                 >
                   <div className="flex-1 min-w-0">
                     <div className={`text-[12px] md:text-[13px] font-semibold transition-colors truncate ${
@@ -380,8 +380,8 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                 activeTab === 'overview'
                   ? 'bg-[#c9983a] text-white shadow-lg'
                   : isDark
-                    ? 'backdrop-blur-[40px] bg-white/[0.12] border border-white/20 text-[#d4d4d4] hover:bg-white/[0.15] active:bg-white/[0.18]'
-                    : 'backdrop-blur-[40px] bg-white/[0.12] border border-white/20 text-[#7a6b5a] hover:bg-white/[0.15] active:bg-white/[0.2]'
+                    ? 'bg-white/[0.12] border border-white/20 text-[#d4d4d4] hover:bg-white/[0.15] active:bg-white/[0.18]'
+                    : 'bg-white/[0.12] border border-white/20 text-[#7a6b5a] hover:bg-white/[0.15] active:bg-white/[0.2]'
               }`}
             >
               Overview
@@ -392,8 +392,8 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                 activeTab === 'projects'
                   ? 'bg-[#c9983a] text-white shadow-lg'
                   : isDark
-                    ? 'backdrop-blur-[40px] bg-white/[0.12] border border-white/20 text-[#d4d4d4] hover:bg-white/[0.15] active:bg-white/[0.18]'
-                    : 'backdrop-blur-[40px] bg-white/[0.12] border border-white/20 text-[#7a6b5a] hover:bg-white/[0.15] active:bg-white/[0.2]'
+                    ? 'bg-white/[0.12] border border-white/20 text-[#d4d4d4] hover:bg-white/[0.15] active:bg-white/[0.18]'
+                    : 'bg-white/[0.12] border border-white/20 text-[#7a6b5a] hover:bg-white/[0.15] active:bg-white/[0.2]'
               }`}
             >
               Projects
@@ -404,8 +404,8 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                 activeTab === 'community'
                   ? 'bg-[#c9983a] text-white shadow-lg'
                   : isDark
-                    ? 'backdrop-blur-[40px] bg-white/[0.12] border border-white/20 text-[#d4d4d4] hover:bg-white/[0.15] active:bg-white/[0.18]'
-                    : 'backdrop-blur-[40px] bg-white/[0.12] border border-white/20 text-[#7a6b5a] hover:bg-white/[0.15] active:bg-white/[0.2]'
+                    ? 'bg-white/[0.12] border border-white/20 text-[#d4d4d4] hover:bg-white/[0.15] active:bg-white/[0.18]'
+                    : 'bg-white/[0.12] border border-white/20 text-[#7a6b5a] hover:bg-white/[0.15] active:bg-white/[0.2]'
               }`}
             >
               Community
@@ -416,7 +416,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
             <div className="space-y-4 md:space-y-6">
               {/* Stats Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                <div className="backdrop-blur-[40px] rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
+                <div className="rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
                   <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
                     <Users className={`w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 ${isDark ? 'text-[#c9983a]' : 'text-[#a67c2a]'}`} />
                     <span className={`text-[9px] md:text-[11px] font-bold uppercase tracking-wide leading-tight ${
@@ -432,7 +432,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                   </div>
                 </div>
 
-                <div className="backdrop-blur-[40px] rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
+                <div className="rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
                   <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
                     <FolderGit2 className={`w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 ${isDark ? 'text-[#c9983a]' : 'text-[#a67c2a]'}`} />
                     <span className={`text-[9px] md:text-[11px] font-bold uppercase tracking-wide leading-tight ${
@@ -448,7 +448,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                   </div>
                 </div>
 
-                <div className="backdrop-blur-[40px] rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
+                <div className="rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
                   <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
                     <AlertCircle className={`w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 ${isDark ? 'text-[#c9983a]' : 'text-[#a67c2a]'}`} />
                     <span className={`text-[9px] md:text-[11px] font-bold uppercase tracking-wide leading-tight ${
@@ -464,7 +464,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
                   </div>
                 </div>
 
-                <div className="backdrop-blur-[40px] rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
+                <div className="rounded-[12px] md:rounded-[16px] border bg-white/[0.12] border-white/20 p-3 md:p-5">
                   <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
                     <GitPullRequest className={`w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 ${isDark ? 'text-[#c9983a]' : 'text-[#a67c2a]'}`} />
                     <span className={`text-[9px] md:text-[11px] font-bold uppercase tracking-wide leading-tight ${
@@ -482,7 +482,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
               </div>
 
               {/* About Section */}
-              <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
+              <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
                 <h2 className={`text-[16px] md:text-[18px] font-bold mb-3 md:mb-4 transition-colors ${
                   isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
                 }`}>
@@ -496,7 +496,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
               </div>
 
               {/* Key Areas */}
-              <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
+              <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
                 <h2 className={`text-[16px] md:text-[18px] font-bold mb-3 md:mb-4 transition-colors ${
                   isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
                 }`}>
@@ -524,7 +524,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
               </div>
 
               {/* Technologies */}
-              <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
+              <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-4 md:p-6">
                 <h2 className={`text-[16px] md:text-[18px] font-bold mb-3 md:mb-4 transition-colors ${
                   isDark ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
                 }`}>
@@ -636,7 +636,7 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
           )}
 
           {activeTab === 'community' && (
-            <div className="backdrop-blur-[40px] rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-6 md:p-8 text-center">
+            <div className="rounded-[16px] md:rounded-[24px] border bg-white/[0.12] border-white/20 p-6 md:p-8 text-center">
               <Users className={`w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4 ${
                 isDark ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
               }`} />

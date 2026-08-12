@@ -182,6 +182,19 @@ panel, not a launch page.
 
 ---
 
+## Pre-existing brand inconsistencies
+
+Noticed during the sweep, deliberately **not** fixed inside unrelated commits.
+Collected here to be taken as one pass, so the decisions are made together
+rather than piecemeal.
+
+| Where | What | Note |
+|---|---|---|
+| Ecosystems cards | Avatar tiles render in random purple / cyan / red / green, derived from the ecosystem name | Off-brand against the warm gold palette. Deriving a colour from a name is reasonable; deriving it from the *whole* hue wheel is not |
+| `theme.css` shadcn tokens | `--primary` is white in dark mode, `--muted-foreground` is pure white, `--border` is solid gold | Defined, wrong, and read by nothing. See `brand.css` header |
+| `AdminPage` | Renders "Admin Page - Content to be implemented" | A placeholder reachable from the admin view |
+| GrainHack card (Discover) | Titled "Join the GrainHack", button navigates to the Open-Source Week page; the sidebar lists both as separate destinations | Copy was fixed; the routing conflation was not |
+
 ## Components ruled out
 
 Not taste — each has a concrete reason.
@@ -207,16 +220,16 @@ commit.
 | Leaderboard | B | 71 | 16 / 15 | 121 / 122 | `1a33d5d` + richness |
 | Browse | B | 0 | 120 / 40 | 120 / 120 | (this commit) |
 | Ecosystems | B | 0 | 120 / 42 | 120 / 120 | (this commit) |
-| Ecosystem detail | B | — | — | — | — |
-| Contributors | B | — | — | — | — |
-| Open-Source Week | B | — | — | — | — |
-| OSW detail | B | — | — | — | — |
-| Maintainers | B | — | — | — | — |
-| Org profile | B | — | — | — | — |
-| Profile | B | — | — | — | — |
-| Search | B | — | — | — | — |
-| GrainHack rules | B | — | — | — | — |
-| Blog | B | — | — | — | — |
+| Ecosystem detail | B | unverified | — | — | sweep (de-glassed, not measured) |
+| Contributors | B | 0 | 120 / n/a | 120 / n/a | sweep |
+| Open-Source Week | B | unverified | — | — | sweep (de-glassed, not measured) |
+| OSW detail | B | unverified | — | — | sweep (de-glassed, not measured) |
+| Maintainers | B | unverified | — | — | sweep (de-glassed, not measured) |
+| Org profile | B | unverified | — | — | sweep (de-glassed, not measured) |
+| Profile | B | unverified | — | — | sweep (de-glassed, not measured) |
+| Search | B | 0 | 120 / n/a | 120 / n/a | sweep |
+| GrainHack rules | B | unverified | — | — | sweep (harness could not render it) |
+| Blog | B | **5** | **54 / 39** | 120 / 120 | sweep |
 | Issue detail | C | — | — | — | — |
 | Project detail | C | — | — | — | — |
 | My GrainHack | C | — | — | — | — |
@@ -237,6 +250,13 @@ Browse is the useful counter-example to Leaderboard: **zero** animations, but
 12 glass panels, and it still scrolled at 40 FPS. The two failure modes are
 independent — a page can be quiet and still slow, so run the audit *and* the
 FPS pass rather than treating a clean audit as a clean bill of health.
+
+**`unverified` is not `0`.** A row marked unverified was de-glassed but never
+run through the runtime audit, because the harness could not render it with a
+realistic fixture. It is recorded that way on purpose: a table that reads clean
+for a page that never rendered is the exact failure this document spends its
+first section warning about. `n/a` in a scroll column means the page fits the
+viewport and cannot be scrolled — also not a score.
 
 Fill a row when the page lands. If the offence counts stop being interesting —
 a run of pages at zero — that is the signal the remaining sweep is not paying
@@ -263,6 +283,36 @@ content is visibly clipped, because clipping inside a container with
 `overflow: hidden` never reaches the document. The Leaderboard podium was cut
 off on both edges at 390px with that check reporting no overflow, and the
 Discover greeting truncated a user's own name with the same check clean.
+
+### The canonical example: measuring overflow when you meant clipping
+
+`scrollWidth > clientWidth` does not mean "this content is clipped". It means
+"this content is wider than the box". Those are the same thing only when the
+box actually clips — on `overflow: visible` the content simply spills and stays
+perfectly readable.
+
+Used as a clipping check it fails in **both** directions:
+
+- **False negative.** Content clipped inside an `overflow: hidden` child never
+  widens the document, so the *document-level* check reads `false` while the
+  Leaderboard podium is cut off at both edges and Discover truncates a user's
+  own name.
+- **False positive.** Applied to every element, it flagged four "clipped"
+  podium columns that were `overflow: visible` and entirely on screen. I nearly
+  went and fixed them.
+
+The check now requires a non-visible overflow and reports which elements it
+found, so the count can be judged rather than trusted.
+
+This is the clearest instance of the shape all four share: **the check answered
+a slightly different question than the one being asked, and the answer to the
+wrong question looked like a pass.**
+
+    intended question                 what was actually measured
+    is anything clipped?              is the document wider than the viewport
+    is anything clipped?              is any box narrower than its content
+    does scrolling stay smooth?       how fast frames run while scrollBy no-ops
+    did the page render correctly?    did a JS exception reach window.onerror
 
 A second harness trap, same family: a page shorter than the viewport cannot
 scroll, so `window.scrollBy()` does nothing and the scroll sample degenerates

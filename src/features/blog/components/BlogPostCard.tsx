@@ -17,7 +17,7 @@ export function BlogPostCard({ post, onOpen }: BlogPostCardProps) {
       type="button"
       onClick={onOpen}
       aria-label={`Read: ${post.title}`}
-      className="text-left w-full h-full flex flex-col backdrop-blur-[30px] bg-white/[0.15] rounded-[20px] border border-white/25 p-6 hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9983a] transition-all cursor-pointer group">
+      className="text-left w-full h-full flex flex-col bg-white/[0.15] rounded-[20px] border border-white/25 p-6 hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9983a] transition-all cursor-pointer group">
       <div className="w-16 h-16 rounded-[16px] bg-gradient-to-br from-[#c9983a] to-[#a67c2e] flex items-center justify-center shadow-lg text-3xl mb-4 border border-white/15 group-hover:scale-110 transition-transform duration-300">
         {post.icon}
       </div>

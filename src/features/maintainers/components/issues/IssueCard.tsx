@@ -27,7 +27,7 @@ export function IssueCard({ issue, index, onClick }: IssueCardProps) {
 
   return (
     <div
-      className={`backdrop-blur-[25px] rounded-[16px] border p-4 hover:border-[#c9983a]/30 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/issue ${
+      className={`rounded-[16px] border p-4 hover:border-[#c9983a]/30 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/issue ${
         theme === 'dark'
           ? 'bg-white/[0.08] border-white/10 hover:bg-white/[0.12]'
           : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.22]'

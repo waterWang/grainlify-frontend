@@ -316,7 +316,7 @@ export function MaintainersPage({ onNavigate, viewMode }: MaintainersPageProps) 
     // the Issues list to ~4 visible rows.
     <div className="flex flex-col gap-6 h-[calc(100vh-84px)]">
       {/* Top Navigation Bar */}
-      <div className={`flex-shrink-0 backdrop-blur-[40px] rounded-[20px] border p-2 relative z-10 transition-colors ${theme === 'dark'
+      <div className={`flex-shrink-0 rounded-[20px] border p-2 relative z-10 transition-colors ${theme === 'dark'
         ? 'bg-[#2d2820]/[0.4] border-white/10'
         : 'bg-white/[0.12] border-white/25'
         }`}>
@@ -325,7 +325,7 @@ export function MaintainersPage({ onNavigate, viewMode }: MaintainersPageProps) 
           <div className="relative z-50">
             <button
               type="button"
-              className={`flex items-center gap-3 px-5 py-3 rounded-[14px] backdrop-blur-[30px] border transition-all group cursor-pointer ${theme === 'dark'
+              className={`flex items-center gap-3 px-5 py-3 rounded-[14px] border transition-all group cursor-pointer ${theme === 'dark'
                 ? 'bg-white/[0.08] border-white/20 hover:bg-white/[0.12] hover:border-[#c9983a]/40'
                 : 'bg-white/[0.15] border-white/30 hover:bg-white/[0.2] hover:border-[#c9983a]/30'
                 }`}

@@ -39,7 +39,7 @@ export function BlogPostView({ post, onBack }: BlogPostViewProps) {
     <div className="space-y-6">
       <button
         onClick={onBack}
-        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border transition-all duration-300 text-[13px] font-semibold ${
+        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] border transition-all duration-300 text-[13px] font-semibold ${
           isDark
             ? 'bg-white/[0.08] border-white/15 text-[#f5f5f5] hover:bg-white/[0.14]'
             : 'bg-white/[0.15] border-white/25 text-[#2d2820] hover:bg-white/[0.25]'
@@ -49,7 +49,7 @@ export function BlogPostView({ post, onBack }: BlogPostViewProps) {
         All articles
       </button>
 
-      <article className="relative backdrop-blur-[40px] bg-gradient-to-br from-white/[0.18] to-white/[0.12] rounded-[28px] border border-white/25 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden">
+      <article className="relative bg-gradient-to-br from-white/[0.18] to-white/[0.12] rounded-[28px] border border-white/25 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden">
         {/* Glow, clipped by the parent's overflow-hidden so it cannot bleed
             onto neighbouring cards. */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -195,7 +195,7 @@ export function BlogPostView({ post, onBack }: BlogPostViewProps) {
 
       <button
         onClick={onBack}
-        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] backdrop-blur-[30px] border transition-all duration-300 text-[13px] font-semibold ${
+        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] border transition-all duration-300 text-[13px] font-semibold ${
           isDark
             ? 'bg-white/[0.08] border-white/15 text-[#f5f5f5] hover:bg-white/[0.14]'
             : 'bg-white/[0.15] border-white/25 text-[#2d2820] hover:bg-white/[0.25]'

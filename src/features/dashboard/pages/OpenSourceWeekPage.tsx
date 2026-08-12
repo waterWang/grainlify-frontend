@@ -88,7 +88,7 @@ export function OpenSourceWeekPage({ onEventClick }: OpenSourceWeekPageProps) {
       {/* Main Events */}
       <div className="space-y-5">
         {isLoading ? (
-          <div className={`backdrop-blur-[40px] rounded-[24px] border p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] ${
+          <div className={`rounded-[24px] border p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] ${
             theme === 'dark' ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
           }`}>
             <div className="animate-pulse space-y-6">
@@ -113,7 +113,7 @@ export function OpenSourceWeekPage({ onEventClick }: OpenSourceWeekPageProps) {
             </div>
           </div>
         ) : formattedEvents.length === 0 ? (
-          <div className={`backdrop-blur-[40px] rounded-[24px] border p-8 sm:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.08)] text-center ${
+          <div className={`rounded-[24px] border p-8 sm:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.08)] text-center ${
             theme === 'dark' ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
           }`}>
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#c9983a] to-[#a67c2e] flex items-center justify-center shadow-[0_8px_24px_rgba(162,121,44,0.3)] border border-white/15 mx-auto mb-4">
@@ -131,7 +131,7 @@ export function OpenSourceWeekPage({ onEventClick }: OpenSourceWeekPageProps) {
           <div
             key={event.id}
             onClick={() => onEventClick(event.id, event.title)}
-            className={`backdrop-blur-[40px] rounded-[24px] border p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all cursor-pointer ${
+            className={`rounded-[24px] border p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all cursor-pointer ${
               theme === 'dark'
                 ? 'bg-white/[0.08] border-white/10 hover:bg-white/[0.12] hover:shadow-[0_8px_24px_rgba(201,152,58,0.15)]'
                 : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)]'

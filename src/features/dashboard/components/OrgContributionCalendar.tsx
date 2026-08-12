@@ -24,7 +24,7 @@ export function OrgContributionCalendar({ calendar, total, isLoading }: OrgContr
   const mutedText = isDark ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]';
 
   return (
-    <div className={`backdrop-blur-[40px] rounded-[24px] border-2 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 transition-colors ${isDark ? 'bg-white/[0.08] border-white/15' : 'bg-white/[0.18] border-white/30'}`}>
+    <div className={`rounded-[24px] border-2 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 transition-colors ${isDark ? 'bg-white/[0.08] border-white/15' : 'bg-white/[0.18] border-white/30'}`}>
       <div className="flex items-center justify-between mb-6">
         <h2 className={`text-[18px] font-bold transition-colors ${headingText}`}>
           {isLoading ? (
@@ -38,7 +38,7 @@ export function OrgContributionCalendar({ calendar, total, isLoading }: OrgContr
         </h2>
       </div>
 
-      <div className={`w-full backdrop-blur-[20px] rounded-[20px] border p-6 transition-colors ${isDark ? 'bg-white/[0.05] border-white/15' : 'bg-white/[0.12] border-white/30'}`}>
+      <div className={`w-full rounded-[20px] border p-6 transition-colors ${isDark ? 'bg-white/[0.05] border-white/15' : 'bg-white/[0.12] border-white/30'}`}>
         {/* Month labels - purely cosmetic spacing, not date-aligned to the
             grid below (matches ProfilePage.tsx's own behavior exactly). */}
         <div className="flex mb-4">

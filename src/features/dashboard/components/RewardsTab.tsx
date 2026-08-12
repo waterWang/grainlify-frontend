@@ -95,7 +95,7 @@ export function RewardsTab() {
         {/* Filter and Search Bar */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Filter Button */}
-          <button className="h-12 flex-shrink-0 w-10 sm:w-12 flex items-center justify-center rounded-[12px] backdrop-blur-[30px] bg-white/[0.15] border border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] hover:border-[#c9983a]/40 transition-all">
+          <button className="h-12 flex-shrink-0 w-10 sm:w-12 flex items-center justify-center rounded-[12px] bg-white/[0.15] border border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] hover:border-[#c9983a]/40 transition-all">
             <Filter className="w-5 h-5" />
           </button>
 
@@ -105,7 +105,7 @@ export function RewardsTab() {
             <input
               type="text"
               placeholder="Search"
-              className="w-full h-12 pl-12 pr-4 py-2.5 sm:py-3 rounded-[12px] backdrop-blur-[30px] bg-white/[0.15] border border-white/25 text-[#2d2820] placeholder-[#7a6b5a] focus:outline-none focus:bg-white/[0.2] focus:border-[#c9983a]/40 transition-all text-[13px]"
+              className="w-full h-12 pl-12 pr-4 py-2.5 sm:py-3 rounded-[12px] bg-white/[0.15] border border-white/25 text-[#2d2820] placeholder-[#7a6b5a] focus:outline-none focus:bg-white/[0.2] focus:border-[#c9983a]/40 transition-all text-[13px]"
             />
           </div>
         </div>
@@ -113,15 +113,15 @@ export function RewardsTab() {
         {/* Grid Layout Button */}
         <button
           onClick={() => setIsColumnsModalOpen(!isColumnsModalOpen)}
-          className="w-full h-12 flex-shrink-0 sm:w-12 flex items-center justify-center rounded-[12px] backdrop-blur-[30px] bg-white/[0.15] border border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] hover:border-[#c9983a]/40 transition-all"
+          className="w-full h-12 flex-shrink-0 sm:w-12 flex items-center justify-center rounded-[12px] bg-white/[0.15] border border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] hover:border-[#c9983a]/40 transition-all"
         >
           <LayoutGrid className="w-5 h-5" />
         </button>
 
         {/* Desktop Table View - Hidden on Mobile */}
-        <div className="hidden md:block backdrop-blur-[30px] bg-white/[0.12] rounded-[20px] border border-white/20 overflow-hidden">
+        <div className="hidden md:block bg-white/[0.12] rounded-[20px] border border-white/20 overflow-hidden">
           <table className="w-full">
-            <thead className="backdrop-blur-[20px] bg-white/[0.08] border-b border-white/20">
+            <thead className="bg-white/[0.08] border-b border-white/20">
               <tr>
                 {selectedColumns.includes("Date") && (
                   <th
@@ -225,7 +225,7 @@ export function RewardsTab() {
                   )}
                   {selectedColumns.includes("Status") && (
                     <td className="px-4 lg:px-6 py-4">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-[20px] bg-white/[0.15] border border-white/20">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.15] border border-white/20">
                         {reward.status === "Complete" ? (
                           <Check className="w-4 h-4 text-green-600" />
                         ) : reward.status === "Processing" ? (
@@ -256,7 +256,7 @@ export function RewardsTab() {
           {rewards.map((reward) => (
             <div
               key={reward.id}
-              className={`backdrop-blur-[30px] bg-white/[0.12] rounded-[16px] border border-white/20 p-4 transition-colors hover:bg-white/[0.15] ${
+              className={`bg-white/[0.12] rounded-[16px] border border-white/20 p-4 transition-colors hover:bg-white/[0.15] ${
                 theme === "dark"
                   ? "hover:border-white/30"
                   : "hover:border-white/25"
@@ -285,7 +285,7 @@ export function RewardsTab() {
                     </span>
                   </div>
                 </div>
-                <div className="flex-shrink-0 inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full backdrop-blur-[20px] bg-white/[0.15] border border-white/20">
+                <div className="flex-shrink-0 inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/[0.15] border border-white/20">
                   {reward.status === "Complete" ? (
                     <Check className="w-4 h-4 text-green-600" />
                   ) : reward.status === "Processing" ? (
@@ -306,7 +306,7 @@ export function RewardsTab() {
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
                 {/* Amount */}
-                <div className="backdrop-blur-[20px] bg-white/[0.05] rounded-[10px] p-2.5">
+                <div className="bg-white/[0.05] rounded-[10px] p-2.5">
                   <span
                     className={`text-[11px] block ${
                       theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
@@ -324,7 +324,7 @@ export function RewardsTab() {
                 </div>
 
                 {/* ID */}
-                <div className="backdrop-blur-[20px] bg-white/[0.05] rounded-[10px] p-2.5">
+                <div className="bg-white/[0.05] rounded-[10px] p-2.5">
                   <span
                     className={`text-[11px] block ${
                       theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
@@ -381,7 +381,7 @@ export function RewardsTab() {
       {isColumnsModalOpen && (
         <>
           {/* Modal Dropdown - Glassmorphism Style */}
-          <div className="fixed top-[140px] right-[40px] w-[320px] backdrop-blur-[40px] bg-white/[0.12] rounded-[16px] border border-white/30 z-50 shadow-[0_20px_60px_rgba(0,0,0,0.25)] overflow-hidden">
+          <div className="fixed top-[140px] right-[40px] w-[320px] bg-white/[0.12] rounded-[16px] border border-white/30 z-50 shadow-[0_20px_60px_rgba(0,0,0,0.25)] overflow-hidden">
             {/* Header */}
             <div className="px-5 py-4 border-b border-white/20">
               <h3 className="text-[16px] font-bold text-[#2d2820]">
@@ -398,7 +398,7 @@ export function RewardsTab() {
                   placeholder="Search"
                   value={columnSearchQuery}
                   onChange={(e) => setColumnSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-[10px] backdrop-blur-[20px] bg-white/[0.2] border border-white/25 text-[#2d2820] text-[13px] placeholder-[#7a6b5a] focus:outline-none focus:bg-white/[0.25] focus:border-[#c9983a]/40 transition-all"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-[10px] bg-white/[0.2] border border-white/25 text-[#2d2820] text-[13px] placeholder-[#7a6b5a] focus:outline-none focus:bg-white/[0.25] focus:border-[#c9983a]/40 transition-all"
                 />
               </div>
             </div>
@@ -432,7 +432,7 @@ export function RewardsTab() {
                             setSelectedColumns([...selectedColumns, column]);
                           }
                         }}
-                        className={`w-full px-3.5 py-3 rounded-[10px] text-left text-[13px] font-medium transition-all flex items-center gap-3 backdrop-blur-[20px] bg-white/[0.15] border border-white/25 text-[#2d2820] hover:bg-white/[0.2] ${
+                        className={`w-full px-3.5 py-3 rounded-[10px] text-left text-[13px] font-medium transition-all flex items-center gap-3 bg-white/[0.15] border border-white/25 text-[#2d2820] hover:bg-white/[0.2] ${
                           isSelected ? "hover:border-[#c9983a]/40" : ""
                         }`}
                       >
