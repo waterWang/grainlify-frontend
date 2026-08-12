@@ -15,6 +15,7 @@ import {
   Users,
   TrendingUp,
   CheckCircle,
+  CircleDashed,
 } from "lucide-react";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
 import { useLandingStats } from "../../../shared/hooks/useLandingStats";
@@ -487,30 +488,46 @@ function Mechanism() {
           title="Why this isn't another bounty board"
           subtitle="Three mechanisms, all of them published before an event starts"
         />
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           {MECHANISM.map((item, i) => (
             <Reveal key={item.title} delay={0.05 * i}>
+              {/* Title and body sit in separate columns on desktop so the three
+                  mechanisms can be read as three headlines first and prose
+                  second. Stacked into one column on mobile. */}
               <div
-                className={`rounded-[20px] border p-6 sm:p-8 backdrop-blur-[30px] transition-colors ${
+                className={`group relative overflow-hidden rounded-[20px] border p-6 sm:p-8 backdrop-blur-[30px] transition-colors ${
                   dark
-                    ? "bg-white/[0.06] border-white/10"
-                    : "bg-white/[0.15] border-white/25"
+                    ? "bg-white/[0.06] border-white/10 hover:border-[#c9983a]/30"
+                    : "bg-white/[0.15] border-white/25 hover:border-[#c9983a]/30"
                 }`}
               >
-                <h3
-                  className={`text-xl sm:text-2xl font-bold mb-3 transition-colors ${
-                    dark ? "text-[#e8dfd0]" : "text-[#2d2820]"
-                  }`}
-                >
-                  {item.title}
-                </h3>
-                <p
-                  className={`text-[15px] leading-relaxed transition-colors ${
-                    dark ? "text-[#b8a898]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  {item.body}
-                </p>
+                {/* Accent rule, clipped by the card's own overflow-hidden so it
+                    cannot bleed past the rounded corner. */}
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#c9983a] to-[#c9983a]/0"
+                />
+                <div className="grid gap-4 sm:gap-8 md:grid-cols-[minmax(0,17rem)_1fr] md:items-start">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-[13px] font-semibold tabular-nums text-[#c9983a]">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h3
+                      className={`text-xl sm:text-[22px] font-bold leading-snug transition-colors ${
+                        dark ? "text-[#e8dfd0]" : "text-[#2d2820]"
+                      }`}
+                    >
+                      {item.title}
+                    </h3>
+                  </div>
+                  <p
+                    className={`max-w-[68ch] text-[15px] leading-relaxed transition-colors ${
+                      dark ? "text-[#b8a898]" : "text-[#7a6b5a]"
+                    }`}
+                  >
+                    {item.body}
+                  </p>
+                </div>
               </div>
             </Reveal>
           ))}
@@ -550,44 +567,74 @@ function BuiltAndPlanned() {
   const { theme } = useTheme();
   const dark = theme === "dark";
 
+  // Built is the column a reviewer checks, so it carries the weight: gold
+  // markers, a solid top rule, full-contrast text. Planned is deliberately
+  // quieter - dashed markers, muted text - so the two can never be skimmed as
+  // one list of accomplishments.
   const column = (
     title: string,
     items: string[],
     tone: "built" | "planned",
-  ) => (
-    <div
-      className={`rounded-[20px] border p-6 sm:p-8 backdrop-blur-[30px] transition-colors ${
-        dark ? "bg-white/[0.06] border-white/10" : "bg-white/[0.15] border-white/25"
-      }`}
-    >
-      <h3
-        className={`text-lg font-bold mb-5 transition-colors ${
-          dark ? "text-[#e8dfd0]" : "text-[#2d2820]"
+  ) => {
+    const built = tone === "built";
+    const Marker = built ? CheckCircle : CircleDashed;
+    return (
+      <div
+        className={`relative h-full overflow-hidden rounded-[20px] border p-6 sm:p-8 backdrop-blur-[30px] transition-colors ${
+          built
+            ? dark
+              ? "bg-white/[0.07] border-[#c9983a]/25"
+              : "bg-white/[0.2] border-[#c9983a]/30"
+            : dark
+              ? "bg-white/[0.03] border-white/10"
+              : "bg-white/[0.1] border-white/20"
         }`}
       >
-        {title}
-      </h3>
-      <ul className="space-y-3">
-        {items.map((item) => (
-          <li key={item} className="flex gap-3">
-            <span
-              aria-hidden
-              className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${
-                tone === "built" ? "bg-[#c9983a]" : dark ? "bg-white/25" : "bg-black/20"
-              }`}
-            />
-            <span
-              className={`text-[14px] leading-relaxed transition-colors ${
-                dark ? "text-[#b8a898]" : "text-[#7a6b5a]"
-              }`}
-            >
-              {item}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+        <span
+          aria-hidden
+          className={`absolute inset-x-0 top-0 h-[3px] ${
+            built
+              ? "bg-gradient-to-r from-[#c9983a] to-[#d4af37]"
+              : dark
+                ? "bg-white/10"
+                : "bg-black/10"
+          }`}
+        />
+        <h3
+          className={`text-lg font-bold mb-5 transition-colors ${
+            dark ? "text-[#e8dfd0]" : "text-[#2d2820]"
+          }`}
+        >
+          {title}
+        </h3>
+        <ul className="space-y-3.5">
+          {items.map((item) => (
+            <li key={item} className="flex gap-3">
+              <Marker
+                aria-hidden
+                className={`mt-[3px] h-4 w-4 shrink-0 ${
+                  built ? "text-[#c9983a]" : dark ? "text-white/30" : "text-black/25"
+                }`}
+              />
+              <span
+                className={`text-[14px] leading-relaxed transition-colors ${
+                  built
+                    ? dark
+                      ? "text-[#d6c9b6]"
+                      : "text-[#5f5344]"
+                    : dark
+                      ? "text-[#b8a898]"
+                      : "text-[#7a6b5a]"
+                }`}
+              >
+                {item}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
 
   return (
     <section id="status" className="relative py-20 sm:py-24 md:py-32 px-4 sm:px-6">
@@ -603,9 +650,12 @@ function BuiltAndPlanned() {
         </div>
 
         <Reveal delay={0.1}>
+          {/* Set apart rather than tucked underneath. This paragraph is the
+              page's credibility, so it should look deliberate - a reader who
+              skims the two columns and stops here has read the honest part. */}
           <p
-            className={`mt-8 text-[14px] leading-relaxed max-w-3xl mx-auto text-center transition-colors ${
-              dark ? "text-[#b8a898]" : "text-[#7a6b5a]"
+            className={`mt-8 mx-auto max-w-3xl rounded-[16px] border-l-2 border-[#c9983a] py-4 pl-5 pr-5 text-[14px] leading-relaxed transition-colors ${
+              dark ? "bg-white/[0.04] text-[#c6b7a3]" : "bg-white/[0.12] text-[#6b5d4d]"
             }`}
           >
             No event has run yet. Draws today are executed by the backend and
