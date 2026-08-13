@@ -119,8 +119,22 @@ export function GrainHackRulesPage({ hackathonId }: GrainHackRulesPageProps) {
                           <p className={`text-[12px] mt-0.5 ${isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>{r.description}</p>
                         )}
                       </td>
-                      <td className={`py-2.5 text-right whitespace-nowrap tabular-nums text-[14px] font-semibold ${isDark ? 'text-[#e8c571]' : 'text-[#8b6f3a]'}`}>
-                        {r.value === '' ? '—' : r.value}
+                      <td className={`py-2.5 text-right text-[14px] font-semibold ${isDark ? 'text-[#e8c571]' : 'text-[#8b6f3a]'}`}>
+                        {/* A rule whose authority is a contract that is not
+                            deployed publishes no number. Showing one would be
+                            stating a rule nothing enforces - the same defect as
+                            the referral window before it was served from the
+                            constant that enforces it. */}
+                        {r.unenforced ? (
+                          <span
+                            title={r.unenforced}
+                            className={`text-[12px] font-normal italic ${isDark ? 'text-[#8a7e70]' : 'text-[#9a8b7a]'}`}
+                          >
+                            not yet set on-chain
+                          </span>
+                        ) : (
+                          <span className="whitespace-nowrap tabular-nums">{r.value === '' ? '—' : r.value}</span>
+                        )}
                       </td>
                     </tr>
                   ))}

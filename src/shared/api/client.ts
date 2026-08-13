@@ -2065,6 +2065,11 @@ export interface GrainHackRule {
   description: string;
   valid_range?: string;
   active: boolean;
+  /** Present when the rule is real but its value cannot be quoted: the
+   *  authority is a contract that is not deployed yet. The page shows the
+   *  reason instead of a number, rather than publishing a figure nothing
+   *  enforces. */
+  unenforced?: string;
 }
 
 export interface GrainHackRules {
