@@ -46,11 +46,26 @@
   --brand-gold: #c9983a;
   --brand-gold-strong: #a67c2e;
   --brand-gold-bright: #d4af37;
+  /* Gold as TEXT, which is a different problem from gold as a surface.
+     #c9983a measures 2.48 against a near-white page and 1.98 against the old
+     beige - it fails AA at every body size in light mode, and eyebrow labels
+     were the biggest user of it. Dark enough to pass (5.83), still legibly
+     gold. In dark mode the bright value is already fine and is kept. */
+  --brand-gold-text: #7d5c20;
+  /* Text placed ON a gold surface. White measured 2.61 on --brand-gold, which
+     failed in BOTH themes - the one failure the two shared. Ink on the same
+     gold is 5.60, so the surface keeps the brand colour and only the text
+     changes. */
+  --brand-gold-on: #2d2820;
   --brand-sand: #b89968;
 
   /* --- Ink. Flips with the theme. */
   --brand-ink: #2d2820;
-  --brand-ink-muted: #7a6b5a;
+  /* Body text. Was #7a6b5a, which measured 3.90 against the page - a fail at
+     AA, and the single most-repeated failure on the landing page (49 uses).
+     Near-black rather than merely passing: at 9.59 it is comfortably legible
+     while still stepping down from --brand-ink for hierarchy. */
+  --brand-ink-muted: #4a4038;
   --brand-ink-faint: #b8a898;
 
   /* --- Hairlines: grid and dot patterns, divider rules. Deliberately near
@@ -82,6 +97,12 @@
 }
 
 .dark {
+  /* Gold on dark ground already passes as text; the light-mode darkening
+     would be unreadable here, so it flips back to the bright value. */
+  --brand-gold-text: #d4af37;
+  /* The gold surface is the same in both themes, so the text on it is too. */
+  --brand-gold-on: #2d2820;
+
   --brand-ink: #f5f5f5;
   --brand-ink-muted: #b8a898;
   --brand-ink-faint: #6b5f52;
