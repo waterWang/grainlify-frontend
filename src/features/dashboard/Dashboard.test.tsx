@@ -444,7 +444,7 @@ describe('Dashboard', () => {
       expect(await screen.findByTestId('admin-page')).toBeInTheDocument()
     })
 
-    it('lands the ADMIN view on Data rather than the unimplemented admin placeholder', async () => {
+    it('lands the ADMIN view on the console, where the queues waiting for a decision are', async () => {
       mockUseAuth.mockReturnValue({
         userRole: 'admin',
         userId: 'admin-user-id',
@@ -460,9 +460,12 @@ describe('Dashboard', () => {
 
       await user.click(screen.getByRole('button', { name: /ADMIN/i }))
 
-      // Previously navigated to "admin" with nothing selected in the sidebar.
-      // Data is the overview; the admin page has its own "Reviews" icon.
-      expect(await screen.findByTestId('data-page')).toBeInTheDocument()
+      // Data is a read-only overview. The console holds social-follow proofs
+      // and redemptions waiting on an admin, so landing on Data put a
+      // dashboard between them and the work. This landed on Data for a while
+      // because the console had no rail icon and nothing would be selected;
+      // it has "Reviews" now, so that reason is gone.
+      expect(await screen.findByTestId('admin-page')).toBeInTheDocument()
     })
 
     it('blocks the grainhack page for a non-admin even when navigated to directly via ?tab= (the nav item alone is not the security boundary)', async () => {

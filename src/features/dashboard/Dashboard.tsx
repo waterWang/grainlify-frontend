@@ -401,14 +401,17 @@ export function Dashboard() {
       // server re-checks the role on every admin request regardless.
       if (userRole === "admin") {
         setActiveRole("admin");
-        // Data, not "admin": Data is the overview. The admin page is reachable
-        // from its own rail icon ("Reviews"), which is where the review queues
-        // are. An earlier version of this comment called that page a
-        // placeholder - that was a misread of a same-named stub in
-        // features/dashboard/pages; the page Dashboard imports is the real one.
-        // Landing on
-        // it left the rail with no active item because it has no rail icon.
-        handleNavigation("data");
+        // Land on the console, not on Data.
+        //
+        // The console is where an admin's actual work is: social-follow proofs
+        // and redemptions waiting for a decision, plus ecosystem and event
+        // management. Data is a read-only overview, so landing there put a
+        // dashboard between an admin and the queue they came to clear.
+        //
+        // This was "data" for a while because the console had no rail icon and
+        // landing on it left nothing selected. It has one now ("Reviews"), so
+        // the reason no longer holds.
+        handleNavigation("admin");
       }
       return;
     }
