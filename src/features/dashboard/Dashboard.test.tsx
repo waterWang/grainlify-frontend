@@ -82,6 +82,9 @@ vi.mock('../../shared/api/client', () => ({
 // The admin-activation flow below renders the real AdminPage, which in turn
 // renders these two - unrelated to what this suite tests (shell nav/auth),
 // and covered by their own SocialFollowReview.test.tsx / RedemptionsReview.test.tsx.
+vi.mock('../admin/pages/AdminPage', () => ({
+  AdminPage: () => <div data-testid="admin-page" />,
+}))
 vi.mock('../admin/components/SocialFollowReview', () => ({
   SocialFollowReview: () => null,
 }))
@@ -435,9 +438,10 @@ describe('Dashboard', () => {
       })
       await user.click(reviews)
 
-      // The admin page renders - the queues it hosts are mocked out above, so
-      // its own heading is what proves we landed on it.
-      expect(await screen.findByRole('heading', { name: 'Admin Panel' })).toBeInTheDocument()
+      // The admin page renders. AdminPage itself is mocked in this suite - it
+      // pulls in ecosystem/event fetches that have nothing to do with shell
+      // navigation - so the mock's marker is what proves we landed on it.
+      expect(await screen.findByTestId('admin-page')).toBeInTheDocument()
     })
 
     it('lands the ADMIN view on Data rather than the unimplemented admin placeholder', async () => {

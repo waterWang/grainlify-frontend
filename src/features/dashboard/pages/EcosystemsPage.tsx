@@ -169,7 +169,7 @@ export function EcosystemsPage({ onEcosystemClick }: EcosystemsPageProps) {
   return (
     <div className="space-y-4 md:space-y-6 px-4 md:px-0">
       {/* Header Section */}
-      <div className={`backdrop-blur-[40px] bg-gradient-to-br rounded-[20px] md:rounded-[28px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 md:p-10 transition-colors ${
+      <div className={`bg-gradient-to-br rounded-[20px] md:rounded-[28px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 md:p-10 transition-colors ${
         theme === 'dark'
           ? 'from-white/[0.08] to-white/[0.04] border-white/10'
           : 'from-white/[0.15] to-white/[0.08] border-white/20'
@@ -201,7 +201,7 @@ export function EcosystemsPage({ onEcosystemClick }: EcosystemsPageProps) {
           placeholder="Search ecosystems..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className={`w-full pl-10 md:pl-12 pr-4 py-3 md:py-3.5 rounded-[12px] md:rounded-[14px] backdrop-blur-[30px] border focus:outline-none transition-all text-[13px] md:text-[14px] shadow-[inset_0px_0px_4px_0px_rgba(0,0,0,0.12)] relative touch-manipulation ${
+          className={`w-full pl-10 md:pl-12 pr-4 py-3 md:py-3.5 rounded-[12px] md:rounded-[14px] border focus:outline-none transition-all text-[13px] md:text-[14px] shadow-[inset_0px_0px_4px_0px_rgba(0,0,0,0.12)] relative touch-manipulation ${
             theme === 'dark'
               ? 'bg-white/[0.08] border-white/15 text-[#f5f5f5] placeholder-[#d4d4d4] focus:bg-white/[0.12] focus:border-[#c9983a]/30'
               : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder-[#7a6b5a] focus:bg-white/[0.2] focus:border-[#c9983a]/30'
@@ -215,7 +215,7 @@ export function EcosystemsPage({ onEcosystemClick }: EcosystemsPageProps) {
           {Array.from({ length: 6 }).map((_, idx) => (
             <div
               key={idx}
-              className={`backdrop-blur-[30px] rounded-[16px] md:rounded-[20px] border p-4 md:p-6 ${
+              className={`rounded-[16px] md:rounded-[20px] border p-4 md:p-6 ${
                 theme === 'dark'
                   ? 'bg-white/[0.08] border-white/10'
                   : 'bg-white/[0.15] border-white/25'
@@ -289,7 +289,7 @@ export function EcosystemsPage({ onEcosystemClick }: EcosystemsPageProps) {
           <div
             key={ecosystem.id}
             onClick={() => onEcosystemClick(ecosystem.id, ecosystem.name, ecosystem.description, ecosystem.logo_url)}
-            className={`backdrop-blur-[30px] rounded-[16px] md:rounded-[20px] border p-4 md:p-6 transition-all cursor-pointer group touch-manipulation ${
+            className={`rounded-[16px] md:rounded-[20px] border p-4 md:p-6 transition-all cursor-pointer group touch-manipulation ${
               theme === 'dark'
                 ? 'bg-white/[0.08] border-white/10 hover:bg-white/[0.12] hover:shadow-[0_8px_24px_rgba(201,152,58,0.15)] active:bg-white/[0.15]'
                 : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] active:bg-white/[0.25]'
@@ -363,7 +363,7 @@ export function EcosystemsPage({ onEcosystemClick }: EcosystemsPageProps) {
       )}
 
       {/* Request Ecosystem Section */}
-      <div className={`backdrop-blur-[40px] bg-gradient-to-br rounded-[20px] md:rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 md:p-10 transition-all overflow-hidden relative ${
+      <div className={`bg-gradient-to-br rounded-[20px] md:rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 md:p-10 transition-all overflow-hidden relative ${
         theme === 'dark'
           ? 'from-white/[0.08] to-white/[0.04] border-white/10'
           : 'from-white/[0.15] to-white/[0.08] border-white/20'

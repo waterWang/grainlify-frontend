@@ -67,7 +67,7 @@ export function OpenSourceWeekDetailPage({ eventId, eventName, onBack }: OpenSou
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className={`flex items-center gap-2 px-4 py-2 rounded-[12px] backdrop-blur-[30px] border transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-[12px] border transition-all ${
             theme === 'dark'
               ? 'bg-white/[0.08] border-white/10 text-[#f5f5f5] hover:bg-white/[0.12]'
               : 'bg-white/[0.15] border-white/25 text-[#2d2820] hover:bg-white/[0.2]'
@@ -81,7 +81,7 @@ export function OpenSourceWeekDetailPage({ eventId, eventName, onBack }: OpenSou
 
       {isLoading ? (
         <div
-          className={`backdrop-blur-[40px] rounded-[20px] border p-8 transition-colors animate-pulse ${
+          className={`rounded-[20px] border p-8 transition-colors animate-pulse ${
             theme === 'dark' ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
           }`}
         >
@@ -90,7 +90,7 @@ export function OpenSourceWeekDetailPage({ eventId, eventName, onBack }: OpenSou
         </div>
       ) : error || !event ? (
         <div
-          className={`backdrop-blur-[40px] rounded-[20px] border p-8 transition-colors ${
+          className={`rounded-[20px] border p-8 transition-colors ${
             theme === 'dark'
               ? 'bg-white/[0.08] border-white/10 text-[#d4d4d4]'
               : 'bg-white/[0.15] border-white/25 text-[#7a6b5a]'
@@ -102,7 +102,7 @@ export function OpenSourceWeekDetailPage({ eventId, eventName, onBack }: OpenSou
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div
-              className={`backdrop-blur-[40px] rounded-[20px] border p-6 transition-colors ${
+              className={`rounded-[20px] border p-6 transition-colors ${
                 theme === 'dark' ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
               }`}
             >
@@ -117,7 +117,7 @@ export function OpenSourceWeekDetailPage({ eventId, eventName, onBack }: OpenSou
             </div>
 
             <div
-                          className={`backdrop-blur-[40px] rounded-[20px] border p-6 transition-colors ${
+                          className={`rounded-[20px] border p-6 transition-colors ${
                 theme === 'dark' ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
               }`}
             >
@@ -146,7 +146,7 @@ export function OpenSourceWeekDetailPage({ eventId, eventName, onBack }: OpenSou
                 </div>
 
             <div
-              className={`backdrop-blur-[40px] rounded-[20px] border p-6 transition-colors ${
+              className={`rounded-[20px] border p-6 transition-colors ${
                 theme === 'dark' ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
               }`}
             >
@@ -162,14 +162,14 @@ export function OpenSourceWeekDetailPage({ eventId, eventName, onBack }: OpenSou
 
           <div className="lg:col-span-4 space-y-6">
             <div
-              className={`backdrop-blur-[40px] rounded-[20px] border-2 p-8 transition-colors ${
+              className={`rounded-[20px] border-2 p-8 transition-colors ${
                 theme === 'dark' ? 'bg-white/[0.05] border-[#c9983a]/40' : 'bg-white/[0.1] border-[#c9983a]/40'
               }`}
             >
               <h2 className={`text-[18px] font-bold mb-4 transition-colors ${theme === 'dark' ? 'text-[#e8c77f]' : 'text-[#6d5530]'}`}>
                 Overview
               </h2>
-              <div className={`p-4 rounded-[14px] backdrop-blur-[30px] border ${
+              <div className={`p-4 rounded-[14px] border ${
                 theme === 'dark' ? 'bg-white/[0.05] border-white/10' : 'bg-white/[0.1] border-white/25'
               }`}>
                 <p className={`text-[13px] leading-relaxed transition-colors ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'}`}>

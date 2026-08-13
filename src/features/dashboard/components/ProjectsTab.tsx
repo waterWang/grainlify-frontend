@@ -93,10 +93,10 @@ export function ProjectsTab() {
   return (
     <>
       {/* Desktop Table View - Hidden on Mobile */}
-      <div className="hidden md:block backdrop-blur-[30px] bg-white/[0.12] rounded-[20px] border border-white/20 overflow-hidden">
+      <div className="hidden md:block bg-white/[0.12] rounded-[20px] border border-white/20 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="backdrop-blur-[20px] bg-white/[0.08] border-b border-white/20">
+            <thead className="bg-white/[0.08] border-b border-white/20">
               <tr>
                 <th
                   className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
@@ -311,7 +311,7 @@ export function ProjectsTab() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
-                      className={`px-4 py-2 rounded-[8px] backdrop-blur-[20px] border text-[12px] font-medium transition-all ${
+                      className={`px-4 py-2 rounded-[8px] border text-[12px] font-medium transition-all ${
                         theme === "dark"
                           ? "bg-white/[0.08] border-white/15 text-[#f5f5f5] hover:bg-white/[0.12] hover:border-[#c9983a]/40"
                           : "bg-white/[0.15] border-white/25 text-[#2d2820] hover:bg-white/[0.2] hover:border-[#c9983a]/40"
@@ -332,7 +332,7 @@ export function ProjectsTab() {
         {projects.map((project) => (
           <div
             key={project.id}
-            className={`backdrop-blur-[30px] bg-white/[0.12] rounded-[16px] border border-white/20 p-4 transition-colors hover:bg-white/[0.15] ${
+            className={`bg-white/[0.12] rounded-[16px] border border-white/20 p-4 transition-colors hover:bg-white/[0.15] ${
               theme === "dark"
                 ? "hover:border-white/30"
                 : "hover:border-white/25"
@@ -366,7 +366,7 @@ export function ProjectsTab() {
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3 mb-3">
               {/* Contributors */}
-              <div className="backdrop-blur-[20px] bg-white/[0.05] rounded-[10px] p-2.5">
+              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
                 <span
                   className={`text-[11px] block ${
                     theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
@@ -384,7 +384,7 @@ export function ProjectsTab() {
               </div>
 
               {/* Available Issues */}
-              <div className="backdrop-blur-[20px] bg-white/[0.05] rounded-[10px] p-2.5">
+              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
                 <span
                   className={`text-[11px] block ${
                     theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
@@ -402,7 +402,7 @@ export function ProjectsTab() {
               </div>
 
               {/* My Contributions */}
-              <div className="backdrop-blur-[20px] bg-white/[0.05] rounded-[10px] p-2.5">
+              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
                 <span
                   className={`text-[11px] block ${
                     theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
@@ -420,7 +420,7 @@ export function ProjectsTab() {
               </div>
 
               {/* My Rewards */}
-              <div className="backdrop-blur-[20px] bg-white/[0.05] rounded-[10px] p-2.5">
+              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
                 <span
                   className={`text-[11px] block ${
                     theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
@@ -464,7 +464,7 @@ export function ProjectsTab() {
 
             {/* See Project Button */}
             <button
-              className={`w-full px-4 py-2.5 rounded-[8px] backdrop-blur-[20px] border text-[13px] font-medium transition-all ${
+              className={`w-full px-4 py-2.5 rounded-[8px] border text-[13px] font-medium transition-all ${
                 theme === "dark"
                   ? "bg-[#c9983a]/80 border-[#c9983a] text-[#2d2820] hover:bg-[#c9983a] hover:border-[#c9983a]"
                   : "bg-[#c9983a]/90 border-[#c9983a] text-white hover:bg-[#c9983a] hover:border-[#c9983a]"

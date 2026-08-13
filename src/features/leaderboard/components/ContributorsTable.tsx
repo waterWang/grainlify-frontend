@@ -27,12 +27,12 @@ export function ContributorsTable({
 
   return (
     <div
-      className={`backdrop-blur-[40px] bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-700 delay-1000 ${
+      className={`bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-700 delay-1000 ${
         isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >
       {/* Table Header */}
-      <div className="grid grid-cols-12 gap-4 px-8 py-4 border-b border-white/10 backdrop-blur-[30px] bg-white/[0.08]">
+      <div className="grid grid-cols-12 gap-4 px-8 py-4 border-b border-white/10 bg-white/[0.08]">
         <div
           className={`col-span-1 text-[12px] font-bold uppercase tracking-wider transition-colors ${
             theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
@@ -53,7 +53,7 @@ export function ContributorsTable({
           }`}
         >
           Score
-          <Award className="w-3.5 h-3.5 animate-wiggle-slow" />
+          <Award className="w-3.5 h-3.5" />
         </div>
         <div className="col-span-2"></div>
       </div>
@@ -110,7 +110,7 @@ export function ContributorsTable({
                   </div>
                 )}
                 {/* Glow ring on hover */}
-                <div className="absolute inset-0 rounded-full border-2 border-[#c9983a]/0 group-hover:border-[#c9983a]/50 transition-all duration-300 animate-ping-on-hover" />
+                <div className="absolute inset-0 rounded-full border-2 border-[#c9983a]/0 group-hover:border-[#c9983a]/50 transition-all duration-300" />
               </div>
               <div>
                 <div

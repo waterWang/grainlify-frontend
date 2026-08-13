@@ -31,7 +31,7 @@ export function IssueListSidebar({
 }: IssueListSidebarProps) {
   const { theme } = useTheme();
   return (
-    <div className={`w-[380px] backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col transition-colors ${
+    <div className={`w-[380px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col transition-colors ${
       theme === 'dark'
         ? 'bg-[#2d2820]/[0.4] border-white/10'
         : 'bg-white/[0.12] border-white/20'
@@ -49,7 +49,7 @@ export function IssueListSidebar({
           />
 
           <button 
-            className="relative px-4 py-3 rounded-[14px] backdrop-blur-[25px] bg-white/[0.15] border border-white/25 hover:bg-white/[0.2] hover:border-[#c9983a]/30 transition-all group" 
+            className="relative px-4 py-3 rounded-[14px] bg-white/[0.15] border border-white/25 hover:bg-white/[0.2] hover:border-[#c9983a]/30 transition-all group" 
             onClick={onFilterClick}
           >
             <Filter className="w-4 h-4 text-[#7a6b5a] group-hover:text-[#c9983a] transition-colors" />
@@ -69,7 +69,7 @@ export function IssueListSidebar({
             placeholder="Search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-11 pr-4 py-3 rounded-[14px] backdrop-blur-[25px] border text-[14px] focus:outline-none focus:border-[#c9983a]/40 focus:ring-2 focus:ring-[#c9983a]/20 transition-all ${
+            className={`w-full pl-11 pr-4 py-3 rounded-[14px] border text-[14px] focus:outline-none focus:border-[#c9983a]/40 focus:ring-2 focus:ring-[#c9983a]/20 transition-all ${
               theme === 'dark'
                 ? 'bg-white/[0.08] border-white/15 text-[#e8dfd0] placeholder:text-[#8a7b6a] focus:bg-white/[0.12]'
                 : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder:text-[#9a8b7a] focus:bg-white/[0.2]'

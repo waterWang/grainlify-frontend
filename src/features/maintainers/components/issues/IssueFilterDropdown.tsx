@@ -23,7 +23,7 @@ export function IssueFilterDropdown({ value, onChange, isOpen, onToggle, onClose
   return (
     <div className="relative flex-1 z-50">
       <button 
-        className={`w-full flex items-center justify-between px-4 py-3 rounded-[14px] backdrop-blur-[25px] border transition-all ${
+        className={`w-full flex items-center justify-between px-4 py-3 rounded-[14px] border transition-all ${
           isDark
             ? 'bg-white/[0.08] border-white/15 hover:bg-white/[0.12] hover:border-[#e8c571]/30'
             : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2] hover:border-[#c9983a]/30'

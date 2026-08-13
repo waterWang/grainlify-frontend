@@ -4,6 +4,9 @@
  */
 
 import { API_BASE_URL } from "../config/api";
+import { ApiError } from './apiError';
+export { ApiError, isApiError } from './apiError';
+
 
 // Token management
 export const getAuthToken = (): string | null => {
@@ -138,7 +141,11 @@ async function apiRequest<T>(
     } catch {
       throw new Error(`API request failed with status ${response.status}`);
     }
-    throw new Error(errorData?.message || errorData?.error || "API request failed");
+    throw new ApiError(
+      errorData?.message || errorData?.error || "API request failed",
+      response.status,
+      errorData as Record<string, unknown> | undefined,
+    );
   }
 
   // Parse JSON response

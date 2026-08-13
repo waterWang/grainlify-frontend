@@ -131,7 +131,6 @@ export function SearchPage({ onBack, onIssueClick, onProjectClick, onContributor
               ? 'bg-[#2d2820]/60 hover:bg-[#2d2820]/80 text-[#d4c5b0]'
               : 'bg-white/60 hover:bg-white/80 text-[#6b5d4d]'
           }`}
-          style={{ backdropFilter: 'blur(20px)' }}
         >
           <ChevronLeft className="w-4 h-4" />
           <span className="text-[14px] font-medium">Back</span>
@@ -159,7 +158,6 @@ export function SearchPage({ onBack, onIssueClick, onProjectClick, onContributor
               ? 'bg-[#2d2820]/60 border border-white/10'
               : 'bg-white/60 border border-black/10'
           }`}
-          style={{ backdropFilter: 'blur(40px)' }}
         >
           <div className="absolute inset-0 flex items-center px-6">
             <Search className={`w-5 h-5 mr-4 flex-shrink-0 transition-colors ${
@@ -224,7 +222,6 @@ export function SearchPage({ onBack, onIssueClick, onProjectClick, onContributor
                       ? 'bg-[#2d2820]/40 hover:bg-[#2d2820]/60 border border-white/5 hover:border-white/10'
                       : 'bg-white/40 hover:bg-white/60 border border-black/5 hover:border-black/10'
                   }`}
-                  style={{ backdropFilter: 'blur(20px)' }}
                 >
                   <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0 ${
                     darkTheme ? 'bg-[#c9983a]/20' : 'bg-[#c9983a]/30'
@@ -303,7 +300,6 @@ export function SearchPage({ onBack, onIssueClick, onProjectClick, onContributor
                       ? 'bg-[#2d2820]/40 hover:bg-[#2d2820]/60 border border-white/5 hover:border-white/10'
                       : 'bg-white/40 hover:bg-white/60 border border-black/5 hover:border-black/10'
                   }`}
-                  style={{ backdropFilter: 'blur(20px)' }}
                 >
                   <span className={`text-left text-[14px] transition-colors ${
                     darkTheme ? 'text-[#d4c5b0]' : 'text-[#6b5d4d]'

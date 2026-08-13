@@ -294,7 +294,7 @@ export function OrgProfilePage({ viewingOrgLogin, onBack, onProjectClick }: OrgP
     getOrgSummary(viewingOrgLogin).then(setSummary).catch(() => {});
   };
 
-  const cardClass = `backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 md:p-8 ${
+  const cardClass = `rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 md:p-8 ${
     isDark ? 'bg-white/[0.08] border-white/15' : 'bg-white/[0.15] border-white/25'
   }`;
   const mutedText = isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]';
@@ -396,7 +396,7 @@ export function OrgProfilePage({ viewingOrgLogin, onBack, onProjectClick }: OrgP
             {statTiles.map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
-                className={`group relative overflow-hidden rounded-[20px] border p-5 backdrop-blur-[30px] transition-all duration-300 hover:-translate-y-0.5 ${
+                className={`group relative overflow-hidden rounded-[20px] border p-5 transition-all duration-300 hover:-translate-y-0.5 ${
                   isDark
                     ? 'bg-white/[0.08] border-white/15 hover:border-[#c9983a]/40 hover:shadow-[0_12px_32px_rgba(201,152,58,0.15)]'
                     : 'bg-white/[0.18] border-white/30 hover:border-[#c9983a]/40 hover:shadow-[0_12px_32px_rgba(201,152,58,0.12)]'
@@ -425,7 +425,7 @@ export function OrgProfilePage({ viewingOrgLogin, onBack, onProjectClick }: OrgP
           <div className="absolute inset-0 rounded-[28px] blur-2xl group-hover/rank:blur-3xl transition-all duration-700 opacity-80 bg-gradient-to-br from-[#c9983a]/50 via-[#d4af37]/35 to-transparent" />
           <div className="absolute inset-0 rounded-[28px] blur-xl group-hover/rank:scale-110 transition-transform duration-700 bg-gradient-to-br from-[#ffd700]/30 to-transparent" />
 
-          <div className="relative h-full flex flex-col justify-center backdrop-blur-[40px] rounded-[28px] border-[3.5px] border-white/50 shadow-[0_15px_60px_rgba(201,152,58,0.5),inset_0_2px_4px_rgba(255,255,255,0.5),0_0_60px_rgba(255,215,0,0.2)] p-8 text-center group-hover/rank:scale-105 group-hover/rank:shadow-[0_20px_80px_rgba(201,152,58,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)] transition-all duration-500 bg-gradient-to-br from-[#c9983a]/40 via-[#d4af37]/30 to-[#c9983a]/25">
+          <div className="relative h-full flex flex-col justify-center rounded-[28px] border-[3.5px] border-white/50 shadow-[0_15px_60px_rgba(201,152,58,0.5),inset_0_2px_4px_rgba(255,255,255,0.5),0_0_60px_rgba(255,215,0,0.2)] p-8 text-center group-hover/rank:scale-105 group-hover/rank:shadow-[0_20px_80px_rgba(201,152,58,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)] transition-all duration-500 bg-gradient-to-br from-[#c9983a]/40 via-[#d4af37]/30 to-[#c9983a]/25">
             <div className="absolute top-4 left-4 w-4 h-4 rounded-full bg-white/50 shadow-[0_0_12px_rgba(255,255,255,0.8)] animate-pulse" />
             <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-[#c9983a]/70 shadow-[0_0_10px_rgba(201,152,58,0.9)]" />
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white/40" />

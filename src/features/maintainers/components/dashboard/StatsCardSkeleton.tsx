@@ -5,7 +5,7 @@ export function StatsCardSkeleton() {
   const { theme } = useTheme();
 
   return (
-    <div className={`backdrop-blur-[40px] rounded-[20px] border p-6 relative overflow-hidden transition-colors ${
+    <div className={`rounded-[20px] border p-6 relative overflow-hidden transition-colors ${
       theme === 'dark'
         ? 'bg-[#2d2820]/[0.4] border-white/10'
         : 'bg-white/[0.12] border-white/20'

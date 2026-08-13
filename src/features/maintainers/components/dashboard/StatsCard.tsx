@@ -16,7 +16,7 @@ export function StatsCard({ stat, index }: StatsCardProps) {
 
   return (
     <div
-      className={`backdrop-blur-[40px] rounded-[18px] border p-6 transition-all duration-300 group relative overflow-hidden ${
+      className={`rounded-[18px] border p-6 transition-all duration-300 group relative overflow-hidden ${
         theme === 'dark'
           ? 'bg-[#2d2820]/[0.4] border-white/10 hover:bg-[#2d2820]/[0.5]'
           : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2]'

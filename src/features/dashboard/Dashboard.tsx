@@ -383,7 +383,7 @@ export function Dashboard() {
       setShowAdminPasswordModal(false);
       setAdminPassword("");
       setActiveRole("admin");
-      handleNavigation("data");
+      handleNavigation("admin");
     } catch (error) {
       console.error("Admin authentication failed:", error);
       // Keep UI clean: show a simple message; avoid browser alert spam.
@@ -466,7 +466,6 @@ export function Dashboard() {
     activeRole === "maintainer" || activeRole === "admin"
       ? { id: "maintainers", icon: Users, label: "Maintainers" }
       : { id: "contributors", icon: Users, label: "Contributors" },
-    // Data page is only visible to admin
     ...(activeRole === "admin"
       ? [{ id: "data", icon: Database, label: "Data" }]
       : []),
@@ -484,6 +483,9 @@ export function Dashboard() {
     // management live on this page. It had no rail icon and nothing navigated
     // to it, so the only way in was typing ?tab=admin by hand - which is how
     // submitted proofs end up waiting on a screen nobody can open.
+    //
+    // Two branches fixed this independently and the merge briefly produced
+    // BOTH entries, putting "admin" in the rail twice. One entry, here.
     ...(userRole === "admin"
       ? [{ id: "admin", icon: ClipboardCheck, label: "Reviews" }]
       : []),

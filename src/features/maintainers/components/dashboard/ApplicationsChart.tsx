@@ -27,7 +27,7 @@ export function ApplicationsChart({ data }: ApplicationsChartProps) {
     : 'text-[#2d2820]';
 
   return (
-    <div className={`backdrop-blur-[40px] rounded-[24px] border p-8 relative overflow-hidden group/chart transition-colors ${theme === 'dark'
+    <div className={`rounded-[24px] border p-8 relative overflow-hidden group/chart transition-colors ${theme === 'dark'
         ? 'bg-[#2d2820]/[0.4] border-white/10'
         : 'bg-white/[0.12] border-white/20'
       }`}>
@@ -43,7 +43,7 @@ export function ApplicationsChart({ data }: ApplicationsChartProps) {
         </div>
 
         {/* Bar Chart */}
-        <div className={`h-[320px] backdrop-blur-[25px] rounded-[16px] border p-6 transition-colors ${theme === 'dark'
+        <div className={`h-[320px] rounded-[16px] border p-6 transition-colors ${theme === 'dark'
             ? 'bg-white/[0.05] border-white/10'
             : 'bg-white/[0.08] border-white/20'
           }`}>
@@ -71,7 +71,7 @@ export function ApplicationsChart({ data }: ApplicationsChartProps) {
                   if (active && payload && payload.length) {
                     return (
                       <div
-                        className={`backdrop-blur-[40px] rounded-[14px] border px-5 py-4 ${tooltipBg}`}
+                        className={`rounded-[14px] border px-5 py-4 ${tooltipBg}`}
                       >
                         <div
                           className={`text-[13px] font-bold mb-2 ${tooltipTitleText}`}

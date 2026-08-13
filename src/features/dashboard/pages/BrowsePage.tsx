@@ -363,7 +363,7 @@ export function BrowsePage({ onProjectClick, onOrgClick }: BrowsePageProps) {
       )}
 
       {/* Orgs / Repos toggle */}
-      <div className={`inline-flex items-center p-1 rounded-[14px] border backdrop-blur-[30px] ${isDark ? "bg-white/[0.06] border-white/15" : "bg-white/[0.2] border-white/30"}`}>
+      <div className={`inline-flex items-center p-1 rounded-[14px] border ${isDark ? "bg-white/[0.06] border-white/15" : "bg-white/[0.2] border-white/30"}`}>
         {(
           [
             { key: "orgs" as const, label: "Organizations", icon: Building2 },
