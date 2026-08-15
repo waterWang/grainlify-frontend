@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { screen, cleanup } from '@testing-library/react'
+import { renderWithProviders } from '../../../test/renderWithProviders'
 import { RankBadgeCard, RANK_CARD_SIZE, ordinalSuffix } from './RankBadgeCard'
 
 // Every rank state must occupy the same box.
@@ -44,38 +45,43 @@ const STATES: Array<{ name: string; props: Parameters<typeof RankBadgeCard>[0] }
 
 describe('RankBadgeCard renders every state at one fixed size', () => {
   it.each(STATES)('$name has the fixed dimensions', ({ props }) => {
-    render(<RankBadgeCard {...props} />)
+    renderWithProviders(<RankBadgeCard {...props} />)
     const card = screen.getByTestId('rank-badge-card')
     expect(card.style.width).toBe(`${RANK_CARD_SIZE}px`)
     expect(card.style.height).toBe(`${RANK_CARD_SIZE}px`)
     cleanup()
   })
 
-  it('every state produces the same width/height as every other', () => {
-    const sizes = new Set<string>()
-    for (const { props } of STATES) {
-      render(<RankBadgeCard {...props} />)
-      const card = screen.getByTestId('rank-badge-card')
-      sizes.add(`${card.style.width}x${card.style.height}`)
-      cleanup()
-    }
-    expect(
-      [...sizes],
-      'all rank states must render at one size; more than one entry means the card sizes to its content again',
-    ).toEqual([`${RANK_CARD_SIZE}px x ${RANK_CARD_SIZE}px`.replace(' x ', 'x')])
-  })
+  // Both themes: the card's surface and text colours are theme-dependent, so a
+  // change that made the size theme-dependent too would otherwise slip through.
+  it.each(['light', 'dark'] as const)(
+    'every state produces the same width/height as every other in %s mode',
+    (theme) => {
+      const sizes = new Set<string>()
+      for (const { props } of STATES) {
+        renderWithProviders(<RankBadgeCard {...props} />, { theme })
+        const card = screen.getByTestId('rank-badge-card')
+        sizes.add(`${card.style.width}x${card.style.height}`)
+        cleanup()
+      }
+      expect(
+        [...sizes],
+        'all rank states must render at one size; more than one entry means the card sizes to its content again',
+      ).toEqual([`${RANK_CARD_SIZE}px x ${RANK_CARD_SIZE}px`.replace(' x ', 'x')])
+    },
+  )
 })
 
 describe('RankBadgeCard content', () => {
   it('shows the position and tier when ranked', () => {
-    render(<RankBadgeCard position={526} tierName="Bronze" />)
+    renderWithProviders(<RankBadgeCard position={526} tierName="Bronze" />)
     expect(screen.getByTestId('rank-position').textContent).toBe('526th')
     expect(screen.getByTestId('rank-tier').textContent).toBe('Bronze')
     expect(screen.queryByTestId('rank-unranked')).not.toBeInTheDocument()
   })
 
   it('shows Unranked with the season qualifier when there is no position', () => {
-    render(<RankBadgeCard position={null} tierName="Unranked" />)
+    renderWithProviders(<RankBadgeCard position={null} tierName="Unranked" />)
     // "Unranked" alone reads as "you don't count". The season qualifier is what
     // makes it a statement about a window rather than about the person.
     expect(screen.getByTestId('rank-unranked').textContent).toContain('this season')
@@ -83,16 +89,16 @@ describe('RankBadgeCard content', () => {
   })
 
   it('shows the all-time line only when there is an all-time position', () => {
-    render(<RankBadgeCard position={null} allTime={{ position: 526, tierName: 'Bronze' }} />)
+    renderWithProviders(<RankBadgeCard position={null} allTime={{ position: 526, tierName: 'Bronze' }} />)
     expect(screen.getByTestId('rank-all-time').textContent).toBe('All time · Bronze #526')
     cleanup()
 
-    render(<RankBadgeCard position={4} tierName="Conqueror" allTime={null} />)
+    renderWithProviders(<RankBadgeCard position={4} tierName="Conqueror" allTime={null} />)
     expect(screen.queryByTestId('rank-all-time')).not.toBeInTheDocument()
   })
 
   it('renders no rank content while loading', () => {
-    render(<RankBadgeCard isLoading position={1} tierName="Conqueror" />)
+    renderWithProviders(<RankBadgeCard isLoading position={1} tierName="Conqueror" />)
     expect(screen.getByTestId('rank-badge-loading')).toBeInTheDocument()
     expect(screen.queryByTestId('rank-position')).not.toBeInTheDocument()
   })

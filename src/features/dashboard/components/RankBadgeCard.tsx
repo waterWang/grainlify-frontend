@@ -1,59 +1,75 @@
 import type { ReactNode } from 'react';
+import { useTheme } from '../../../shared/contexts/ThemeContext';
 
 /**
  * The rank trophy on the profile.
  *
- * Two things here are deliberate and were both bugs before.
+ * The translucent, glowing, layered treatment is deliberate - it matches the
+ * glass surfaces the rest of the interface is built from. An earlier pass
+ * flattened this to an opaque gold card to make contrast trivially provable;
+ * that measured well and looked like a foreign element pasted onto the page.
+ * The surface is back, and only the text colours are doing the work.
  *
- * COLOUR. The card is gold, so text on it must be ink - not more gold. The
- * previous version set the tier name in #c9983a on a gold card (gold on gold,
- * about 1.5:1) and the all-time line in #7a6b5a (grey on gold). Both were
- * unreadable, and both are the same mistake as the white-on-gold pair that
- * measured 2.61 in the light-mode audit.
+ * # Why the text colours are per-theme
  *
- * The card background is now OPAQUE rather than a stack of alpha gradients.
- * An alpha wash composites against whatever is behind it, so its contrast
- * depends on the page rather than on the class name - which is how a pair can
- * measure fine in one theme and fail in the other. Opaque means the ratios
- * below hold everywhere:
+ * The card is an alpha wash, so it composites against the page and is a
+ * different colour in each theme - which is exactly the trap that makes a pair
+ * pass in one theme and fail in the other:
  *
- *   --brand-gold-on       #2d2820 on #d4af37   6.95 : 1
- *   --brand-gold-on-muted #4a4038 on #d4af37   4.80 : 1
- *   --brand-gold-bright   #d4af37 on #2d2820   6.95 : 1   (the tier chip)
+ *   light page #e8dfd0  ->  card composites to #dcc394   (light: needs INK)
+ *   dark  page #2d2820  ->  card composites to #6b552a   (dark:  needs CREAM)
  *
- * The card is identical in both themes on purpose: it is a trophy, and a gold
- * medal does not change colour with the page. That also removes a whole class
- * of theme-dependent contrast bug from a component whose entire job is to be
- * legible at a glance.
+ * No single colour clears AA on both. Measured against the real rendered
+ * result, worst gradient stop, at the size each is actually set:
  *
- * The rank number is solid ink rather than bg-clip-text. Gradient-clipped text
- * has a transparent computed colour, so it cannot be contrast-audited at all -
- * it is the "unmeasurable" case from the landing audit, and there is no reason
- * to accept it on the one element that must be readable.
+ *   light  ink   #2d2820 on #dcc394   8.52 : 1    primary
+ *   light  muted #4a4038 on #dcc394   5.87 : 1    secondary
+ *   dark   cream #e8dfd0 on #6b552a   5.38 : 1    primary and secondary
  *
- * SIZE. The card is a fixed square. It used to size to its content, so
- * "Unranked" and "1000th" produced visibly different boxes and the profile
- * layout shifted with a contributor's standing. The dimensions below fit the
- * longest realistic content - a four-digit rank with an ordinal suffix, and
- * "Conqueror", the longest tier name - and everything shorter centres inside.
- * RankBadgeCard.test.tsx asserts every state renders at the same size.
+ * Dark's secondary is NOT dimmed. Every step down from cream fails there -
+ * #ddd0bd is 4.68 and #b8a898 is 3.07 - so hierarchy in dark comes from size
+ * and weight rather than from colour. Light has enough headroom to dim.
+ *
+ * # The tier chip
+ *
+ * Its original bg-white/[0.3] is unusable in dark: on the composited chip
+ * (#98886a) NOTHING reaches 4.5 - ink is 4.21, cream 2.63, gold 1.33. Rather
+ * than flatten it, the chip keeps a wash and changes which wash: white in
+ * light (ink text, 10.11), ink in dark (gold text, ~5.2). Still translucent,
+ * still layered, and legible in both.
+ *
+ * # The rank number
+ *
+ * Gradient-clipped text has a transparent computed colour, so a contrast
+ * auditor cannot measure it at all - it is the "unmeasurable" case from the
+ * landing audit and is reported separately rather than counted. The gradient
+ * is kept because it is part of the treatment, but its stops are chosen so
+ * every stop sits on the safe side of the card: all-dark in light mode,
+ * all-light in dark mode. The old version ended on #c9983a, which put the
+ * bottom of the digits in gold on a gold card.
+ *
+ * # Size
+ *
+ * Fixed 300x300 so every rank state renders identically - "Unranked" and
+ * "1000th" used to produce different boxes and the layout moved with a
+ * contributor's standing. Sized for the longest realistic content: a
+ * four-digit rank with an ordinal suffix plus "Conqueror".
  */
 
-/** Fixed so every rank state occupies the same box. Exported for the test that
- *  asserts they all do. */
+/** Fixed so every rank state occupies the same box. Exported for the test. */
 export const RANK_CARD_SIZE = 300;
 
 export type RankBadgeCardProps = {
-  /** Seasonal position. null/undefined renders the Unranked state. */
   position?: number | null;
   tierName?: string | null;
   allTime?: { position?: number | null; tierName?: string | null } | null;
-  /** Tier medal/icon, supplied by the caller so this component owns no art. */
   icon?: ReactNode;
   isLoading?: boolean;
 };
 
-/** 1st, 2nd, 3rd, 4th... and 11th/12th/13th, which the naive rule gets wrong. */
+/** 1st, 2nd, 3rd, 4th... and 11th/12th/13th, which the naive rule gets wrong.
+ *  The inline version this replaces special-cased only 1, 2 and 3, so rank 21
+ *  rendered as "21th". */
 export function ordinalSuffix(n: number): string {
   const lastTwo = n % 100;
   if (lastTwo >= 11 && lastTwo <= 13) return 'th';
@@ -76,73 +92,112 @@ export function RankBadgeCard({
   icon,
   isLoading = false,
 }: RankBadgeCardProps) {
-  const size = { width: `${RANK_CARD_SIZE}px`, height: `${RANK_CARD_SIZE}px` };
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const box = { width: `${RANK_CARD_SIZE}px`, height: `${RANK_CARD_SIZE}px` };
+
+  // Primary and secondary text, per theme. See the header for the ratios.
+  const primary = isDark ? 'text-[var(--brand-cream)]' : 'text-[var(--brand-gold-on)]';
+  const secondary = isDark
+    ? 'text-[var(--brand-cream)]'
+    : 'text-[var(--brand-gold-on-muted)]';
+
+  // Gradient stops kept entirely on one side of the card's luminance.
+  const numberGradient = isDark
+    ? 'from-white via-[var(--brand-cream)] to-[var(--brand-cream)]'
+    : 'from-[var(--brand-gold-on)] via-[var(--brand-gold-on)] to-[var(--brand-gold-on-muted)]';
 
   return (
-    <div
-      data-testid="rank-badge-card"
-      style={size}
-      className="relative rounded-[28px] flex flex-col items-center justify-center px-6 text-center
-                 bg-[var(--brand-gold-bright)] border-[3px] border-[var(--brand-gold-on)]/15
-                 shadow-[0_12px_40px_rgba(45,40,32,0.18)]"
-    >
-      {isLoading ? (
-        <div
-          className="h-16 w-40 rounded-[12px] bg-[var(--brand-gold-on)]/10 animate-pulse"
-          data-testid="rank-badge-loading"
-        />
-      ) : (
-        <>
-          {/* Rank number, or the Unranked state. Both are sized so the block
-              occupies comparable height and the card does not need to reflow. */}
-          {position ? (
-            <div
-              data-testid="rank-position"
-              className="text-[64px] font-black leading-none text-[var(--brand-gold-on)]"
-              style={{ letterSpacing: '-0.02em' }}
-            >
-              {position}
-              <span className="text-[32px] align-super">{ordinalSuffix(position)}</span>
-            </div>
-          ) : (
-            <div data-testid="rank-unranked">
-              <div className="text-[40px] font-black leading-none text-[var(--brand-gold-on)]">
-                Unranked
+    <div className="relative flex-shrink-0" style={box}>
+      {/* Outer glow, two layers. Purely decorative and behind everything.
+          Dimmer in dark: the glow bleeds through the translucent card and was
+          the largest single contributor to it compositing to #90772f there - a
+          mid-tone where neither cream nor ink clears AA. Measured, not
+          reasoned about. */}
+      <div
+        aria-hidden
+        className={`absolute inset-0 rounded-[28px] blur-2xl bg-gradient-to-br from-[var(--brand-gold)]/50 via-[var(--brand-gold-bright)]/35 to-transparent ${
+          isDark ? 'opacity-40' : 'opacity-80'
+        }`}
+      />
+      <div
+        aria-hidden
+        className={`absolute inset-0 rounded-[28px] blur-xl bg-gradient-to-br from-[var(--brand-gold-bright)]/30 to-transparent ${
+          isDark ? 'opacity-40' : 'opacity-100'
+        }`}
+      />
+
+      <div
+        data-testid="rank-badge-card"
+        style={box}
+        className={`relative rounded-[28px] flex flex-col items-center justify-center px-6 text-center
+                    border-[3.5px] ${isDark ? 'border-white/20' : 'border-white/50'}
+                    shadow-[0_15px_60px_rgba(201,152,58,0.45),inset_0_2px_4px_rgba(255,255,255,0.35)]
+                    ${
+                      isDark
+                        ? 'bg-gradient-to-br from-[var(--brand-gold)]/22 via-[var(--brand-gold-bright)]/16 to-[var(--brand-gold)]/14'
+                        : 'bg-gradient-to-br from-[var(--brand-gold)]/40 via-[var(--brand-gold-bright)]/30 to-[var(--brand-gold)]/25'
+                    }`}
+      >
+        {/* Decorative corner dots, part of the original treatment. */}
+        <div aria-hidden className="absolute top-4 left-4 w-3.5 h-3.5 rounded-full bg-white/50" />
+        <div aria-hidden className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-[var(--brand-gold)]/70" />
+        <div aria-hidden className="absolute bottom-4 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white/40" />
+
+        {isLoading ? (
+          <div
+            data-testid="rank-badge-loading"
+            className="h-16 w-40 rounded-[12px] bg-white/25 animate-pulse"
+          />
+        ) : (
+          <>
+            {position ? (
+              <div
+                data-testid="rank-position"
+                className={`text-[64px] font-black leading-none bg-gradient-to-b bg-clip-text text-transparent drop-shadow-[0_2px_6px_rgba(45,40,32,0.25)] ${numberGradient}`}
+                style={{ letterSpacing: '-0.02em' }}
+              >
+                {position}
+                <span className="text-[32px] align-super">{ordinalSuffix(position)}</span>
               </div>
-              <div className="mt-1.5 text-[13px] font-semibold text-[var(--brand-gold-on-muted)]">
-                this season
+            ) : (
+              <div data-testid="rank-unranked">
+                <div className={`text-[40px] font-black leading-none ${primary}`}>Unranked</div>
+                <div className={`mt-1.5 text-[13px] font-semibold ${secondary}`}>this season</div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="h-[3px] w-20 my-4 rounded-full bg-[var(--brand-gold-on)]/25" />
-
-          {/* Tier chip: the contrast is inverted here - ink field, gold text -
-              so the tier reads as a plaque on the medal rather than dissolving
-              into it. */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-[var(--brand-gold-on)]">
-            {icon}
-            <span
-              data-testid="rank-tier"
-              className="text-[13px] font-black uppercase tracking-[0.15em] text-[var(--brand-gold-bright)]"
-            >
-              {tierName || 'Unranked'}
-            </span>
-          </div>
-
-          {/* All-time, only when it says something the seasonal line does not.
-              Most valuable in exactly the case that reads worst without it:
-              unranked this season, but ranked all-time. */}
-          {allTime?.position ? (
             <div
-              data-testid="rank-all-time"
-              className="mt-3 text-[12px] font-semibold text-[var(--brand-gold-on-muted)]"
+              aria-hidden
+              className="h-[3px] w-20 my-4 rounded-full bg-gradient-to-r from-transparent via-[var(--brand-gold)]/80 to-transparent"
+            />
+
+            <div
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border-2 ${
+                isDark
+                  ? 'bg-[var(--brand-gold-on)]/60 border-[var(--brand-gold)]/40'
+                  : 'bg-white/[0.3] border-[var(--brand-gold)]/50'
+              }`}
             >
-              All time · {allTime.tierName} #{allTime.position}
+              {icon}
+              <span
+                data-testid="rank-tier"
+                className={`text-[13px] font-black uppercase tracking-[0.15em] ${
+                  isDark ? 'text-[var(--brand-gold-bright)]' : 'text-[var(--brand-gold-on)]'
+                }`}
+              >
+                {tierName || 'Unranked'}
+              </span>
             </div>
-          ) : null}
-        </>
-      )}
+
+            {allTime?.position ? (
+              <div data-testid="rank-all-time" className={`mt-3 text-[12px] font-semibold ${secondary}`}>
+                All time · {allTime.tierName} #{allTime.position}
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
     </div>
   );
 }

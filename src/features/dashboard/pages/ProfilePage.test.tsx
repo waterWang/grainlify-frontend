@@ -283,16 +283,26 @@ describe('ProfilePage', () => {
     // RankBadgeCard.tsx for the ratios (6.95 primary, 4.80 secondary, both
     // themes). What remains worth pinning here is that the profile still
     // renders the badge and that Unranked still carries its season qualifier.
-    it('renders the rank badge card in both themes', async () => {
-      const { container: darkContainer } = renderWithProviders(<ProfilePage />, { theme: 'dark' })
-      await waitFor(() => expect(getUserProfile).toHaveBeenCalled())
-      expect(darkContainer.querySelector('[data-testid="rank-badge-card"]')).toBeTruthy()
-      // The unmeasurable gradient text must not come back.
-      expect(darkContainer.querySelector('.bg-clip-text')).toBeNull()
+    it('renders the rank badge, with a rank-number gradient that never reaches gold', async () => {
+      // The number is gradient-clipped, which is part of the card's treatment
+      // but makes it unmeasurable by a contrast auditor: bg-clip-text has a
+      // transparent computed colour. So the invariant is asserted on the stops
+      // instead - every stop must sit on the safe side of the gold card.
+      //
+      // The version this replaces ended on #c9983a in both themes, which put
+      // the bottom of the digits in gold on a gold surface.
+      for (const theme of ['dark', 'light'] as const) {
+        const { container } = renderWithProviders(<ProfilePage />, { theme })
+        await waitFor(() => expect(getUserProfile).toHaveBeenCalled())
+        expect(container.querySelector('[data-testid="rank-badge-card"]')).toBeTruthy()
 
-      const { container: lightContainer } = renderWithProviders(<ProfilePage />, { theme: 'light' })
-      await waitFor(() => expect(getUserProfile).toHaveBeenCalled())
-      expect(lightContainer.querySelector('[data-testid="rank-badge-card"]')).toBeTruthy()
+        const number = container.querySelector('[data-testid="rank-position"]')
+        if (number) {
+          expect(number.className, `${theme}: rank number must not fade into gold`).not.toMatch(
+            /to-\[#c9983a\]|to-\[var\(--brand-gold\)\]|to-\[var\(--brand-gold-bright\)\]/,
+          )
+        }
+      }
     })
 
     it('qualifies the Unranked state with the season it refers to', async () => {
