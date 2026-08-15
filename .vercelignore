@@ -1,0 +1,7 @@
+# Never upload developer-machine artefacts. A 100MB Loom installer in
+# src/assets blocked a production deploy with "File size limit exceeded",
+# during an incident, because the CLI uploads the working directory rather
+# than the git tree.
+*.dmg
+*.zip
+.worktrees
