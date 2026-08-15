@@ -121,11 +121,17 @@ const cleanIssueDescription = (
   return selectedLines;
 };
 
-// Helper function to calculate days left (mock for now, can be enhanced with actual dates)
-const getDaysLeft = (): string => {
-  const days = Math.floor(Math.random() * 10) + 1;
-  return `${days} days left`;
-};
+// A "days left" figure used to be generated here with Math.random(), which
+// meant every issue card advertised a deadline that did not exist and that
+// changed on every render - the same issue could read "2 days left" and then
+// "9 days left" after a reload.
+//
+// There is no deadline to show. The issues endpoint carries github_issue_id,
+// number, state, title, description, author_login, labels, url, updated_at and
+// last_seen_at - no due date, and GitHub issues do not have one. IssueCard's
+// daysLeft prop is optional and renders nothing when omitted, so the card
+// simply drops the line. If a real deadline ever lands in the payload, pass it
+// there; do not synthesise one.
 
 // Helper function to get primary tag from issue labels
 const getPrimaryTag = (labels: any[]): string | undefined => {
@@ -163,7 +169,6 @@ type IssueType = {
   title: string;
   description: string;
   language: string;
-  daysLeft: string;
   primaryTag?: string;
   projectId: string;
 };
@@ -363,7 +368,6 @@ export function DiscoverPage({
                   title: issue.title || 'Untitled Issue',
                   description: cleanIssueDescription(issue.description),
                   language: language,
-                  daysLeft: getDaysLeft(),
                   primaryTag: getPrimaryTag(issue.labels || []),
                   projectId: project.id,
                 });
@@ -683,7 +687,6 @@ export function DiscoverPage({
                   title={issue.title}
                   description={issue.description}
                   language={issue.language}
-                  daysLeft={issue.daysLeft}
                   variant="recommended"
                   primaryTag={issue.primaryTag}
                   onClick={() => {
