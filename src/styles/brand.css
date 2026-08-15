@@ -46,6 +46,14 @@
   --brand-gold: #c9983a;
   --brand-gold-strong: #a67c2e;
   --brand-gold-bright: #d4af37;
+  /* The logo artwork's OWN yellow, sampled from src/assets/grainlify_png:
+     96.4% of 4.png and the accent in 1.png. It is not the UI gold, and the
+     difference is real rather than a rounding error - the product paints with
+     #c9983a, a muted ochre, while every exported logo file is this brighter,
+     more saturated amber. Generated brand assets that reproduce the mark read
+     this so they match the logo instead of the interface. On the near-black
+     ground it measures 9.49, comfortably above the 6.95 of the UI gold. */
+  --brand-logo-yellow: #ffc926;
   /* Gold as TEXT, which is a different problem from gold as a surface.
      #c9983a measures 2.48 against a near-white page and 1.98 against the old
      beige - it fails AA at every body size in light mode, and eyebrow labels
@@ -58,6 +66,14 @@
      changes. */
   --brand-gold-on: #2d2820;
   --brand-sand: #b89968;
+  /* The warm off-white the product has always painted with - 191 occurrences
+     across src, and until now not written down anywhere. Defined once rather
+     than per theme because it is a fixed brand colour whose ROLE flips, not
+     its value: cream text on the dark ground, cream ground under dark text in
+     light mode. That is the same arrangement as the golds above.
+     Added for the social share cards (scripts/social-cards), which need to
+     name this colour rather than retype it. */
+  --brand-cream: #e8dfd0;
 
   /* --- Ink. Flips with the theme. */
   --brand-ink: #2d2820;
