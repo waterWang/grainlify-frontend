@@ -62,7 +62,7 @@ export function GrainHackRulesPage({ hackathonId }: GrainHackRulesPageProps) {
   return (
     <div className="space-y-6">
       <div
-        className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 transition-colors ${
+        className={`rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 transition-colors ${
           isDark ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/20'
         }`}
       >
@@ -88,7 +88,7 @@ export function GrainHackRulesPage({ hackathonId }: GrainHackRulesPageProps) {
       {ordered.map((section) => (
         <div
           key={section}
-          className={`backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 transition-colors ${
+          className={`rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6 transition-colors ${
             isDark ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/20'
           }`}
         >

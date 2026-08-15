@@ -11,12 +11,12 @@ export function FeaturedPost({ post, onOpen }: FeaturedPostProps) {
   const { theme } = useTheme();
 
   return (
-    <div className="backdrop-blur-[40px] bg-gradient-to-br from-white/[0.18] to-white/[0.12] rounded-[28px] border border-white/25 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden group hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-500 cursor-pointer">
+    <div className="bg-gradient-to-br from-white/[0.18] to-white/[0.12] rounded-[28px] border border-white/25 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden group hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-500 cursor-pointer">
       <div className="relative">
         {/* Animated Glow Effects */}
         <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-[#c9983a]/40 rounded-full blur-[60px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-[#d4af37]/30 rounded-full blur-[70px] animate-pulse" style={{ animationDelay: '0.5s' }} />
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-[#c9983a]/40 rounded-full blur-[60px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-[#d4af37]/30 rounded-full blur-[70px]" />
         </div>
 
         <div className="relative z-10 p-10">

@@ -50,7 +50,7 @@ export function SearchWithFilter({
         {/* Filter Button */}
         <button
           onClick={() => setIsFilterOpen(true)}
-          className={`w-12 h-12 flex items-center justify-center rounded-[12px] backdrop-blur-[30px] border transition-all ${
+          className={`w-12 h-12 flex items-center justify-center rounded-[12px] border transition-all ${
             theme === 'dark'
               ? 'bg-white/[0.15] border-white/25 text-[#d4d4d4] hover:bg-white/[0.2] hover:border-[#c9983a]/40'
               : 'bg-white/[0.15] border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] hover:border-[#c9983a]/40'
@@ -69,7 +69,7 @@ export function SearchWithFilter({
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            className={`w-full pl-12 pr-4 py-3 rounded-[12px] backdrop-blur-[30px] border focus:outline-none transition-all text-[13px] ${
+            className={`w-full pl-12 pr-4 py-3 rounded-[12px] border focus:outline-none transition-all text-[13px] ${
               theme === 'dark'
                 ? 'bg-white/[0.15] border-white/25 text-[#f5f5f5] placeholder-[#d4d4d4] focus:bg-white/[0.2] focus:border-[#c9983a]/40'
                 : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder-[#7a6b5a] focus:bg-white/[0.2] focus:border-[#c9983a]/40'
@@ -88,7 +88,7 @@ export function SearchWithFilter({
           />
 
           {/* Filter Panel */}
-          <div className={`fixed top-0 right-0 h-full w-[400px] backdrop-blur-[40px] border-l z-50 shadow-[0_0_40px_rgba(0,0,0,0.15)] p-6 flex flex-col animate-slide-in-right ${
+          <div className={`fixed top-0 right-0 h-full w-[400px] border-l z-50 shadow-[0_0_40px_rgba(0,0,0,0.15)] p-6 flex flex-col animate-slide-in-right ${
             theme === 'dark'
               ? 'bg-[#2d2820]/95 border-white/30'
               : 'bg-[#e5ddd1]/95 border-white/30'
@@ -147,7 +147,7 @@ export function SearchWithFilter({
                           <input
                             type="text"
                             placeholder="Search"
-                            className={`w-full pl-10 pr-4 py-3 rounded-[12px] backdrop-blur-[30px] border text-[13px] focus:outline-none transition-all ${
+                            className={`w-full pl-10 pr-4 py-3 rounded-[12px] border text-[13px] focus:outline-none transition-all ${
                               theme === 'dark'
                                 ? 'bg-white/[0.15] border-white/25 text-[#f5f5f5] placeholder-[#d4d4d4] focus:bg-white/[0.2] focus:border-[#c9983a]/40'
                                 : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder-[#7a6b5a] focus:bg-white/[0.2] focus:border-[#c9983a]/40'
@@ -167,8 +167,8 @@ export function SearchWithFilter({
                                 section.selectedValues?.includes(option.value)
                                   ? 'bg-[#c9983a] text-white shadow-[0_4px_12px_rgba(201,152,58,0.3)]'
                                   : theme === 'dark'
-                                    ? 'backdrop-blur-[20px] bg-white/[0.1] border border-white/20 text-[#f5f5f5] hover:bg-white/[0.15]'
-                                    : 'backdrop-blur-[20px] bg-white/[0.1] border border-white/20 text-[#2d2820] hover:bg-white/[0.15]'
+                                    ? 'bg-white/[0.1] border border-white/20 text-[#f5f5f5] hover:bg-white/[0.15]'
+                                    : 'bg-white/[0.1] border border-white/20 text-[#2d2820] hover:bg-white/[0.15]'
                               }`}
                             >
                               <span>{option.label}</span>
@@ -179,7 +179,7 @@ export function SearchWithFilter({
                           ))}
                         </div>
                       ) : (
-                        <div className={`backdrop-blur-[20px] rounded-[12px] border p-4 ${
+                        <div className={`rounded-[12px] border p-4 ${
                           theme === 'dark'
                             ? 'bg-white/[0.1] border-white/20'
                             : 'bg-white/[0.1] border-white/20'
@@ -199,7 +199,7 @@ export function SearchWithFilter({
             <div className="flex items-center gap-3 mt-6 pt-6 border-t border-white/20">
               <button
                 onClick={handleReset}
-                className={`flex-1 px-4 py-3 rounded-[12px] backdrop-blur-[30px] border text-[13px] font-semibold transition-all ${
+                className={`flex-1 px-4 py-3 rounded-[12px] border text-[13px] font-semibold transition-all ${
                   theme === 'dark'
                     ? 'bg-white/[0.15] border-white/25 text-[#d4d4d4] hover:bg-white/[0.2]'
                     : 'bg-white/[0.15] border-white/25 text-[#6b5d4d] hover:bg-white/[0.2]'

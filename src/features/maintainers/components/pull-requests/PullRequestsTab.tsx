@@ -156,7 +156,7 @@ export function PullRequestsTab({ selectedProjects, onRefresh: _onRefresh, isLoa
   };
 
   return (
-    <div className={`backdrop-blur-[40px] rounded-[24px] border p-8 transition-colors ${
+    <div className={`rounded-[24px] border p-8 transition-colors ${
       theme === 'dark'
         ? 'bg-[#2d2820]/[0.4] border-white/10'
         : 'bg-white/[0.12] border-white/20'
@@ -183,7 +183,7 @@ export function PullRequestsTab({ selectedProjects, onRefresh: _onRefresh, isLoa
             placeholder="Search pull request by title or author name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-11 pr-4 py-3 rounded-[14px] backdrop-blur-[25px] border text-[14px] focus:outline-none transition-all ${
+            className={`w-full pl-11 pr-4 py-3 rounded-[14px] border text-[14px] focus:outline-none transition-all ${
               theme === 'dark'
                 ? 'bg-white/[0.08] border-white/20 text-[#e8dfd0] placeholder:text-[#8a7b6a] focus:bg-white/[0.12] focus:border-[#c9983a]/40'
                 : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder:text-[#9a8b7a] focus:bg-white/[0.2] focus:border-[#c9983a]/40'
@@ -202,7 +202,7 @@ export function PullRequestsTab({ selectedProjects, onRefresh: _onRefresh, isLoa
 
         {/* Clear Filters Button */}
         <button 
-          className={`px-5 py-3 rounded-[14px] backdrop-blur-[25px] border transition-all ${
+          className={`px-5 py-3 rounded-[14px] border transition-all ${
             theme === 'dark'
               ? 'bg-white/[0.08] border-white/20 hover:bg-white/[0.12] hover:border-[#c9983a]/30 text-[#b8a898]'
               : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2] hover:border-[#c9983a]/30 text-[#7a6b5a]'

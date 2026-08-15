@@ -1,0 +1,143 @@
+/* ===========================================================================
+   Brand tokens.
+
+   The one place the warm gold/cream palette is written down. Shared design
+   components read these and never carry a colour of their own, so switching
+   theme moves everything and a future palette change is edited here rather
+   than hunted for.
+
+   WHY THIS EXISTS SEPARATELY FROM THE TOKENS IN theme.css
+   -------------------------------------------------------
+   theme.css already defines a shadcn-style set (--primary, --accent, --border,
+   --muted-foreground, ...). Those are deliberately left alone, for two reasons.
+
+   1. Nothing reads them. A grep for var(--primary), text-muted-foreground,
+      border-border and friends across src/features and src/shared returns zero
+      hits. The product paints with hardcoded hex - #c9983a alone appears about
+      1,205 times across 126 files - routed through `theme === 'dark' ? ... : ...`
+      conditionals in TSX.
+
+   2. Where they do have values, those values disagree with the product:
+
+        --primary          light #c9983a (gold)   dark #f5f5f5 (white)
+        --muted-foreground light 60% ink          dark #f5f5f5 (not muted)
+        --border           light 20%-alpha gold   dark solid #a67c2e
+
+      A component reading var(--primary) for "our gold" renders white in dark
+      mode. Reading those tokens would produce a broken dark theme that looks
+      correct in light, which is worse than hardcoding.
+
+   Repointing the shadcn set is a 126-file change and a separate decision. This
+   file is additive: new shared components read --brand-*, nothing existing
+   changes behaviour.
+
+   RULES
+   -----
+   - Shared design components (src/shared/components/ui/aceternity/**) may not
+     contain colour literals. Enforced by brandTokens.test.ts.
+   - Values that must differ between themes are redefined under .dark below.
+     Values that are the same in both (the golds) are defined once.
+   - Effect layers bake in their alpha rather than relying on an opacity
+     modifier, so the colour and its weight flip together.
+   =========================================================================== */
+
+:root {
+  /* --- Accents. The same hue in both themes; only their usage weight varies. */
+  --brand-gold: #c9983a;
+  --brand-gold-strong: #a67c2e;
+  --brand-gold-bright: #d4af37;
+  /* The logo artwork's OWN yellow, sampled from src/assets/grainlify_png:
+     96.4% of 4.png and the accent in 1.png. It is not the UI gold, and the
+     difference is real rather than a rounding error - the product paints with
+     #c9983a, a muted ochre, while every exported logo file is this brighter,
+     more saturated amber. Generated brand assets that reproduce the mark read
+     this so they match the logo instead of the interface. On the near-black
+     ground it measures 9.49, comfortably above the 6.95 of the UI gold. */
+  --brand-logo-yellow: #ffc926;
+  /* Gold as TEXT, which is a different problem from gold as a surface.
+     #c9983a measures 2.48 against a near-white page and 1.98 against the old
+     beige - it fails AA at every body size in light mode, and eyebrow labels
+     were the biggest user of it. Dark enough to pass (5.83), still legibly
+     gold. In dark mode the bright value is already fine and is kept. */
+  --brand-gold-text: #7d5c20;
+  /* Text placed ON a gold surface. White measured 2.61 on --brand-gold, which
+     failed in BOTH themes - the one failure the two shared. Ink on the same
+     gold is 5.60, so the surface keeps the brand colour and only the text
+     changes. */
+  --brand-gold-on: #2d2820;
+  --brand-sand: #b89968;
+  /* The warm off-white the product has always painted with - 191 occurrences
+     across src, and until now not written down anywhere. Defined once rather
+     than per theme because it is a fixed brand colour whose ROLE flips, not
+     its value: cream text on the dark ground, cream ground under dark text in
+     light mode. That is the same arrangement as the golds above.
+     Added for the social share cards (scripts/social-cards), which need to
+     name this colour rather than retype it. */
+  --brand-cream: #e8dfd0;
+
+  /* --- Ink. Flips with the theme. */
+  --brand-ink: #2d2820;
+  /* Body text. Was #7a6b5a, which measured 3.90 against the page - a fail at
+     AA, and the single most-repeated failure on the landing page (49 uses).
+     Near-black rather than merely passing: at 9.59 it is comfortably legible
+     while still stepping down from --brand-ink for hierarchy. */
+  --brand-ink-muted: #4a4038;
+  --brand-ink-faint: #b8a898;
+
+  /* --- Hairlines: grid and dot patterns, divider rules. Deliberately near
+         invisible; a pattern that reads as a pattern competes with content. */
+  --brand-hairline: rgba(45, 40, 32, 0.055);
+
+  /* --- Glass surfaces. The backdrop-blur card style used across the product. */
+  --brand-glass: rgba(255, 255, 255, 0.12);
+  --brand-glass-strong: rgba(255, 255, 255, 0.14);
+  --brand-glass-border: rgba(255, 255, 255, 0.25);
+
+  /* --- Card surfaces.
+         --brand-glass is used with a backdrop filter (Tier A only).
+         --brand-surface is the same card without one: measured at 4x the
+         scroll rate, and visually near-identical because the page behind these
+         panels is a flat gradient, so the blur had nothing to blur. Slightly
+         higher alpha than the glass to make up the lightening the blur used to
+         contribute. See docs/design-system.md. */
+  --brand-surface: rgba(255, 255, 255, 0.16);
+  --brand-surface-raised: rgba(255, 255, 255, 0.24);
+  /* Tier D wants a control panel, not a card: opaque, no lift. */
+  --brand-surface-flat: rgba(255, 255, 255, 0.30);
+  --brand-surface-border: rgba(201, 152, 58, 0.18);
+
+  /* --- Effect layers, alpha included. */
+  --brand-aurora-1: rgba(201, 152, 58, 0.30);
+  --brand-aurora-2: rgba(212, 175, 55, 0.28);
+  --brand-spotlight: rgba(201, 152, 58, 0.20);
+}
+
+.dark {
+  /* Gold on dark ground already passes as text; the light-mode darkening
+     would be unreadable here, so it flips back to the bright value. */
+  --brand-gold-text: #d4af37;
+  /* The gold surface is the same in both themes, so the text on it is too. */
+  --brand-gold-on: #2d2820;
+
+  --brand-ink: #f5f5f5;
+  --brand-ink-muted: #b8a898;
+  --brand-ink-faint: #6b5f52;
+
+  --brand-hairline: rgba(245, 245, 245, 0.055);
+
+  /* Glass reads heavier on a dark ground at the same alpha, so the dark values
+     are lower rather than mirrored. */
+  --brand-glass: rgba(255, 255, 255, 0.08);
+  --brand-glass-strong: rgba(255, 255, 255, 0.06);
+  --brand-glass-border: rgba(255, 255, 255, 0.10);
+
+  --brand-surface: rgba(255, 255, 255, 0.055);
+  --brand-surface-raised: rgba(255, 255, 255, 0.085);
+  --brand-surface-flat: rgba(255, 255, 255, 0.04);
+  --brand-surface-border: rgba(255, 255, 255, 0.09);
+
+  /* Same reasoning: a gold wash over dark ground needs less alpha to read. */
+  --brand-aurora-1: rgba(201, 152, 58, 0.25);
+  --brand-aurora-2: rgba(212, 175, 55, 0.18);
+  --brand-spotlight: rgba(201, 152, 58, 0.16);
+}

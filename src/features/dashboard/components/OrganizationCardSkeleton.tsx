@@ -11,7 +11,7 @@ export function OrganizationCardSkeleton() {
 
   return (
     <div
-      className={`flex flex-col items-center text-center h-full backdrop-blur-[30px] rounded-[16px] border p-6 ${
+      className={`flex flex-col items-center text-center h-full rounded-[16px] border p-6 ${
         isDark
           ? 'bg-white/[0.08] border-white/15 shadow-[0_4px_16px_rgba(0,0,0,0.24)]'
           : 'bg-white/[0.15] border-white/25 shadow-[0_4px_16px_rgba(0,0,0,0.06)]'

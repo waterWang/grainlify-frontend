@@ -82,6 +82,9 @@ vi.mock('../../shared/api/client', () => ({
 // The admin-activation flow below renders the real AdminPage, which in turn
 // renders these two - unrelated to what this suite tests (shell nav/auth),
 // and covered by their own SocialFollowReview.test.tsx / RedemptionsReview.test.tsx.
+vi.mock('../admin/pages/AdminPage', () => ({
+  AdminPage: () => <div data-testid="admin-page" />,
+}))
 vi.mock('../admin/components/SocialFollowReview', () => ({
   SocialFollowReview: () => null,
 }))
@@ -435,12 +438,13 @@ describe('Dashboard', () => {
       })
       await user.click(reviews)
 
-      // The admin page renders - the queues it hosts are mocked out above, so
-      // its own heading is what proves we landed on it.
-      expect(await screen.findByRole('heading', { name: 'Admin Panel' })).toBeInTheDocument()
+      // The admin page renders. AdminPage itself is mocked in this suite - it
+      // pulls in ecosystem/event fetches that have nothing to do with shell
+      // navigation - so the mock's marker is what proves we landed on it.
+      expect(await screen.findByTestId('admin-page')).toBeInTheDocument()
     })
 
-    it('lands the ADMIN view on Data rather than the unimplemented admin placeholder', async () => {
+    it('lands the ADMIN view on the console, where the queues waiting for a decision are', async () => {
       mockUseAuth.mockReturnValue({
         userRole: 'admin',
         userId: 'admin-user-id',
@@ -456,9 +460,12 @@ describe('Dashboard', () => {
 
       await user.click(screen.getByRole('button', { name: /ADMIN/i }))
 
-      // Previously navigated to "admin" with nothing selected in the sidebar.
-      // Data is the overview; the admin page has its own "Reviews" icon.
-      expect(await screen.findByTestId('data-page')).toBeInTheDocument()
+      // Data is a read-only overview. The console holds social-follow proofs
+      // and redemptions waiting on an admin, so landing on Data put a
+      // dashboard between them and the work. This landed on Data for a while
+      // because the console had no rail icon and nothing would be selected;
+      // it has "Reviews" now, so that reason is gone.
+      expect(await screen.findByTestId('admin-page')).toBeInTheDocument()
     })
 
     it('blocks the grainhack page for a non-admin even when navigated to directly via ?tab= (the nav item alone is not the security boundary)', async () => {

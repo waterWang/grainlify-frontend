@@ -21,7 +21,7 @@ export function EmptyIssueState({ issueCount }: EmptyIssueStateProps) {
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#c9983a]/20 to-[#d4af37]/10 blur-xl animate-pulse" />
             
             {/* Main icon circle */}
-            <div className="relative w-full h-full rounded-full bg-gradient-to-br from-[#c9983a]/15 to-[#d4af37]/10 border-2 border-[#c9983a]/30 flex items-center justify-center backdrop-blur-[20px] group-hover/icon:scale-110 group-hover/icon:border-[#c9983a]/50 transition-all duration-500">
+            <div className="relative w-full h-full rounded-full bg-gradient-to-br from-[#c9983a]/15 to-[#d4af37]/10 border-2 border-[#c9983a]/30 flex items-center justify-center group-hover/icon:scale-110 group-hover/icon:border-[#c9983a]/50 transition-all duration-500">
               <Inbox className="w-16 h-16 text-[#c9983a]/60 group-hover/icon:text-[#c9983a]/80 transition-colors duration-300" strokeWidth={1.5} />
             </div>
             

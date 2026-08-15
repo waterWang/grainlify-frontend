@@ -754,7 +754,7 @@ Only applications submitted via the apply link above will be considered. Please 
         {/* Search and Filter Row */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Search Bar */}
-          <div className={`flex-1 backdrop-blur-[40px] rounded-[16px] border p-3 transition-colors ${isDark
+          <div className={`flex-1 rounded-[16px] border p-3 transition-colors ${isDark
             ? 'bg-white/[0.12] border-white/20'
             : 'bg-white/[0.12] border-white/20'
             }`}>
@@ -780,7 +780,7 @@ Only applications submitted via the apply link above will be considered. Please 
           <button
             ref={filterBtnRef}
             onClick={() => setIsFilterModalOpen((v) => !v)}
-            className={`relative p-3 rounded-[16px] backdrop-blur-[40px] border hover:bg-white/[0.15] transition-all ${isDark
+            className={`relative p-3 rounded-[16px] border hover:bg-white/[0.15] transition-all ${isDark
               ? 'bg-white/[0.12] border-white/20'
               : 'bg-white/[0.12] border-white/20'
               }`}>
@@ -884,7 +884,7 @@ Only applications submitted via the apply link above will be considered. Please 
       </div>
 
       {/* Right Content Area - Issue Detail or Placeholder */}
-      <div className={`flex-1 backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] relative overflow-y-auto scrollbar-custom transition-colors ${isDark
+      <div className={`flex-1 rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] relative overflow-y-auto scrollbar-custom transition-colors ${isDark
         ? 'bg-[#2d2820]/[0.4] border-white/10'
         : 'bg-white/[0.12] border-white/20'
         }`}>
@@ -952,7 +952,7 @@ Only applications submitted via the apply link above will be considered. Please 
                   {selectedIssue.tags?.map((tag: string, idx: number) => (
                     <span
                       key={idx}
-                      className={`px-3 py-1.5 rounded-[8px] text-[12px] font-bold backdrop-blur-[20px] border border-white/25 transition-colors ${isDark ? 'bg-white/[0.08] text-[#d4d4d4]' : 'bg-white/[0.08] text-[#4a3f2f]'
+                      className={`px-3 py-1.5 rounded-[8px] text-[12px] font-bold border border-white/25 transition-colors ${isDark ? 'bg-white/[0.08] text-[#d4d4d4]' : 'bg-white/[0.08] text-[#4a3f2f]'
                         }`}
                     >
                       {tag}
@@ -969,7 +969,7 @@ Only applications submitted via the apply link above will be considered. Please 
                   setSearchParams(next);
                 }}
                 aria-label="Close issue detail"
-                className={`p-2 rounded-[10px] backdrop-blur-[20px] border border-white/25 hover:bg-white/[0.2] transition-all ${isDark ? 'bg-white/[0.08] text-[#f5f5f5]' : 'bg-white/[0.08] text-[#2d2820]'
+                className={`p-2 rounded-[10px] border border-white/25 hover:bg-white/[0.2] transition-all ${isDark ? 'bg-white/[0.08] text-[#f5f5f5]' : 'bg-white/[0.08] text-[#2d2820]'
                   }`}
               >
                 <X className="w-5 h-5" />
@@ -1088,7 +1088,7 @@ Only applications submitted via the apply link above will be considered. Please 
                   <div className="text-center py-16">
                     <div className="relative mx-auto mb-6 w-20 h-20">
                       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#c9983a]/20 to-[#d4af37]/10 blur-xl" />
-                      <div className="relative w-full h-full rounded-full bg-gradient-to-br from-[#c9983a]/15 to-[#d4af37]/10 border-2 border-[#c9983a]/30 flex items-center justify-center backdrop-blur-[20px]">
+                      <div className="relative w-full h-full rounded-full bg-gradient-to-br from-[#c9983a]/15 to-[#d4af37]/10 border-2 border-[#c9983a]/30 flex items-center justify-center ">
                         <div className="relative">
                           <User className="w-8 h-8 text-[#c9983a]/60" strokeWidth={1.5} />
                           <Plus className="w-4 h-4 text-[#c9983a] absolute -top-1 -right-1" strokeWidth={3} />
@@ -1114,7 +1114,7 @@ Only applications submitted via the apply link above will be considered. Please 
                       return (
                         <div
                           key={application.id}
-                          className={`backdrop-blur-[25px] rounded-[16px] border p-6 transition-colors ${isDark ? 'bg-white/[0.15] border-white/25' : 'bg-white/[0.15] border-white/25'
+                          className={`rounded-[16px] border p-6 transition-colors ${isDark ? 'bg-white/[0.15] border-white/25' : 'bg-white/[0.15] border-white/25'
                             }`}
                         >
                           {/* User Header - Always Visible */}
@@ -1167,7 +1167,7 @@ Only applications submitted via the apply link above will be considered. Please 
                             <div className="mt-5 space-y-5">
                               {/* Profile Stats Grid */}
                               <div className="grid grid-cols-2 gap-3">
-                                <div className={`backdrop-blur-[20px] rounded-[12px] border border-[#c9983a]/20 p-3 transition-colors ${isDark ? 'bg-white/[0.12]' : 'bg-white/[0.12]'
+                                <div className={`rounded-[12px] border border-[#c9983a]/20 p-3 transition-colors ${isDark ? 'bg-white/[0.12]' : 'bg-white/[0.12]'
                                   }`}>
                                   <div className="flex items-center gap-2 mb-1">
                                     <Award className={`w-4 h-4 transition-colors ${isDark ? 'text-[#c9983a]' : 'text-[#c9983a]'
@@ -1178,7 +1178,7 @@ Only applications submitted via the apply link above will be considered. Please 
                                   <p className={`text-[11px] font-semibold uppercase tracking-wide transition-colors ${isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]'
                                     }`}>Contributions</p>
                                 </div>
-                                <div className={`backdrop-blur-[20px] rounded-[12px] border border-[#c9983a]/20 p-3 transition-colors ${isDark ? 'bg-white/[0.12]' : 'bg-white/[0.12]'
+                                <div className={`rounded-[12px] border border-[#c9983a]/20 p-3 transition-colors ${isDark ? 'bg-white/[0.12]' : 'bg-white/[0.12]'
                                   }`}>
                                   <div className="flex items-center gap-2 mb-1">
                                     <Award className={`w-4 h-4 transition-colors ${isDark ? 'text-[#c9983a]' : 'text-[#c9983a]'
@@ -1308,7 +1308,7 @@ Only applications submitted via the apply link above will be considered. Please 
               <div className="space-y-4">
                 {/* Issue description */}
                 {selectedIssueFromAPI?.description && (
-                  <div className={`backdrop-blur-[25px] rounded-[16px] border p-5 transition-colors ${isDark
+                  <div className={`rounded-[16px] border p-5 transition-colors ${isDark
                     ? 'bg-white/[0.08] border-white/10'
                     : 'bg-white/[0.15] border-white/25'
                     }`}>
@@ -1325,7 +1325,7 @@ Only applications submitted via the apply link above will be considered. Please 
                   applicationData.discussions.map((discussion) => (
                     <div
                       key={discussion.id}
-                      className={`backdrop-blur-[25px] rounded-[16px] border p-5 transition-colors ${isDark
+                      className={`rounded-[16px] border p-5 transition-colors ${isDark
                         ? 'bg-white/[0.08] border-white/10'
                         : 'bg-white/[0.15] border-white/25'
                         }`}
@@ -1375,7 +1375,7 @@ Only applications submitted via the apply link above will be considered. Please 
                     </div>
                   ))
                 ) : (
-                  <div className={`p-8 rounded-[16px] backdrop-blur-[25px] border text-center min-h-[300px] flex flex-col items-center justify-center ${isDark ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
+                  <div className={`p-8 rounded-[16px] border text-center min-h-[300px] flex flex-col items-center justify-center ${isDark ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.15] border-white/25'
                     }`}>
                     <MessageSquare className={`w-12 h-12 mx-auto mb-4 transition-colors ${isDark ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
                       }`} />

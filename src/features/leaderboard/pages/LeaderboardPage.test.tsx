@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '../../../test/renderWithProviders'
+import { expectNoPersistentAnimation } from '../../../test/noPersistentAnimation'
 import { LeaderboardPage } from './LeaderboardPage'
 import { getLeaderboard, getProjectLeaderboard, getEcosystems } from '../../../shared/api/client'
 
@@ -113,10 +114,11 @@ describe('LeaderboardPage', () => {
     // Rank numbers appear in the table's rank column.
     expect(screen.getByText('Rank')).toBeInTheDocument()
 
-    // LeaderboardHero has one permanent decorative "animate-shimmer" underline
-    // unrelated to loading state, so the skeletons clearing means the count drops
-    // to exactly that 1 (not 0).
-    expect(container.querySelectorAll('.animate-shimmer').length).toBe(1)
+    // Nothing on this page animates once the skeletons clear. Checked against
+    // every infinite animation the codebase defines, not just the shimmer this
+    // used to watch — an assertion pinned to one class stops testing anything
+    // the moment somebody adds a different one.
+    expectNoPersistentAnimation(container)
     // Requests PAGE_SIZE+1 (26) so the response length can reveal whether a
     // next page exists, without the backend needing to return a total count.
     expect(mockedGetLeaderboard).toHaveBeenCalledWith(26, 0, undefined, 'season')
@@ -147,8 +149,8 @@ describe('LeaderboardPage', () => {
     await waitFor(() => {
       expect(screen.getByText('No contributors yet. Be the first to contribute!')).toBeInTheDocument()
     })
-    // Same permanent decorative underline noted above — 1, not 0, once skeletons clear.
-    expect(container.querySelectorAll('.animate-shimmer').length).toBe(1)
+    // Same rule as above: still, even on the error path.
+    expectNoPersistentAnimation(container)
     expect(consoleErrorSpy).toHaveBeenCalled()
 
     consoleErrorSpy.mockRestore()

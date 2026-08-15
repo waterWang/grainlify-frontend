@@ -4,6 +4,9 @@ import { renderWithProviders, screen, waitFor } from '../../../../test/renderWit
 import { BillingProfilesProvider } from '../../contexts/BillingProfilesContext'
 import { BillingTab } from './BillingTab'
 import type { BillingProfile } from '../../types'
+// The real class, from its own module — the client module is mocked below, so
+// anything imported from there would be undefined here.
+import { ApiError } from '../../../../shared/api/apiError'
 
 const mockStartKYCVerification = vi.fn()
 const mockGetKYCStatus = vi.fn()
@@ -122,6 +125,34 @@ describe('BillingTab', () => {
 
     expect(
       screen.queryByText('Could not start verification. Please try again later.')
+    ).not.toBeInTheDocument()
+  })
+
+  it('offers to resume, not an error, when a verification session already exists', async () => {
+    // Regression, reported from production. The backend answers 409 with the
+    // URL of the session the user already has; apiRequest used to flatten the
+    // response to its message and drop that URL, so the UI said "try again
+    // later" — the one thing that could never work — while holding the way
+    // back in a discarded field.
+    seedProfiles([{ id: 1, name: 'Test Profile', type: 'individual', status: 'missing-verification' }])
+    mockGetKYCStatus.mockResolvedValue({ status: null })
+    const conflict = new ApiError(
+      'You already have an active KYC verification session (status: pending).',
+      409,
+      { error: 'kyc_session_exists', status: 'pending', url: 'https://verify.didit.me/session/abc123' },
+    )
+    mockStartKYCVerification.mockRejectedValueOnce(conflict)
+
+    const user = userEvent.setup()
+    renderBillingTab()
+
+    await user.click(await screen.findByText('Test Profile'))
+    await waitFor(() => expect(mockGetKYCStatus).toHaveBeenCalledTimes(1))
+    await user.click(await screen.findByRole('button', { name: 'Verify KYC' }))
+
+    expect(await screen.findByRole('button', { name: 'Continue verification' })).toBeInTheDocument()
+    expect(
+      screen.queryByText('Could not start verification. Please try again later.'),
     ).not.toBeInTheDocument()
   })
 

@@ -323,7 +323,7 @@ export function DashboardTab({ selectedProjects, isLoadingProjects = false, onRe
       {/* Main Content: Last Activity & Applications History */}
       <div className="grid grid-cols-2 gap-6">
         {/* Last Activity */}
-        <div className={`backdrop-blur-[40px] rounded-[24px] border p-8 relative overflow-hidden group/activity transition-colors ${theme === 'dark'
+        <div className={`rounded-[24px] border p-8 relative overflow-hidden group/activity transition-colors ${theme === 'dark'
           ? 'bg-[#2d2820]/[0.4] border-white/10'
           : 'bg-white/[0.12] border-white/20'
           }`}>
@@ -368,7 +368,7 @@ export function DashboardTab({ selectedProjects, isLoadingProjects = false, onRe
                   <div className="flex justify-center mt-6">
                     <button
                       onClick={() => setShowAllActivities(!showAllActivities)}
-                      className={`px-6 py-2.5 rounded-[10px] backdrop-blur-[25px] bg-gradient-to-br from-[#c9983a]/25 to-[#d4af37]/20 border border-[#c9983a]/40 text-[13px] font-semibold text-[#c9983a] hover:from-[#c9983a]/35 hover:to-[#d4af37]/30 hover:scale-105 transition-all duration-200 ${
+                      className={`px-6 py-2.5 rounded-[10px] bg-gradient-to-br from-[#c9983a]/25 to-[#d4af37]/20 border border-[#c9983a]/40 text-[13px] font-semibold text-[#c9983a] hover:from-[#c9983a]/35 hover:to-[#d4af37]/30 hover:scale-105 transition-all duration-200 ${
                         theme === 'dark' ? 'hover:border-[#c9983a]/60' : 'hover:border-[#c9983a]/50'
                       }`}
                     >
@@ -382,7 +382,7 @@ export function DashboardTab({ selectedProjects, isLoadingProjects = false, onRe
         </div>
 
         {/* Applications History */}
-        <div className={`backdrop-blur-[40px] rounded-[24px] border p-8 relative overflow-hidden group/chart transition-colors ${theme === 'dark'
+        <div className={`rounded-[24px] border p-8 relative overflow-hidden group/chart transition-colors ${theme === 'dark'
           ? 'bg-[#2d2820]/[0.4] border-white/10'
           : 'bg-white/[0.12] border-white/20'
           }`}>

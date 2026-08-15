@@ -121,11 +121,17 @@ const cleanIssueDescription = (
   return selectedLines;
 };
 
-// Helper function to calculate days left (mock for now, can be enhanced with actual dates)
-const getDaysLeft = (): string => {
-  const days = Math.floor(Math.random() * 10) + 1;
-  return `${days} days left`;
-};
+// A "days left" figure used to be generated here with Math.random(), which
+// meant every issue card advertised a deadline that did not exist and that
+// changed on every render - the same issue could read "2 days left" and then
+// "9 days left" after a reload.
+//
+// There is no deadline to show. The issues endpoint carries github_issue_id,
+// number, state, title, description, author_login, labels, url, updated_at and
+// last_seen_at - no due date, and GitHub issues do not have one. IssueCard's
+// daysLeft prop is optional and renders nothing when omitted, so the card
+// simply drops the line. If a real deadline ever lands in the payload, pass it
+// there; do not synthesise one.
 
 // Helper function to get primary tag from issue labels
 const getPrimaryTag = (labels: any[]): string | undefined => {
@@ -163,7 +169,6 @@ type IssueType = {
   title: string;
   description: string;
   language: string;
-  daysLeft: string;
   primaryTag?: string;
   projectId: string;
 };
@@ -363,7 +368,6 @@ export function DiscoverPage({
                   title: issue.title || 'Untitled Issue',
                   description: cleanIssueDescription(issue.description),
                   language: language,
-                  daysLeft: getDaysLeft(),
                   primaryTag: getPrimaryTag(issue.labels || []),
                   projectId: project.id,
                 });
@@ -480,21 +484,16 @@ export function DiscoverPage({
             </button>
           </div>
 
-          {/* Radar-ping badge */}
+          {/* Badge.
+              There were two pulsing rings here. They cost two thirds of the
+              page's idle frame budget - 120 FPS down to 38-42 on a 4x-throttled
+              CPU - because they sit inside a backdrop-blur panel, and animating
+              anything inside one forces the blurred backdrop to recompute every
+              frame. Static rings keep the shape at no cost. See
+              docs/design-system.md, "No animation inside glass". */}
           <div className="relative flex-shrink-0 w-28 h-28 md:w-36 md:h-36 flex items-center justify-center">
-            {/* CSS-driven, not motion.div: see .animate-ping-ring in theme.css.
-                As a JS animation this pair was the whole idle cost of the page.
-                Reduced motion is honoured by the stylesheet, and the guard here
-                is kept so the nodes are not even mounted in that case. */}
-            {!prefersReducedMotion && (
-              <>
-                <span className="absolute inset-[8%] rounded-full border-2 border-[#c9983a]/40 animate-ping-ring" />
-                <span
-                  className="absolute inset-0 rounded-full border-2 border-[#c9983a]/30 animate-ping-ring"
-                  style={{ animationDelay: '1.2s' }}
-                />
-              </>
-            )}
+            <span className="absolute inset-[8%] rounded-full border-2 border-[#c9983a]/25" />
+            <span className="absolute inset-0 rounded-full border-2 border-[#c9983a]/15" />
             <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-[#c9983a] to-[#a67c2e] flex items-center justify-center shadow-[0_8px_24px_rgba(162,121,44,0.4)] border border-white/15">
               <Target className="w-9 h-9 md:w-11 md:h-11 text-white" />
             </div>
@@ -688,7 +687,6 @@ export function DiscoverPage({
                   title={issue.title}
                   description={issue.description}
                   language={issue.language}
-                  daysLeft={issue.daysLeft}
                   variant="recommended"
                   primaryTag={issue.primaryTag}
                   onClick={() => {

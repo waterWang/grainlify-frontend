@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "social-cards": "node scripts/social-cards/build.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

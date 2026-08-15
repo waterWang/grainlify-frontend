@@ -49,37 +49,50 @@ function Card({ children, theme }: { children: React.ReactNode; theme: string })
 
 /** One badge for the whole submission. There is no per-platform status by
  *  design: both platforms are decided together, so showing them separately
- *  would imply a half-approved state that cannot exist. */
-function StatusBadge({ status }: { status: SocialFollowStatus['status'] }) {
-  if (status === 'approved') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-green-500/15 text-green-500">
-        <CheckCircle2 className="w-3.5 h-3.5" /> Eligible
-      </span>
-    );
-  }
-  if (status === 'pending') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-500">
-        <Clock className="w-3.5 h-3.5" /> Pending review
-      </span>
-    );
-  }
-  if (status === 'rejected') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-red-500/15 text-red-500">
-        <XCircle className="w-3.5 h-3.5" /> Not approved
-      </span>
-    );
-  }
-  if (status === 'revoked') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-red-500/15 text-red-500">
-        <ShieldOff className="w-3.5 h-3.5" /> Eligibility withdrawn
-      </span>
-    );
-  }
-  return null;
+ *  would imply a half-approved state that cannot exist.
+ *
+ *  The tones are theme-dependent, which they were not before.
+ *  `bg-*-500/15 text-*-500` reads well on the dark card and is close to
+ *  invisible on the light one: green-500 on the light panel measures about
+ *  1.3:1, so "Eligible" - the one state that confirms a contributor is in -
+ *  was the least readable thing on the page.
+ *
+ *  Light mode uses OPAQUE tints rather than another alpha wash. These badges
+ *  sit on a translucent panel inside a translucent card over a gradient, so an
+ *  alpha background composites against something the class name cannot see;
+ *  a solid tint takes that whole class of problem off the table and measures
+ *  6.4:1 or better in every state. */
+const BADGE_TONES = {
+  green: { dark: 'bg-green-500/15 text-green-400', light: 'bg-green-100 text-green-800' },
+  amber: { dark: 'bg-amber-500/15 text-amber-400', light: 'bg-amber-100 text-amber-800' },
+  // red-300 rather than the -400 its siblings use: red is the darkest of the
+  // three hues at equal lightness, and -400 measures 4.0:1 on this tint - a
+  // fail at every background alpha, so the text is what has to move. The
+  // shipped -500 was 3.0:1, meaning dark mode was failing quietly too.
+  red: { dark: 'bg-red-500/15 text-red-300', light: 'bg-red-100 text-red-800' },
+} as const;
+
+const BADGE_STATES = {
+  approved: { tone: 'green', Icon: CheckCircle2, label: 'Eligible' },
+  pending: { tone: 'amber', Icon: Clock, label: 'Pending review' },
+  rejected: { tone: 'red', Icon: XCircle, label: 'Not approved' },
+  revoked: { tone: 'red', Icon: ShieldOff, label: 'Eligibility withdrawn' },
+} as const;
+
+function StatusBadge({ status, theme }: { status: SocialFollowStatus['status']; theme: string }) {
+  const state = status ? BADGE_STATES[status as keyof typeof BADGE_STATES] : undefined;
+  if (!state) return null;
+
+  const { Icon, label } = state;
+  const tone = BADGE_TONES[state.tone][theme === 'dark' ? 'dark' : 'light'];
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-full ${tone}`}
+    >
+      <Icon className="w-3.5 h-3.5" /> {label}
+    </span>
+  );
 }
 
 function PlatformUploadRow({
@@ -265,7 +278,7 @@ export function RewardsTab() {
               theme === 'dark' ? 'bg-white/[0.04] border-white/10' : 'bg-white/[0.15] border-white/25'
             }`}
           >
-            <StatusBadge status={socialFollow.status} />
+            <StatusBadge status={socialFollow.status} theme={theme} />
             {/* Why, not just what. A withdrawal or rejection with no stated
                 reason reads as arbitrary, and the contributor cannot act on
                 it. */}

@@ -1,6 +1,5 @@
 import { useRef, useState, type ReactNode, type MouseEvent } from 'react';
 import { useReducedMotion } from 'motion/react';
-import { useTheme } from '../../../contexts/ThemeContext';
 import { cn } from '../../../utils/cn';
 
 interface SpotlightCardProps {
@@ -23,14 +22,14 @@ interface SpotlightCardProps {
  * Upstream also renders the highlight always; this mounts it only while hovered
  * and skips the whole mechanism when the user prefers reduced motion, in which
  * case the card is a plain container.
+ *
+ * The highlight colour is --brand-spotlight (styles/brand.css), so this holds
+ * no colour of its own and needs no theme conditional.
  */
 export function SpotlightCard({ children, className }: SpotlightCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const { theme } = useTheme();
   const prefersReducedMotion = useReducedMotion();
-
-  const highlight = theme === 'dark' ? 'rgba(201,152,58,0.16)' : 'rgba(201,152,58,0.20)';
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const node = ref.current;
@@ -57,7 +56,8 @@ export function SpotlightCard({ children, className }: SpotlightCardProps) {
         className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300"
         style={{
           opacity: isHovered ? 1 : 0,
-          background: `radial-gradient(320px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), ${highlight}, transparent 70%)`,
+          background:
+            'radial-gradient(320px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), var(--brand-spotlight), transparent 70%)',
         }}
       />
       {children}

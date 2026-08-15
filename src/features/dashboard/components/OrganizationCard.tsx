@@ -3,6 +3,7 @@ import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { useState } from 'react';
 import { motion, type Variants } from 'motion/react';
 import { getOnBrandGradient } from '../../../shared/utils/motionVariants';
+import { SpotlightCard } from '../../../shared/components/ui/aceternity/SpotlightCard';
 
 export interface Organization {
   name: string;
@@ -28,10 +29,14 @@ export function OrganizationCard({ organization, onClick, variants }: Organizati
   const isAvatarUrl = organization.avatar.startsWith('http');
   const showAvatarImage = isAvatarUrl && !avatarError;
 
+  // Hover-only, outside any glass: the highlight follows the cursor via CSS
+  // custom properties rather than React state, so moving the mouse over a grid
+  // of these re-renders nothing. See SpotlightCard.
   return (
+    <SpotlightCard className="rounded-[16px] h-full">
     <motion.div
       variants={variants}
-      className={`flex flex-col items-center text-center h-full backdrop-blur-[30px] rounded-[16px] border p-6 transition-all cursor-pointer motion-safe:hover:-translate-y-1 active:scale-[0.98] ${
+      className={`flex flex-col items-center text-center h-full rounded-[16px] border p-6 transition-all cursor-pointer motion-safe:hover:-translate-y-1 active:scale-[0.98] ${
         isDark
           ? 'bg-white/[0.08] border-white/15 shadow-[0_4px_16px_rgba(0,0,0,0.24)] hover:bg-white/[0.12] hover:shadow-[0_8px_24px_rgba(201,152,58,0.15)]'
           : 'bg-white/[0.15] border-white/25 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]'
@@ -80,5 +85,6 @@ export function OrganizationCard({ organization, onClick, variants }: Organizati
         </div>
       </div>
     </motion.div>
+    </SpotlightCard>
   );
 }

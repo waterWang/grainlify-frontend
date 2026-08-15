@@ -25,7 +25,7 @@ export function OrgActivityChart({ weeks }: OrgActivityChartProps) {
 
   return (
     <div
-      className={`backdrop-blur-[40px] rounded-[24px] border p-8 relative overflow-hidden group/chart transition-colors ${
+      className={`rounded-[24px] border p-8 relative overflow-hidden group/chart transition-colors ${
         isDark ? 'bg-[#2d2820]/[0.4] border-white/10' : 'bg-white/[0.12] border-white/20'
       }`}
     >
@@ -40,7 +40,7 @@ export function OrgActivityChart({ weeks }: OrgActivityChartProps) {
         </div>
 
         <div
-          className={`h-[320px] backdrop-blur-[25px] rounded-[16px] border p-6 transition-colors ${
+          className={`h-[320px] rounded-[16px] border p-6 transition-colors ${
             isDark ? 'bg-white/[0.05] border-white/10' : 'bg-white/[0.08] border-white/20'
           }`}
         >
@@ -74,7 +74,7 @@ export function OrgActivityChart({ weeks }: OrgActivityChartProps) {
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className={`backdrop-blur-[40px] rounded-[14px] border px-5 py-4 ${tooltipBg}`}>
+                        <div className={`rounded-[14px] border px-5 py-4 ${tooltipBg}`}>
                           <div className={`text-[13px] font-bold mb-2 ${tooltipTitleText}`}>{payload[0].payload.label}</div>
                           {payload.map((entry: any, index: number) => (
                             <div key={index} className="flex items-center justify-between gap-4 mb-1">

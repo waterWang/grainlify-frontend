@@ -9,7 +9,7 @@ interface ApplicationCardProps {
 
 export function ApplicationCard({ applicant, status, onProfileClick }: ApplicationCardProps) {
   return (
-    <div className="backdrop-blur-[25px] bg-white/[0.15] rounded-[16px] border border-white/25 p-6">
+    <div className="bg-white/[0.15] rounded-[16px] border border-white/25 p-6">
       {/* Clickable User Header */}
       <button 
         onClick={onProfileClick}
@@ -38,14 +38,14 @@ export function ApplicationCard({ applicant, status, onProfileClick }: Applicati
       {/* Profile Stats */}
       {applicant.profileStats && (
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="backdrop-blur-[20px] bg-white/[0.12] rounded-[12px] border border-[#c9983a]/20 p-3">
+          <div className="bg-white/[0.12] rounded-[12px] border border-[#c9983a]/20 p-3">
             <div className="flex items-center gap-2 mb-1">
               <GitPullRequest className="w-4 h-4 text-[#c9983a]" />
               <span className="text-[20px] font-bold text-[#2d2820]">{applicant.profileStats.contributions}</span>
             </div>
             <p className="text-[11px] font-semibold text-[#7a6b5a] uppercase tracking-wide">Contributions</p>
           </div>
-          <div className="backdrop-blur-[20px] bg-white/[0.12] rounded-[12px] border border-[#c9983a]/20 p-3">
+          <div className="bg-white/[0.12] rounded-[12px] border border-[#c9983a]/20 p-3">
             <div className="flex items-center gap-2 mb-1">
               <Trophy className="w-4 h-4 text-[#c9983a]" />
               <span className="text-[20px] font-bold text-[#2d2820]">{applicant.profileStats.rewards}</span>

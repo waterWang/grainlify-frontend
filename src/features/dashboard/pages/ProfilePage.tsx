@@ -346,7 +346,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       {onBack && (viewingUserId || viewingUserLogin) && (
         <button
           onClick={onBack}
-          className={`flex items-center gap-2 px-4 py-2 rounded-[12px] backdrop-blur-[30px] border font-medium text-[14px] hover:bg-white/[0.2] transition-all ${theme === 'dark'
+          className={`flex items-center gap-2 px-4 py-2 rounded-[12px] border font-medium text-[14px] hover:bg-white/[0.2] transition-all ${theme === 'dark'
               ? 'bg-[#3d342c]/[0.4] border-white/15 text-[#d4c5b0]'
               : 'bg-white/[0.15] border-white/25 text-[#2d2820]'
             }`}
@@ -357,7 +357,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       )}
 
       {/* Profile Header */}
-      <div className="backdrop-blur-[40px] bg-gradient-to-br from-white/[0.18] to-white/[0.10] rounded-[32px] border-2 border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.15),0_0_80px_rgba(201,152,58,0.08)] p-12 relative overflow-hidden z-20 group">
+      <div className="bg-gradient-to-br from-white/[0.18] to-white/[0.10] rounded-[32px] border-2 border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.15),0_0_80px_rgba(201,152,58,0.08)] p-12 relative overflow-hidden z-20 group">
         {/* Ambient Background Glow - Enhanced. overflow-hidden above (not
             overflow-visible) is load-bearing: these are 400-600px blurred
             circles inside a 32px-rounded card - without clipping, they
@@ -398,7 +398,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                   ) : (
                     <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 border-[6px] border-white/40 shadow-[0_12px_40px_rgba(0,0,0,0.25),inset_0_2px_8px_rgba(255,255,255,0.3)] flex-shrink-0 group-hover/avatar:scale-105 transition-transform duration-500" />
                   )}
-                  <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full backdrop-blur-[25px] bg-gradient-to-br from-[#ffd700] via-[#c9983a] to-[#b8873a] border-[4px] border-white/50 shadow-[0_6px_20px_rgba(201,152,58,0.5),0_0_20px_rgba(255,215,0,0.3)] flex items-center justify-center group-hover/avatar:rotate-12 transition-transform duration-500">
+                  <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full bg-gradient-to-br from-[#ffd700] via-[#c9983a] to-[#b8873a] border-[4px] border-white/50 shadow-[0_6px_20px_rgba(201,152,58,0.5),0_0_20px_rgba(255,215,0,0.3)] flex items-center justify-center group-hover/avatar:rotate-12 transition-transform duration-500">
                     <Award className="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
                   </div>
                 </>
@@ -822,7 +822,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
             <div className="absolute inset-0 rounded-[28px] blur-xl group-hover/rank:scale-110 transition-transform duration-700 bg-gradient-to-br from-[#ffd700]/30 to-transparent" />
 
             {/* Main Badge */}
-            <div className="relative backdrop-blur-[40px] rounded-[28px] border-[3.5px] border-white/50 shadow-[0_15px_60px_rgba(201,152,58,0.5),inset_0_2px_4px_rgba(255,255,255,0.5),0_0_60px_rgba(255,215,0,0.2)] p-10 min-w-[200px] text-center group-hover/rank:scale-105 group-hover/rank:shadow-[0_20px_80px_rgba(201,152,58,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)] transition-all duration-500 bg-gradient-to-br from-[#c9983a]/40 via-[#d4af37]/30 to-[#c9983a]/25">
+            <div className="relative rounded-[28px] border-[3.5px] border-white/50 shadow-[0_15px_60px_rgba(201,152,58,0.5),inset_0_2px_4px_rgba(255,255,255,0.5),0_0_60px_rgba(255,215,0,0.2)] p-10 min-w-[200px] text-center group-hover/rank:scale-105 group-hover/rank:shadow-[0_20px_80px_rgba(201,152,58,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)] transition-all duration-500 bg-gradient-to-br from-[#c9983a]/40 via-[#d4af37]/30 to-[#c9983a]/25">
               {/* Decorative Elements */}
               <div className="absolute top-4 left-4 w-4 h-4 rounded-full bg-white/50 shadow-[0_0_12px_rgba(255,255,255,0.8)] animate-pulse" />
               <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-[#c9983a]/70 shadow-[0_0_10px_rgba(201,152,58,0.9)]" />
@@ -901,7 +901,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       </div>
 
       {/* Projects Led / Most */}
-      <div className="backdrop-blur-[40px] bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 relative overflow-hidden group/projects">
+      <div className="bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 relative overflow-hidden group/projects">
         {/* Animated Background Glow */}
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#c9983a]/8 to-transparent rounded-full blur-3xl pointer-events-none group-hover/projects:scale-125 transition-transform duration-1000" />
 
@@ -924,7 +924,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
             Array.from({ length: 3 }).map((_, idx) => (
               <div
                 key={idx}
-                className={`backdrop-blur-[20px] rounded-[16px] border p-5 ${theme === 'dark'
+                className={`rounded-[16px] border p-5 ${theme === 'dark'
                     ? 'bg-white/[0.08] border-white/10'
                     : 'bg-white/[0.15] border-white/25'
                   }`}
@@ -954,7 +954,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                   tabIndex={0}
                   onClick={() => onProjectClick?.(project.id)}
                   onKeyDown={(e) => e.key === 'Enter' && onProjectClick?.(project.id)}
-                  className={`backdrop-blur-[20px] rounded-[16px] border p-5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/project ${theme === 'dark'
+                  className={`rounded-[16px] border p-5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/project ${theme === 'dark'
                       ? 'bg-white/[0.08] border-white/10 hover:bg-white/[0.12] hover:border-white/15'
                       : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2] hover:border-white/40'
                     }`}
@@ -1004,7 +1004,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
 
                   {/* Bottom Stats - Rewards and Merged PRs */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className={`backdrop-blur-[15px] rounded-[10px] border p-3 group-hover/project:bg-white/[0.15] transition-all ${theme === 'dark' ? 'bg-white/[0.06] border-white/8' : 'bg-white/[0.1] border-white/20'
+                    <div className={`rounded-[10px] border p-3 group-hover/project:bg-white/[0.15] transition-all ${theme === 'dark' ? 'bg-white/[0.06] border-white/8' : 'bg-white/[0.1] border-white/20'
                       }`}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-7 h-7 rounded-full bg-[#c9983a]/20 flex items-center justify-center group-hover/project:scale-110 transition-transform">
@@ -1016,7 +1016,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                       <div className={`text-[20px] font-bold transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
                         }`}>{project.rewards_amount || 0}</div>
                     </div>
-                    <div className={`backdrop-blur-[15px] rounded-[10px] border p-3 group-hover/project:bg-white/[0.15] transition-all ${theme === 'dark' ? 'bg-white/[0.06] border-white/8' : 'bg-white/[0.1] border-white/20'
+                    <div className={`rounded-[10px] border p-3 group-hover/project:bg-white/[0.15] transition-all ${theme === 'dark' ? 'bg-white/[0.06] border-white/8' : 'bg-white/[0.1] border-white/20'
                       }`}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-7 h-7 rounded-full bg-[#c9983a]/20 flex items-center justify-center group-hover/project:scale-110 transition-transform">
@@ -1053,7 +1053,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       {/* Most active languages & ecosystems - Combined */}
       <div className="grid grid-cols-2 gap-6">
         {/* Most active languages */}
-        <div className="backdrop-blur-[40px] bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6">
+        <div className="bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6">
           <div className="flex items-center gap-2 mb-5">
             <Code className="w-5 h-5 text-[#c9983a]" />
             <h2 className={`text-[16px] font-bold transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
@@ -1066,7 +1066,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               Array.from({ length: 3 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="backdrop-blur-[20px] bg-white/[0.15] rounded-[12px] border border-white/25 p-4"
+                  className="bg-white/[0.15] rounded-[12px] border border-white/25 p-4"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1085,7 +1085,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               activeLanguages.map((language) => (
                 <div
                   key={language.name}
-                  className="backdrop-blur-[20px] bg-white/[0.15] rounded-[12px] border border-white/25 p-4 hover:bg-white/[0.2] transition-all group cursor-pointer"
+                  className="bg-white/[0.15] rounded-[12px] border border-white/25 p-4 hover:bg-white/[0.2] transition-all group cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1116,7 +1116,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
         </div>
 
         {/* Most active ecosystems */}
-        <div className="backdrop-blur-[40px] bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6">
+        <div className="bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-6">
           <div className="flex items-center gap-2 mb-5">
             <Globe className="w-5 h-5 text-[#c9983a]" />
             <h2 className={`text-[16px] font-bold transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
@@ -1129,7 +1129,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               Array.from({ length: 2 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="backdrop-blur-[20px] bg-white/[0.15] rounded-[12px] border border-white/25 p-4"
+                  className="bg-white/[0.15] rounded-[12px] border border-white/25 p-4"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1148,7 +1148,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               activeEcosystems.map((ecosystem) => (
                 <div
                   key={ecosystem.name}
-                  className="backdrop-blur-[20px] bg-white/[0.15] rounded-[12px] border border-white/25 p-4 hover:bg-white/[0.2] transition-all group cursor-pointer"
+                  className="bg-white/[0.15] rounded-[12px] border border-white/25 p-4 hover:bg-white/[0.2] transition-all group cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1180,7 +1180,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       </div>
 
       {/* Rewards Distribution */}
-      <div className="backdrop-blur-[40px] bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 relative overflow-hidden group/rewards">
+      <div className="bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8 relative overflow-hidden group/rewards">
         {/* Animated Background Glow */}
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-br from-[#c9983a]/10 to-transparent rounded-full blur-3xl pointer-events-none group-hover/rewards:scale-125 transition-transform duration-1000" />
 
@@ -1233,7 +1233,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
                         if (active && payload && payload[0]) {
                           const data = payload[0].payload;
                           return (
-                            <div className="backdrop-blur-[40px] bg-[#e8dfd0]/95 rounded-[14px] border border-white/25 shadow-[0_8px_24px_rgba(0,0,0,0.12)] px-6 py-4">
+                            <div className="bg-[#e8dfd0]/95 rounded-[14px] border border-white/25 shadow-[0_8px_24px_rgba(0,0,0,0.12)] px-6 py-4">
                               <div className="text-[24px] font-black text-[#2d2820] drop-shadow-sm">
                                 ${data.amount.toLocaleString()}
                               </div>
@@ -1271,7 +1271,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               {rewardsData.map((item, idx) => (
                 <div
                   key={item.name}
-                  className="backdrop-blur-[20px] bg-white/[0.15] rounded-[14px] border border-white/25 p-4 hover:bg-white/[0.25] hover:border-white/40 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/card"
+                  className="bg-white/[0.15] rounded-[14px] border border-white/25 p-4 hover:bg-white/[0.25] hover:border-white/40 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group/card"
                   style={{
                     animationDelay: `${idx * 100}ms`,
                   }}
@@ -1299,7 +1299,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       </div>
 
       {/* Contribution Heatmap */}
-      <div className="backdrop-blur-[40px] bg-white/[0.18] rounded-[24px] border-2 border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8">
+      <div className="bg-white/[0.18] rounded-[24px] border-2 border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className={`text-[18px] font-bold transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
             }`}>
@@ -1319,7 +1319,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
         </div>
 
         {/* GitHub-style Heatmap Grid */}
-        <div className="w-full backdrop-blur-[20px] bg-white/[0.12] rounded-[20px] border border-white/30 p-6">
+        <div className="w-full bg-white/[0.12] rounded-[20px] border border-white/30 p-6">
           {/* Month Labels */}
           <div className="flex mb-4">
             <div className="w-16" /> {/* Space for day labels */}
@@ -1426,7 +1426,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
       </div>
 
       {/* Contributions Activity */}
-      <div className="backdrop-blur-[40px] bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8">
+      <div className="bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-8">
         <h2 className={`text-[20px] font-bold mb-6 transition-colors ${theme === 'dark' ? 'text-[#f5f5f5]' : 'text-[#2d2820]'
           }`}>Contributions Activity</h2>
 
@@ -1440,7 +1440,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-12 pr-4 py-3 rounded-[12px] backdrop-blur-[30px] bg-white/[0.15] border border-white/25 focus:outline-none focus:bg-white/[0.2] focus:border-[#c9983a]/40 transition-all text-[13px] ${theme === 'dark' ? 'text-[#f5f5f5] placeholder-[#d4d4d4]' : 'text-[#2d2820] placeholder-[#7a6b5a]'
+              className={`w-full pl-12 pr-4 py-3 rounded-[12px] bg-white/[0.15] border border-white/25 focus:outline-none focus:bg-white/[0.2] focus:border-[#c9983a]/40 transition-all text-[13px] ${theme === 'dark' ? 'text-[#f5f5f5] placeholder-[#d4d4d4]' : 'text-[#2d2820] placeholder-[#7a6b5a]'
                 }`}
             />
           </div>
@@ -1450,7 +1450,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
         {isLoadingActivity ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, idx) => (
-              <div key={idx} className="backdrop-blur-[20px] bg-white/[0.08] rounded-[12px] border border-white/20 p-5">
+              <div key={idx} className="bg-white/[0.08] rounded-[12px] border border-white/20 p-5">
                 <SkeletonLoader variant="text" width="150px" height="20px" className="mb-3" />
                 <div className="space-y-2">
                   {Array.from({ length: 2 }).map((_, itemIdx) => (
@@ -1472,7 +1472,7 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
         ) : (
           <div className="space-y-2">
             {Object.entries(contributionsByMonth).map(([month, items]) => (
-              <div key={month} className="backdrop-blur-[20px] bg-white/[0.08] rounded-[12px] border border-white/20 overflow-hidden">
+              <div key={month} className="bg-white/[0.08] rounded-[12px] border border-white/20 overflow-hidden">
                 {/* Month Header with Calendar Icon */}
                 <button
                   onClick={() => toggleMonth(month)}
