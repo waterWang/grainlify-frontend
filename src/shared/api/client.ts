@@ -1039,11 +1039,15 @@ export const submitSocialFollowProof = (screenshots: { linkedin: string; x: stri
 
 // Public (no auth required) so it works for anonymous landing-page visitors,
 // not just signed-in dashboard users.
+// reporter_login is deliberately absent. It used to be sent from here and the
+// backend relayed it as the reporter's identity, so anyone could file a report
+// as anyone - a value that looked verified and was not. Identity is now
+// resolved server-side from the JWT; an unauthenticated report simply carries
+// none, which is correct rather than a regression.
 export const submitBugReport = (payload: {
   description: string;
   screenshot?: string;
   page_url?: string;
-  reporter_login?: string;
 }) =>
   apiRequest<{ ok: boolean }>("/bug-reports", {
     method: "POST",

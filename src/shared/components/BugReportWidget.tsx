@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { Bug, CheckCircle2, Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal, ModalButton, ModalFooter, ModalInput } from './ui/Modal';
-import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { submitBugReport } from '../api/client';
 
@@ -14,7 +13,6 @@ const VALID_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 
 // aren't limited to signed-in users.
 export function BugReportWidget() {
   const { theme } = useTheme();
-  const { user } = useAuth();
   const isDark = theme === 'dark';
 
   const [isOpen, setIsOpen] = useState(false);
@@ -74,10 +72,14 @@ export function BugReportWidget() {
         description: description.trim(),
         screenshot: screenshot ?? undefined,
         page_url: window.location.href,
-        reporter_login: user?.github?.login,
       });
       setSubmitted(true);
     } catch (error) {
+      // Deliberately does NOT clear `description`. The backend distinguishes
+      // "saved but not yet delivered" (200) from "not saved" (503), and the
+      // only path that loses a report is the second one - so on any error the
+      // person's text stays in the box and the message they see is the
+      // backend's own, which says whether to retry.
       toast.error(error instanceof Error ? error.message : 'Failed to submit report. Please try again.');
     } finally {
       setIsSubmitting(false);
