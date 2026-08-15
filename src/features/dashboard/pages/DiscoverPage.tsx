@@ -385,18 +385,16 @@ export function DiscoverPage({
     };
 
     loadRecommendedIssues();
-    // fetchIssues is deliberately NOT a dependency here - useOptimisticData's
-    // fetchData is a useCallback closed over its own `data` state, so its
-    // identity changes on every successful fetch. Combined with
-    // forceRefresh=showAllIssues above (needed so expanding the list is
-    // never silently swallowed by the 30s cache), including it here creates
-    // a genuine infinite loop once showAllIssues is true: fetch resolves ->
-    // data changes -> fetchIssues gets a new identity -> this effect
-    // re-fires because fetchIssues "changed" -> fetches again -> forever.
-    // Confirmed via an identical bug in BrowsePage.tsx's filter fetch
-    // (2026-08-09) - a waitFor-based test can pass without ever exposing
-    // this, since it stops polling the instant its assertion is met once,
-    // even while the effect keeps looping in the background afterward.
+    // fetchIssues is omitted deliberately, though it is no longer load-bearing:
+    // useOptimisticData's fetchData now has a permanently stable identity, so
+    // including it would be harmless. It used to close over `data` and over an
+    // inline `initialData`, so any effect depending on it re-fired every render.
+    //
+    // The note that survives the fix: a waitFor-based test can pass without
+    // ever exposing a loop like this, because it stops polling the instant its
+    // assertion is met once - while the effect keeps looping behind it. What
+    // caught the third occurrence was counting network requests, not asserting
+    // on rendered output.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, isLoadingProjects, showAllIssues]);
 

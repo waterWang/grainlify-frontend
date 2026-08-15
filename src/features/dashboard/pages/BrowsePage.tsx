@@ -325,16 +325,13 @@ export function BrowsePage({ onProjectClick, onOrgClick }: BrowsePageProps) {
     };
 
     loadProjects();
-    // fetchProjects is deliberately NOT a dependency: useOptimisticData's
-    // fetchData is a useCallback closed over its own `data` state, so its
-    // identity changes on every successful fetch. Combined with
-    // forceRefresh=true above (needed so a real filter change is never
-    // silently swallowed by the 30s cache - see the comment above this
-    // effect), including it here creates a genuine infinite loop: fetch
-    // resolves -> data changes -> fetchProjects gets a new identity ->
-    // this effect re-fires because fetchProjects "changed" -> fetches
-    // again -> forever. selectedFilters is the only real trigger this
-    // effect should react to.
+    // fetchProjects is omitted deliberately, though it is no longer load-bearing:
+    // useOptimisticData's fetchData now has a permanently stable identity, so
+    // including it would be harmless. It used to close over `data` and over an
+    // inline `initialData`, which gave it a new identity every render and made
+    // any effect that depended on it re-fire forever - the bug this comment was
+    // originally written to route around. selectedFilters remains the only real
+    // trigger this effect should react to, so the omission stays.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFilters]);
 
