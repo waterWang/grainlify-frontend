@@ -295,7 +295,11 @@ export function BrowsePage({ onProjectClick, onOrgClick }: BrowsePageProps) {
             .map((p) => {
               const repoName = getRepoName(p.github_full_name);
               return {
-                id: p.id || `project-${Date.now()}-${Math.random()}`, // Fallback ID if missing
+                // Fallback ID if missing. Derived from github_full_name, which
+                // is unique and stable, rather than from Date.now()/Math.random():
+                // a fresh id on every render makes this row's React key change
+                // every render, remounting it and discarding its state.
+                id: p.id || `project-${p.github_full_name}`,
                 name: repoName,
                 owner: p.github_full_name.split('/')[0] || repoName,
                 icon: getProjectIcon(p.github_full_name),

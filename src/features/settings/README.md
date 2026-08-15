@@ -26,7 +26,7 @@ The Settings page has been refactored into a clean, modular, feature-based archi
 │       └── TermsTab.tsx
 ├── data/
 │   ├── billingProfilesData.ts
-│   └── payoutProjectsData.ts
+│   └── invoicesData.ts
 ├── pages/
 │   └── SettingsPage.tsx       # Main page with tab navigation
 └── types/
