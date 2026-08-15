@@ -1,3 +1,16 @@
+// Light-mode muted text reads --brand-ink-muted (#4a4038) rather than the
+// literal #7a6b5a it used to.
+//
+// Measured by sampling the painted pixel, because every surface in a modal is
+// translucent and token arithmetic has been wrong here before. #7a6b5a scored
+// 3.04 for labels and 3.32 for the placeholder and secondary button - failing
+// AA at every size these are used at. The replacement measures 5.97-6.51 on
+// the same surfaces.
+//
+// Only the light branch changed. Dark mode's #d4d4d4 already measured
+// 6.68-8.50, and --brand-ink-muted flips to #b8a898 there, which passes at
+// 5.46 but is dimmer than what shipped - a visible change nobody asked for is
+// not part of a contrast fix.
 import React, { ReactNode } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
 import * as Select from '@radix-ui/react-select';
@@ -159,7 +172,7 @@ export function ModalButton({
       disabled={disabled}
       className={`px-4 md:px-5 py-2.5 rounded-[10px] md:rounded-[12px] backdrop-blur-[20px] border font-medium text-[13px] md:text-[14px] transition-all hover:scale-[1.02] active:scale-100 touch-manipulation min-h-[44px] w-full sm:w-auto ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${theme === 'dark'
         ? 'bg-white/[0.08] border-white/15 text-[#d4d4d4] hover:bg-white/[0.12] active:bg-white/[0.15]'
-        : 'bg-white/[0.15] border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] active:bg-white/[0.25]'
+        : 'bg-white/[0.15] border-white/25 text-[var(--brand-ink-muted)] hover:bg-white/[0.2] active:bg-white/[0.25]'
         } ${className}`}
     >
       {children}
@@ -204,13 +217,13 @@ export function ModalInput({
       : 'bg-red-500/5 border-red-500/40 text-[#2d2820] placeholder-red-700/50 focus:border-red-500/60'
     : theme === 'dark'
       ? 'bg-white/[0.08] border-white/15 text-[#f5f5f5] placeholder-[#d4d4d4] focus:bg-white/[0.12] focus:border-[#c9983a]/30'
-      : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder-[#7a6b5a] focus:bg-white/[0.2] focus:border-[#c9983a]/30'
+      : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder-[var(--brand-ink-muted)] focus:bg-white/[0.2] focus:border-[#c9983a]/30'
     } ${className}`;
 
   return (
     <div>
       {label && (
-        <label className={`block text-[13px] font-medium mb-2 transition-colors ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
+        <label className={`block text-[13px] font-medium mb-2 transition-colors ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[var(--brand-ink-muted)]'
           }`}>
           {label}
           {required && <span className="text-[#c9983a] ml-1">*</span>}
@@ -273,7 +286,7 @@ export function ModalSelect({
     <div className={`flex flex-col gap-1 relative ${className}`}>
       {label && (
         <label className={`block text-[13px] font-medium mb-2 transition-colors ${
-          isDark ? 'text-[#d4d4d4]' : 'text-[#7a6b5a]'
+          isDark ? 'text-[#d4d4d4]' : 'text-[var(--brand-ink-muted)]'
         }`}>
           {label}
           {required && <span className="text-[#c9983a] ml-1">*</span>}
@@ -312,7 +325,7 @@ export function ModalSelect({
                   className={`relative flex w-full cursor-default select-none items-center rounded-[10px] py-2.5 pl-3 pr-8 text-[14px] outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 ${
                     isDark
                       ? 'text-[#d4d4d4] focus:bg-white/[0.08] focus:text-[#f5f5f5] data-[state=checked]:bg-white/[0.08] data-[state=checked]:text-[#f5f5f5]'
-                      : 'text-[#7a6b5a] focus:bg-black/[0.05] focus:text-[#2d2820] data-[state=checked]:bg-black/[0.05] data-[state=checked]:text-[#2d2820]'
+                      : 'text-[var(--brand-ink-muted)] focus:bg-black/[0.05] focus:text-[#2d2820] data-[state=checked]:bg-black/[0.05] data-[state=checked]:text-[#2d2820]'
                   }`}
                 >
                   <Select.ItemText>{option.label}</Select.ItemText>
