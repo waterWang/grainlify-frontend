@@ -1037,19 +1037,32 @@ export const submitSocialFollowProof = (screenshots: { linkedin: string; x: stri
     }),
   });
 
+/** The categories the support widget offers. Mirrors the CHECK constraint on
+ *  support_requests.category and the topic map in the backend's Telegram sink -
+ *  a value not in this union is rejected at the edge with `invalid_category`. */
+export type SupportCategory = "bug" | "kyc" | "idea" | "help" | "other";
+
 // Public (no auth required) so it works for anonymous landing-page visitors,
-// not just signed-in dashboard users.
+// not just signed-in dashboard users - somebody who can't sign in is exactly
+// the person most likely to need support.
+//
 // reporter_login is deliberately absent. It used to be sent from here and the
 // backend relayed it as the reporter's identity, so anyone could file a report
 // as anyone - a value that looked verified and was not. Identity is now
 // resolved server-side from the JWT; an unauthenticated report simply carries
 // none, which is correct rather than a regression.
-export const submitBugReport = (payload: {
-  description: string;
+//
+// The category decides where this lands. It is not cosmetic: `kyc` routes to a
+// private DM instead of a readable group, so sending the wrong one publishes
+// something that was meant to stay private. Send what the person picked and
+// nothing inferred.
+export const submitSupportRequest = (payload: {
+  category: SupportCategory;
+  message: string;
   screenshot?: string;
   page_url?: string;
 }) =>
-  apiRequest<{ ok: boolean }>("/bug-reports", {
+  apiRequest<{ ok: boolean; support_id: string; delivered: string[] }>("/support-requests", {
     method: "POST",
     body: JSON.stringify(payload),
   });

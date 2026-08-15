@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from "../shared/contexts/AuthContext";
 import { ThemeProvider, useTheme } from "../shared/contexts/ThemeContext";
 import { LandingPage } from "../features/landing";
 import Toast from "../shared/components/Toast";
-import { BugReportWidget } from "../shared/components/BugReportWidget";
+import { SupportWidget } from "../shared/components/SupportWidget";
 import { captureReferralCodeFromURL } from "../shared/api/client";
 
 // Code-split from the landing page's bundle: an anonymous visitor hitting "/"
@@ -75,7 +75,7 @@ export default function App() {
               </Routes>
             </Suspense>
             <Toast />
-            <BugReportWidget />
+            <SupportWidget />
           </div>
         </AuthProvider>
       </ThemeProvider>
