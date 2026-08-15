@@ -53,17 +53,11 @@ export function ContributorsPage() {
           </button>
         </div>
 
-        {/* Action Buttons - Only show on Rewards tab */}
-        {activeTab === "rewards" && (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-            <button className="px-4 py-2.5 sm:py-3 rounded-[12px] bg-white/[0.15] border border-white/25 text-[12px] sm:text-[13px] font-medium text-[#6b5d4d] hover:bg-white/[0.2] transition-all whitespace-nowrap flex-1 sm:flex-none">
-              See transactions
-            </button>
-            <button className="px-4 py-2.5 sm:py-3 rounded-[12px] bg-[#c9983a] text-white text-[12px] sm:text-[13px] font-semibold shadow-[0_4px_12px_rgba(201,152,58,0.3)] hover:shadow-[0_6px_16px_rgba(201,152,58,0.4)] transition-all whitespace-nowrap flex-1 sm:flex-none">
-              Request payment
-            </button>
-          </div>
-        )}
+        {/* "See transactions" and "Request payment" used to sit here on the
+            Rewards tab. Neither had an onClick - they were styled buttons that
+            did nothing, advertising a payout flow that does not exist. A
+            primary-styled "Request payment" is a promise; removed until there
+            is something to request. */}
       </div>
 
       {/* Tab Content */}

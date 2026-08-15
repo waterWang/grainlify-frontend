@@ -1,324 +1,190 @@
-import { Github, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Github, FolderGit2 } from "lucide-react";
+import { toast } from "sonner";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
+import { getProjectsContributed } from "../../../shared/api/client";
+import { SkeletonLoader } from "../../../shared/components/SkeletonLoader";
+
+// The projects a contributor has actually contributed to, from
+// /profile/projects (ProjectsContributed).
+//
+// This tab previously rendered a hardcoded array of five projects - React
+// Ecosystem, Next.js Framework, Vue.js, Express.js, Django - with invented
+// contributor counts, invented issue counts, "My rewards" of "3,600 USD" and
+// billing profiles reading "React Foundation" and "Vercel Inc.". Nothing in
+// the file made a request.
+//
+// TWO COLUMNS ARE GONE RATHER THAN ZEROED. "My contributions" and "My rewards"
+// have no backing: /profile/projects returns id, github_full_name, status,
+// ecosystem_name, language and owner_avatar_url, and there is no per-project
+// contribution count or reward figure behind it. A column of zeros invites
+// "why zero?" and implies the number is real and currently nil; an absent
+// column asks nothing. When a real per-project count exists - internal/ranking
+// already computes merged PRs per repo for the leaderboard - add the column
+// back with the endpoint that serves it.
+//
+// Not /projects/mine: that is `WHERE p.owner_user_id = $1`, the projects you
+// own as a maintainer, which is a different question from the one this tab asks.
+
+type ContributedProject = Awaited<ReturnType<typeof getProjectsContributed>>[number];
+
+const LANGUAGE_BADGE: Record<string, { icon: string; color: string }> = {
+  TypeScript: { icon: "TS", color: "bg-blue-500" },
+  JavaScript: { icon: "JS", color: "bg-yellow-500" },
+  Python: { icon: "Py", color: "bg-green-600" },
+  Java: { icon: "Jv", color: "bg-red-600" },
+  Rust: { icon: "Rs", color: "bg-orange-600" },
+  Go: { icon: "Go", color: "bg-cyan-600" },
+};
+
+function languageBadge(language: string) {
+  return LANGUAGE_BADGE[language] ?? { icon: language.slice(0, 2), color: "bg-gray-500" };
+}
 
 export function ProjectsTab() {
   const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const [projects, setProjects] = useState<ContributedProject[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
-  // Language icon helper
-  const getLanguageIcon = (language: string) => {
-    const icons: { [key: string]: { icon: string; color: string } } = {
-      TypeScript: { icon: "TS", color: "bg-blue-500" },
-      JavaScript: { icon: "JS", color: "bg-yellow-500" },
-      Python: { icon: "Py", color: "bg-green-600" },
-      Java: { icon: "Jv", color: "bg-red-600" },
-      Rust: { icon: "Rs", color: "bg-orange-600" },
-      Go: { icon: "Go", color: "bg-cyan-600" },
+  useEffect(() => {
+    let cancelled = false;
+    getProjectsContributed()
+      .then((data) => {
+        if (!cancelled) setProjects(data ?? []);
+      })
+      .catch((error) => {
+        console.error("Failed to load contributed projects:", error);
+        if (cancelled) return;
+        // Kept distinct from the empty state: showing "no projects" on a failed
+        // request tells somebody with real contributions that they have none.
+        setFailed(true);
+        toast.error(error instanceof Error ? error.message : "Failed to load your projects.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
     };
-    return (
-      icons[language] || {
-        icon: language.substring(0, 2),
-        color: "bg-gray-500",
-      }
-    );
-  };
+  }, []);
 
-  const projects = [
-    {
-      id: 1,
-      name: "React Ecosystem",
-      logo: "⚛️",
-      lead: "project-lead-1",
-      contributors: 1250,
-      availableIssues: "3 GFI",
-      myContributions: 15,
-      myRewards: "3,600 USD",
-      languages: ["TypeScript", "JavaScript"],
-      repository: "react-ecosystem/react-core",
-      billingProfile: "React Foundation",
-    },
-    {
-      id: 2,
-      name: "Next.js Framework",
-      logo: "▲",
-      lead: "project-lead-2",
-      contributors: 890,
-      availableIssues: "2 GFI",
-      myContributions: 8,
-      myRewards: "2,640 USD",
-      languages: ["TypeScript", "JavaScript"],
-      repository: "vercel/next.js",
-      billingProfile: "Vercel Inc.",
-    },
-    {
-      id: 3,
-      name: "Vue.js",
-      logo: "V",
-      lead: "project-lead-3",
-      contributors: 650,
-      availableIssues: "3 GFI",
-      myContributions: 15,
-      myRewards: "1,800 USD",
-      languages: ["TypeScript", "JavaScript"],
-      repository: "vuejs/vue",
-      billingProfile: "Vue.js Foundation",
-    },
-    {
-      id: 4,
-      name: "Express.js",
-      logo: "E",
-      lead: "project-lead-4",
-      contributors: 350,
-      availableIssues: "2 GFI",
-      myContributions: 8,
-      myRewards: "1,260 USD",
-      languages: ["JavaScript"],
-      repository: "expressjs/express",
-      billingProfile: "Express.js Foundation",
-    },
-    {
-      id: 5,
-      name: "Django",
-      logo: "D",
-      lead: "project-lead-5",
-      contributors: 2820,
-      availableIssues: "3 GFI",
-      myContributions: 10,
-      myRewards: "2,800 USD",
-      languages: ["Python"],
-      repository: "django/django",
-      billingProfile: "Django Software Foundation",
-    },
-  ];
+  const shell = `backdrop-blur-[40px] rounded-[20px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-colors ${
+    isDark ? "bg-[#2d2820]/[0.4] border-white/10" : "bg-white/[0.12] border-white/20"
+  }`;
+  const strong = isDark ? "text-[#f5efe5]" : "text-[#2d2820]";
+  const muted = isDark ? "text-[#b8a898]" : "text-[#4a4038]";
+
+  if (isLoading) {
+    return (
+      <div className={`${shell} p-8 space-y-3`}>
+        {[0, 1, 2].map((i) => (
+          <SkeletonLoader key={i} variant="text" height="18px" />
+        ))}
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div className={`${shell} p-8 text-center`}>
+        <p className={`text-[14px] ${muted}`}>Couldn't load your projects. Please try again later.</p>
+      </div>
+    );
+  }
+
+  if (!projects || projects.length === 0) {
+    return (
+      <div className={`${shell} p-12 text-center`}>
+        <div
+          className={`w-14 h-14 rounded-full mx-auto mb-5 flex items-center justify-center ${
+            isDark ? "bg-white/[0.06]" : "bg-black/[0.04]"
+          }`}
+        >
+          <FolderGit2 className={`w-6 h-6 ${muted}`} />
+        </div>
+        <h3 className={`text-[18px] font-bold mb-2 ${strong}`}>No projects yet</h3>
+        <p className={`text-[14px] max-w-md mx-auto ${muted}`}>
+          Projects you contribute to will appear here. Find an issue on Discover to get started.
+        </p>
+      </div>
+    );
+  }
+
+  const cellHead = `px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap ${muted}`;
 
   return (
     <>
-      {/* Desktop Table View - Hidden on Mobile */}
-      <div className="hidden md:block bg-white/[0.12] rounded-[20px] border border-white/20 overflow-hidden">
+      {/* Desktop */}
+      <div className={`hidden md:block ${shell} overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-white/[0.08] border-b border-white/20">
-              <tr>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Project name
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Project lead
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Contributors
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Available issues
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  My contributions
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  My rewards
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Languages
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Repositories
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Billing profile
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-[12px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Actions
-                </th>
+            <thead className={isDark ? "bg-white/[0.04]" : "bg-white/[0.08]"}>
+              <tr className={`border-b ${isDark ? "border-white/10" : "border-black/[0.06]"}`}>
+                <th className={cellHead}>Project</th>
+                <th className={cellHead}>Ecosystem</th>
+                <th className={cellHead}>Language</th>
+                <th className={cellHead}>Repository</th>
               </tr>
             </thead>
             <tbody>
-              {projects.map((project, idx) => (
+              {projects.map((p) => (
                 <tr
-                  key={project.id}
-                  className={`border-b border-white/10 hover:bg-white/[0.05] transition-colors ${
-                    idx % 2 === 0 ? "bg-white/[0.02]" : ""
-                  }`}
+                  key={p.id}
+                  className={`border-b last:border-0 ${isDark ? "border-white/[0.06]" : "border-black/[0.04]"}`}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg">
-                        {project.logo}
-                      </div>
-                      <span
-                        className={`text-[14px] font-semibold transition-colors ${
-                          theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                        }`}
-                      >
-                        {project.name}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      {p.owner_avatar_url ? (
+                        <img
+                          src={p.owner_avatar_url}
+                          alt=""
+                          className="w-8 h-8 rounded-[8px] shrink-0"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div
+                          className={`w-8 h-8 rounded-[8px] shrink-0 flex items-center justify-center ${
+                            isDark ? "bg-white/10" : "bg-black/5"
+                          }`}
+                        >
+                          <Github className={`w-4 h-4 ${muted}`} />
+                        </div>
+                      )}
+                      <span className={`text-[14px] font-semibold ${strong}`}>
+                        {p.github_full_name}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <Github
-                        className={`w-4 h-4 transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      />
-                      <span
-                        className={`text-[13px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      >
-                        {project.lead}
+                  <td className={`px-6 py-4 text-[14px] ${muted}`}>{p.ecosystem_name ?? "—"}</td>
+                  <td className="px-6 py-4">
+                    {p.language ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className={`w-5 h-5 rounded-[4px] text-white text-[9px] font-bold flex items-center justify-center ${
+                            languageBadge(p.language).color
+                          }`}
+                        >
+                          {languageBadge(p.language).icon}
+                        </span>
+                        <span className={`text-[14px] ${muted}`}>{p.language}</span>
                       </span>
-                    </div>
+                    ) : (
+                      <span className={`text-[14px] ${muted}`}>—</span>
+                    )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors ${
-                        theme === "dark"
-                          ? "bg-[#c9983a]/20 text-[#f5c563]"
-                          : "bg-[#c9983a]/25 border border-[#c9983a]/30 text-[#2d2820]"
+                  <td className="px-6 py-4">
+                    <a
+                      href={`https://github.com/${p.github_full_name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-1.5 text-[13px] font-medium ${
+                        isDark ? "text-[#d4af37] hover:text-[#ffc926]" : "text-[#7d5c20] hover:text-[#a67c2e]"
                       }`}
                     >
-                      {project.contributors}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-1">
-                      <span
-                        className={`text-[13px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      >
-                        {project.availableIssues}
-                      </span>
-                      <ChevronDown
-                        className={`w-4 h-4 transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors ${
-                        theme === "dark"
-                          ? "bg-[#c9983a]/20 text-[#f5c563]"
-                          : "bg-[#c9983a]/25 border border-[#c9983a]/30 text-[#2d2820]"
-                      }`}
-                    >
-                      {project.myContributions}
-                    </span>
-                  </td>
-                  <td
-                    className={`px-6 py-4 text-[14px] font-semibold whitespace-nowrap transition-colors ${
-                      theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                    }`}
-                  >
-                    {project.myRewards}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {project.languages.map((lang, idx) => {
-                        const iconInfo = getLanguageIcon(lang);
-                        return (
-                          <span
-                            key={idx}
-                            className={`flex items-center gap-1.5 px-2 py-1 rounded-[6px] text-[11px] font-medium transition-colors ${
-                              theme === "dark"
-                                ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                                : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
-                            }`}
-                          >
-                            <span
-                              className={`w-4 h-4 ${iconInfo.color} rounded-sm flex items-center justify-center text-[8px] font-bold text-white`}
-                            >
-                              {iconInfo.icon}
-                            </span>
-                            <span>{lang}</span>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <Github
-                        className={`w-4 h-4 transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      />
-                      <span
-                        className={`text-[12px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      >
-                        {project.repository}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-1">
-                      <span
-                        className={`text-[12px] transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      >
-                        {project.billingProfile}
-                      </span>
-                      <ChevronDown
-                        className={`w-4 h-4 transition-colors ${
-                          theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                        }`}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      className={`px-4 py-2 rounded-[8px] border text-[12px] font-medium transition-all ${
-                        theme === "dark"
-                          ? "bg-white/[0.08] border-white/15 text-[#f5f5f5] hover:bg-white/[0.12] hover:border-[#c9983a]/40"
-                          : "bg-white/[0.15] border-white/25 text-[#2d2820] hover:bg-white/[0.2] hover:border-[#c9983a]/40"
-                      }`}
-                    >
-                      See project
-                    </button>
+                      <Github className="w-3.5 h-3.5" /> View
+                    </a>
                   </td>
                 </tr>
               ))}
@@ -327,151 +193,40 @@ export function ProjectsTab() {
         </div>
       </div>
 
-      {/* Mobile Card View - Hidden on Desktop */}
+      {/* Mobile */}
       <div className="md:hidden space-y-3">
-        {projects.map((project) => (
-          <div
-            key={project.id}
-            className={`bg-white/[0.12] rounded-[16px] border border-white/20 p-4 transition-colors hover:bg-white/[0.15] ${
-              theme === "dark"
-                ? "hover:border-white/30"
-                : "hover:border-white/25"
-            }`}
-          >
-            {/* Header: Project name with logo */}
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg flex-shrink-0">
-                  {project.logo}
+        {projects.map((p) => (
+          <div key={p.id} className={`${shell} p-4`}>
+            <div className="flex items-center gap-3 mb-3">
+              {p.owner_avatar_url ? (
+                <img src={p.owner_avatar_url} alt="" className="w-9 h-9 rounded-[8px] shrink-0" loading="lazy" />
+              ) : (
+                <div
+                  className={`w-9 h-9 rounded-[8px] shrink-0 flex items-center justify-center ${
+                    isDark ? "bg-white/10" : "bg-black/5"
+                  }`}
+                >
+                  <Github className={`w-4 h-4 ${muted}`} />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h4
-                    className={`text-[14px] font-semibold truncate ${
-                      theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                    }`}
-                  >
-                    {project.name}
-                  </h4>
-                  <p
-                    className={`text-[12px] truncate ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    {project.billingProfile}
-                  </p>
-                </div>
-              </div>
+              )}
+              <span className={`text-[14px] font-semibold min-w-0 break-words ${strong}`}>
+                {p.github_full_name}
+              </span>
             </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              {/* Contributors */}
-              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
-                <span
-                  className={`text-[11px] block ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Contributors
-                </span>
-                <span
-                  className={`text-[13px] font-semibold mt-0.5 ${
-                    theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                  }`}
-                >
-                  {project.contributors}
-                </span>
-              </div>
-
-              {/* Available Issues */}
-              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
-                <span
-                  className={`text-[11px] block ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  Available
-                </span>
-                <span
-                  className={`text-[13px] font-semibold mt-0.5 ${
-                    theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                  }`}
-                >
-                  {project.availableIssues}
-                </span>
-              </div>
-
-              {/* My Contributions */}
-              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
-                <span
-                  className={`text-[11px] block ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  My contributions
-                </span>
-                <span
-                  className={`text-[13px] font-semibold mt-0.5 ${
-                    theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                  }`}
-                >
-                  {project.myContributions}
-                </span>
-              </div>
-
-              {/* My Rewards */}
-              <div className="bg-white/[0.05] rounded-[10px] p-2.5">
-                <span
-                  className={`text-[11px] block ${
-                    theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                  }`}
-                >
-                  My rewards
-                </span>
-                <span
-                  className={`text-[13px] font-semibold mt-0.5 ${
-                    theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                  }`}
-                >
-                  {project.myRewards}
-                </span>
-              </div>
+            <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[13px] ${muted}`}>
+              {p.ecosystem_name && <span>{p.ecosystem_name}</span>}
+              {p.language && <span>{p.language}</span>}
+              <a
+                href={`https://github.com/${p.github_full_name}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-1.5 font-medium ${
+                  isDark ? "text-[#d4af37]" : "text-[#7d5c20]"
+                }`}
+              >
+                <Github className="w-3.5 h-3.5" /> View
+              </a>
             </div>
-
-            {/* Languages */}
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              {project.languages.map((lang, idx) => {
-                const iconInfo = getLanguageIcon(lang);
-                return (
-                  <span
-                    key={idx}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-[6px] text-[11px] font-medium transition-colors ${
-                      theme === "dark"
-                        ? "bg-[#c9983a]/20 border border-[#c9983a]/30 text-[#f5c563]"
-                        : "bg-[#c9983a]/15 border border-[#c9983a]/25 text-[#8b6f3a]"
-                    }`}
-                  >
-                    <span
-                      className={`w-4 h-4 ${iconInfo.color} rounded-sm flex items-center justify-center text-[8px] font-bold text-white`}
-                    >
-                      {iconInfo.icon}
-                    </span>
-                    <span>{lang}</span>
-                  </span>
-                );
-              })}
-            </div>
-
-            {/* See Project Button */}
-            <button
-              className={`w-full px-4 py-2.5 rounded-[8px] border text-[13px] font-medium transition-all ${
-                theme === "dark"
-                  ? "bg-[#c9983a]/80 border-[#c9983a] text-[#2d2820] hover:bg-[#c9983a] hover:border-[#c9983a]"
-                  : "bg-[#c9983a]/90 border-[#c9983a] text-white hover:bg-[#c9983a] hover:border-[#c9983a]"
-              }`}
-            >
-              See project
-            </button>
           </div>
         ))}
       </div>

@@ -1,478 +1,176 @@
-import { useState } from "react";
-import {
-  Filter,
-  Search,
-  LayoutGrid,
-  Github,
-  Check,
-  Hourglass,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Wallet } from "lucide-react";
+import { toast } from "sonner";
 import { useTheme } from "../../../shared/contexts/ThemeContext";
+import { getMyRedemptions, type Redemption } from "../../../shared/api/client";
+import { SkeletonLoader } from "../../../shared/components/SkeletonLoader";
+
+// A contributor's own reward payouts, read from /redemptions/me.
+//
+// This tab previously rendered a hardcoded array of seven payouts against
+// React Ecosystem, Next.js, Vue.js, Angular, Svelte and Express.js, dated
+// through 2025, with statuses of "Complete" and "Processing" and amounts of
+// the literal string "--- undefined". None of it came from anywhere; there was
+// no request of any kind in the file.
+//
+// It said the opposite of what is true. No funded hackathon has run, no
+// settlement has ever been computed, and production held zero redemptions in
+// any status when the points programme was frozen on 2026-08-11. The empty
+// state below is not a placeholder for missing data - it IS the data, and it
+// corroborates what we have said publicly rather than contradicting it.
+//
+// Columns are the ones redemptions actually have. There is deliberately no
+// "Project" column: a redemption is points-to-USDC for the account, not per
+// repository, and inventing that attribution is how the old table came to name
+// projects nobody had contributed to.
+
+function StatusPill({ status, theme }: { status: Redemption["status"]; theme: string }) {
+  // Same tone treatment as the social-follow badge: opaque tints in light mode,
+  // because an alpha wash over a translucent card composites against something
+  // the class name cannot see and lands near-invisible.
+  const tones: Record<Redemption["status"], { dark: string; light: string; label: string }> = {
+    paid: { dark: "bg-green-500/15 text-green-400", light: "bg-green-100 text-green-800", label: "Paid" },
+    pending: { dark: "bg-amber-500/15 text-amber-400", light: "bg-amber-100 text-amber-800", label: "Pending" },
+    rejected: { dark: "bg-red-500/15 text-red-300", light: "bg-red-100 text-red-800", label: "Rejected" },
+  };
+  const tone = tones[status] ?? tones.pending;
+  return (
+    <span
+      className={`inline-flex items-center text-[12px] font-semibold px-2.5 py-1 rounded-full ${
+        theme === "dark" ? tone.dark : tone.light
+      }`}
+    >
+      {tone.label}
+    </span>
+  );
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Unknown";
+  return d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+}
+
+/** Truncates a Stellar address to something readable without implying the
+ *  middle is missing data. */
+function shortAddress(address: string): string {
+  if (!address || address.length <= 12) return address || "—";
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
 
 export function RewardsTab() {
   const { theme } = useTheme();
-  const [isColumnsModalOpen, setIsColumnsModalOpen] = useState(false);
-  const [selectedColumns, setSelectedColumns] = useState<string[]>([
-    "Date",
-    "ID",
-    "Project",
-    "From",
-    "Contributions",
-    "Amount",
-    "Status",
-  ]);
-  const [columnSearchQuery, setColumnSearchQuery] = useState("");
+  const isDark = theme === "dark";
+  const [redemptions, setRedemptions] = useState<Redemption[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
-  const rewards = [
-    {
-      id: 1,
-      date: "20/12/2025",
-      project: "React Ecosystem",
-      logo: "⚛️",
-      contribution: "project-lead-1",
-      amount: "--- undefined",
-      status: "Pending request",
-    },
-    {
-      id: 2,
-      date: "13/12/2025",
-      project: "Next.js Framework",
-      logo: "▲",
-      contribution: "project-lead-2",
-      amount: "--- undefined",
-      status: "Complete",
-    },
-    {
-      id: 3,
-      date: "27/11/2025",
-      project: "Vue.js",
-      logo: "V",
-      contribution: "project-lead-3",
-      amount: "--",
-      status: "Processing",
-    },
-    {
-      id: 4,
-      date: "28/10/2025",
-      project: "Angular",
-      logo: "A",
-      contribution: "project-lead-4",
-      amount: "--- undefined",
-      status: "Complete",
-    },
-    {
-      id: 5,
-      date: "25/12/2025",
-      project: "Svelte",
-      logo: "S",
-      contribution: "project-lead-5",
-      amount: "--- undefined",
-      status: "Pending request",
-    },
-    {
-      id: 6,
-      date: "13/12/2025",
-      project: "Express.js",
-      logo: "E",
-      contribution: "project-lead-6",
-      amount: "--- undefined",
-      status: "Pending request",
-    },
-    {
-      id: 7,
-      date: "27/11/2025",
-      project: "Rust",
-      logo: "R",
-      contribution: "project-lead-7",
-      amount: "--",
-      status: "Complete",
-    },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    getMyRedemptions()
+      .then((data) => {
+        if (!cancelled) setRedemptions(data.redemptions ?? []);
+      })
+      .catch((error) => {
+        console.error("Failed to load redemptions:", error);
+        if (cancelled) return;
+        // Distinguished from "you have none" on purpose. Showing the empty
+        // state on a failed request would tell somebody with real payouts that
+        // they have none, which is the same class of lie this tab just stopped
+        // telling.
+        setFailed(true);
+        toast.error(error instanceof Error ? error.message : "Failed to load your rewards.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const shell = `backdrop-blur-[40px] rounded-[24px] border shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-colors ${
+    isDark ? "bg-[#2d2820]/[0.4] border-white/10" : "bg-white/[0.12] border-white/20"
+  }`;
+  const strong = isDark ? "text-[#f5efe5]" : "text-[#2d2820]";
+  const muted = isDark ? "text-[#b8a898]" : "text-[#4a4038]";
+
+  if (isLoading) {
+    return (
+      <div className={`${shell} p-8 space-y-3`}>
+        {[0, 1, 2].map((i) => (
+          <SkeletonLoader key={i} variant="text" height="18px" />
+        ))}
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div className={`${shell} p-8 text-center`}>
+        <p className={`text-[14px] ${muted}`}>Couldn't load your rewards. Please try again later.</p>
+      </div>
+    );
+  }
+
+  if (!redemptions || redemptions.length === 0) {
+    return (
+      <div className={`${shell} p-12 text-center`}>
+        <div
+          className={`w-14 h-14 rounded-full mx-auto mb-5 flex items-center justify-center ${
+            isDark ? "bg-white/[0.06]" : "bg-black/[0.04]"
+          }`}
+        >
+          <Wallet className={`w-6 h-6 ${muted}`} />
+        </div>
+        <h3 className={`text-[18px] font-bold mb-2 ${strong}`}>No rewards yet</h3>
+        <p className={`text-[14px] max-w-md mx-auto ${muted}`}>
+          The first funded hackathon hasn't run. When it does, rewards are decided after the work is
+          merged and reviewed — and they'll appear here.
+        </p>
+      </div>
+    );
+  }
+
+  const cellHead = `px-4 lg:px-6 py-4 text-left text-[11px] lg:text-[12px] font-semibold uppercase tracking-wider ${muted}`;
+  const cell = `px-4 lg:px-6 py-4 text-[13px] lg:text-[14px] ${strong}`;
 
   return (
-    <>
-      <div className="space-y-4">
-        {/* Filter and Search Bar */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Filter Button */}
-          <button className="h-12 flex-shrink-0 w-10 sm:w-12 flex items-center justify-center rounded-[12px] bg-white/[0.15] border border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] hover:border-[#c9983a]/40 transition-all">
-            <Filter className="w-5 h-5" />
-          </button>
-
-          {/* Search Bar */}
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7a6b5a] z-10" />
-            <input
-              type="text"
-              placeholder="Search"
-              className="w-full h-12 pl-12 pr-4 py-2.5 sm:py-3 rounded-[12px] bg-white/[0.15] border border-white/25 text-[#2d2820] placeholder-[#7a6b5a] focus:outline-none focus:bg-white/[0.2] focus:border-[#c9983a]/40 transition-all text-[13px]"
-            />
-          </div>
-        </div>
-
-        {/* Grid Layout Button */}
-        <button
-          onClick={() => setIsColumnsModalOpen(!isColumnsModalOpen)}
-          className="w-full h-12 flex-shrink-0 sm:w-12 flex items-center justify-center rounded-[12px] bg-white/[0.15] border border-white/25 text-[#7a6b5a] hover:bg-white/[0.2] hover:border-[#c9983a]/40 transition-all"
-        >
-          <LayoutGrid className="w-5 h-5" />
-        </button>
-
-        {/* Desktop Table View - Hidden on Mobile */}
-        <div className="hidden md:block bg-white/[0.12] rounded-[20px] border border-white/20 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-white/[0.08] border-b border-white/20">
-              <tr>
-                {selectedColumns.includes("Date") && (
-                  <th
-                    className={`px-4 lg:px-6 py-4 text-left text-[11px] lg:text-[12px] font-semibold uppercase tracking-wider transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    Date
-                  </th>
-                )}
-                {selectedColumns.includes("ID") && (
-                  <th
-                    className={`px-4 lg:px-6 py-4 text-left text-[11px] lg:text-[12px] font-semibold uppercase tracking-wider transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    ID
-                  </th>
-                )}
-                {selectedColumns.includes("Project") && (
-                  <th
-                    className={`px-4 lg:px-6 py-4 text-left text-[11px] lg:text-[12px] font-semibold uppercase tracking-wider transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    Project
-                  </th>
-                )}
-                {selectedColumns.includes("Amount") && (
-                  <th
-                    className={`px-4 lg:px-6 py-4 text-left text-[11px] lg:text-[12px] font-semibold uppercase tracking-wider transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    Amount
-                  </th>
-                )}
-                {selectedColumns.includes("Status") && (
-                  <th
-                    className={`px-4 lg:px-6 py-4 text-left text-[11px] lg:text-[12px] font-semibold uppercase tracking-wider transition-colors ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    Status
-                  </th>
-                )}
+    <div className={`${shell} overflow-hidden`}>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px]">
+          <thead>
+            <tr className={`border-b ${isDark ? "border-white/10" : "border-black/[0.06]"}`}>
+              <th className={cellHead}>Date</th>
+              <th className={cellHead}>Points spent</th>
+              <th className={cellHead}>Amount</th>
+              <th className={cellHead}>Wallet</th>
+              <th className={cellHead}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {redemptions.map((r) => (
+              <tr
+                key={r.id}
+                className={`border-b last:border-0 ${isDark ? "border-white/[0.06]" : "border-black/[0.04]"}`}
+              >
+                <td className={cell}>{formatDate(r.created_at)}</td>
+                <td className={cell}>{r.points_spent.toLocaleString()}</td>
+                {/* usdc_amount arrives as a string straight from numeric::text
+                    so the decimal is never rounded through a float. Rendered as
+                    given. */}
+                <td className={`${cell} font-semibold`}>{r.usdc_amount} USDC</td>
+                <td className={`${cell} font-mono text-[12px] ${muted}`} title={r.stellar_wallet_address}>
+                  {shortAddress(r.stellar_wallet_address)}
+                </td>
+                <td className="px-4 lg:px-6 py-4">
+                  <StatusPill status={r.status} theme={theme} />
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rewards.map((reward, idx) => (
-                <tr
-                  key={reward.id}
-                  className={`border-b border-white/10 hover:bg-white/[0.05] transition-colors ${
-                    idx % 2 === 0 ? "bg-white/[0.02]" : ""
-                  }`}
-                >
-                  {selectedColumns.includes("Date") && (
-                    <td
-                      className={`px-4 lg:px-6 py-4 text-[12px] lg:text-[13px] transition-colors ${
-                        theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                      }`}
-                    >
-                      {reward.date}
-                    </td>
-                  )}
-                  {selectedColumns.includes("ID") && (
-                    <td
-                      className={`px-4 lg:px-6 py-4 text-[12px] lg:text-[13px] transition-colors ${
-                        theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                      }`}
-                    >
-                      #{reward.id}
-                    </td>
-                  )}
-                  {selectedColumns.includes("Project") && (
-                    <td className="px-4 lg:px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm">
-                          {reward.logo}
-                        </div>
-                        <span
-                          className={`text-[12px] lg:text-[13px] transition-colors ${
-                            theme === "dark"
-                              ? "text-[#f5f5f5]"
-                              : "text-[#2d2820]"
-                          }`}
-                        >
-                          {reward.project}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-                  {selectedColumns.includes("Amount") && (
-                    <td
-                      className={`px-4 lg:px-6 py-4 text-[12px] lg:text-[13px] transition-colors ${
-                        theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                      }`}
-                    >
-                      {reward.amount}
-                    </td>
-                  )}
-                  {selectedColumns.includes("Status") && (
-                    <td className="px-4 lg:px-6 py-4">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.15] border border-white/20">
-                        {reward.status === "Complete" ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : reward.status === "Processing" ? (
-                          <Hourglass className="w-4 h-4 text-yellow-600" />
-                        ) : (
-                          <Hourglass className="w-4 h-4 text-orange-600" />
-                        )}
-                        <span
-                          className={`text-[12px] lg:text-[13px] transition-colors ${
-                            theme === "dark"
-                              ? "text-[#f5f5f5]"
-                              : "text-[#2d2820]"
-                          }`}
-                        >
-                          {reward.status}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Card View - Hidden on Desktop */}
-        <div className="md:hidden space-y-3">
-          {rewards.map((reward) => (
-            <div
-              key={reward.id}
-              className={`bg-white/[0.12] rounded-[16px] border border-white/20 p-4 transition-colors hover:bg-white/[0.15] ${
-                theme === "dark"
-                  ? "hover:border-white/30"
-                  : "hover:border-white/25"
-              }`}
-            >
-              {/* Header: Date, Project, Status */}
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div>
-                  <span
-                    className={`text-[12px] ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    {reward.date}
-                  </span>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white">
-                      {reward.logo}
-                    </div>
-                    <span
-                      className={`text-[13px] font-medium ${
-                        theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                      }`}
-                    >
-                      {reward.project}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex-shrink-0 inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/[0.15] border border-white/20">
-                  {reward.status === "Complete" ? (
-                    <Check className="w-4 h-4 text-green-600" />
-                  ) : reward.status === "Processing" ? (
-                    <Hourglass className="w-4 h-4 text-yellow-600" />
-                  ) : (
-                    <Hourglass className="w-4 h-4 text-orange-600" />
-                  )}
-                  <span
-                    className={`text-[11px] transition-colors ${
-                      theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                    }`}
-                  >
-                    {reward.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Amount */}
-                <div className="bg-white/[0.05] rounded-[10px] p-2.5">
-                  <span
-                    className={`text-[11px] block ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    Amount
-                  </span>
-                  <span
-                    className={`text-[13px] font-semibold mt-0.5 ${
-                      theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                    }`}
-                  >
-                    {reward.amount}
-                  </span>
-                </div>
-
-                {/* ID */}
-                <div className="bg-white/[0.05] rounded-[10px] p-2.5">
-                  <span
-                    className={`text-[11px] block ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    ID
-                  </span>
-                  <span
-                    className={`text-[13px] font-semibold mt-0.5 ${
-                      theme === "dark" ? "text-[#f5f5f5]" : "text-[#2d2820]"
-                    }`}
-                  >
-                    #{reward.id}
-                  </span>
-                </div>
-              </div>
-
-              {/* Details: From and Contributions (optional, can be hidden) */}
-              <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                {/* From */}
-                <div className="flex items-center space-x-2">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0" />
-                  <span
-                    className={`text-[12px] ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    contributor-{reward.id}
-                  </span>
-                </div>
-
-                {/* Contributions */}
-                <div className="flex items-center space-x-2">
-                  <Github
-                    className={`w-4 h-4 flex-shrink-0 ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  />
-                  <span
-                    className={`text-[12px] ${
-                      theme === "dark" ? "text-[#d4d4d4]" : "text-[#7a6b5a]"
-                    }`}
-                  >
-                    {reward.contribution}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      {/* Rewards Columns Modal */}
-      {isColumnsModalOpen && (
-        <>
-          {/* Modal Dropdown - Glassmorphism Style */}
-          <div className="fixed top-[140px] right-[40px] w-[320px] bg-white/[0.12] rounded-[16px] border border-white/30 z-50 shadow-[0_20px_60px_rgba(0,0,0,0.25)] overflow-hidden">
-            {/* Header */}
-            <div className="px-5 py-4 border-b border-white/20">
-              <h3 className="text-[16px] font-bold text-[#2d2820]">
-                Rewards columns
-              </h3>
-            </div>
-
-            {/* Search Bar */}
-            <div className="px-5 pt-4 pb-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2d2820]" />
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={columnSearchQuery}
-                  onChange={(e) => setColumnSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-[10px] bg-white/[0.2] border border-white/25 text-[#2d2820] text-[13px] placeholder-[#7a6b5a] focus:outline-none focus:bg-white/[0.25] focus:border-[#c9983a]/40 transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Column Options */}
-            <div className="px-5 pb-4 max-h-[360px] overflow-y-auto scrollbar-hide">
-              <div className="space-y-2">
-                {[
-                  "Date",
-                  "ID",
-                  "Project",
-                  "From",
-                  "Contributions",
-                  "Amount",
-                  "Status",
-                ]
-                  .filter((col) =>
-                    col.toLowerCase().includes(columnSearchQuery.toLowerCase()),
-                  )
-                  .map((column) => {
-                    const isSelected = selectedColumns.includes(column);
-                    return (
-                      <button
-                        key={column}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedColumns(
-                              selectedColumns.filter((c) => c !== column),
-                            );
-                          } else {
-                            setSelectedColumns([...selectedColumns, column]);
-                          }
-                        }}
-                        className={`w-full px-3.5 py-3 rounded-[10px] text-left text-[13px] font-medium transition-all flex items-center gap-3 bg-white/[0.15] border border-white/25 text-[#2d2820] hover:bg-white/[0.2] ${
-                          isSelected ? "hover:border-[#c9983a]/40" : ""
-                        }`}
-                      >
-                        <div
-                          className={`w-5 h-5 rounded-[6px] flex items-center justify-center border-2 transition-all ${
-                            isSelected
-                              ? "bg-[#c9983a] border-[#c9983a]"
-                              : "bg-white/30 border-[#7a6b5a]/40"
-                          }`}
-                        >
-                          {isSelected && (
-                            <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
-                          )}
-                        </div>
-                        <span>{column}</span>
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="px-5 py-4 border-t border-white/20 flex items-center justify-between">
-              <button
-                onClick={() => setIsColumnsModalOpen(false)}
-                className="text-[13px] text-[#7a6b5a] hover:text-[#2d2820] transition-all font-medium"
-              >
-                Pending request
-              </button>
-              <button
-                onClick={() => setIsColumnsModalOpen(false)}
-                className="flex items-center gap-1.5 text-[13px] text-[#2d2820] hover:text-[#c9983a] transition-all font-semibold"
-              >
-                <Check className="w-4 h-4" />
-                <span>Complete</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </>
+    </div>
   );
 }
