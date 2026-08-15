@@ -268,21 +268,34 @@ describe('ProfilePage', () => {
   // all used to render a fixed, unthemed color that was legible in light
   // mode but nearly invisible against the dark background.
   describe('dark mode contrast', () => {
-    it('rank number uses a light-starting gradient in dark mode, and a dark-starting one in light mode', async () => {
+    // These two used to assert a per-theme gradient on the rank number and a
+    // per-theme colour on the Unranked fallback. Both assumptions are gone:
+    // the badge is now an OPAQUE gold card that is identical in both themes,
+    // so its text colours are theme-independent by construction rather than by
+    // a pair of conditionals that had to be kept in step.
+    //
+    // The rank number is also no longer bg-clip-text. Gradient-clipped text has
+    // a transparent computed colour and cannot be contrast-audited at all - it
+    // was the "unmeasurable" case in the landing audit, and it sat on the one
+    // element that most needs to be readable.
+    //
+    // Contrast is now asserted by measurement rather than by class name; see
+    // RankBadgeCard.tsx for the ratios (6.95 primary, 4.80 secondary, both
+    // themes). What remains worth pinning here is that the profile still
+    // renders the badge and that Unranked still carries its season qualifier.
+    it('renders the rank badge card in both themes', async () => {
       const { container: darkContainer } = renderWithProviders(<ProfilePage />, { theme: 'dark' })
       await waitFor(() => expect(getUserProfile).toHaveBeenCalled())
-      const darkRankEl = darkContainer.querySelector('.bg-clip-text')
-      expect(darkRankEl).toBeTruthy()
-      expect(darkRankEl?.className).toContain('from-white')
-      expect(darkRankEl?.className).not.toContain('from-[#1a1410]')
+      expect(darkContainer.querySelector('[data-testid="rank-badge-card"]')).toBeTruthy()
+      // The unmeasurable gradient text must not come back.
+      expect(darkContainer.querySelector('.bg-clip-text')).toBeNull()
 
       const { container: lightContainer } = renderWithProviders(<ProfilePage />, { theme: 'light' })
       await waitFor(() => expect(getUserProfile).toHaveBeenCalled())
-      const lightRankEl = lightContainer.querySelector('.bg-clip-text')
-      expect(lightRankEl?.className).toContain('from-[#1a1410]')
+      expect(lightContainer.querySelector('[data-testid="rank-badge-card"]')).toBeTruthy()
     })
 
-    it('the Unranked fallback uses a light, readable color in dark mode', async () => {
+    it('qualifies the Unranked state with the season it refers to', async () => {
       vi.mocked(getUserProfile).mockResolvedValue({
         ...OWN_PROFILE,
         rank: { position: null, tier: 'bronze', tier_name: 'Bronze', tier_color: '#999999' },
@@ -290,9 +303,11 @@ describe('ProfilePage', () => {
 
       renderWithProviders(<ProfilePage />, { theme: 'dark' })
 
-      const unranked = await screen.findByText('Unranked')
-      expect(unranked.className).toContain('text-[#e8dfd0]')
-      expect(unranked.className).not.toContain('text-gray-400')
+      // A bare "Unranked" reads as "you don't count"; the qualifier makes it a
+      // statement about a 90-day window instead.
+      const unranked = await screen.findByTestId('rank-unranked')
+      expect(unranked.textContent).toContain('Unranked')
+      expect(unranked.textContent).toContain('this season')
     })
 
     it('the calendar Less/More legend switches to a light color in dark mode', async () => {

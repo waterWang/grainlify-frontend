@@ -65,6 +65,13 @@
      gold is 5.60, so the surface keeps the brand colour and only the text
      changes. */
   --brand-gold-on: #2d2820;
+  /* The step-down companion to --brand-gold-on, for secondary text on a gold
+     surface. Like --brand-gold-on it is defined identically in both themes,
+     because the surface it sits on is gold in both: reaching for
+     --brand-ink-muted here would be correct in light mode and 1.10 in dark,
+     where that token flips to #b8a898. Measures 4.80 on --brand-gold-bright,
+     so it clears AA at 12px while still reading quieter than the ink above. */
+  --brand-gold-on-muted: #4a4038;
   --brand-sand: #b89968;
   /* The warm off-white the product has always painted with - 191 occurrences
      across src, and until now not written down anywhere. Defined once rather
@@ -118,6 +125,7 @@
   --brand-gold-text: #d4af37;
   /* The gold surface is the same in both themes, so the text on it is too. */
   --brand-gold-on: #2d2820;
+  --brand-gold-on-muted: #4a4038;
 
   --brand-ink: #f5f5f5;
   --brand-ink-muted: #b8a898;

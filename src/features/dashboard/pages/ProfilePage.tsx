@@ -5,6 +5,7 @@ import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { useAuth } from '../../../shared/contexts/AuthContext';
 import { getUserProfile, getProjectsContributed, getProjectsLed, getProfileCalendar, getProfileActivity, getPublicProfile } from '../../../shared/api/client';
 import { SkeletonLoader } from '../../../shared/components/SkeletonLoader';
+import { RankBadgeCard } from '../components/RankBadgeCard';
 import { LanguageIcon } from '../../../shared/components/LanguageIcon';
 import { getGitHubAvatarUrl } from '../../../shared/utils/avatar';
 
@@ -815,87 +816,29 @@ export function ProfilePage({ viewingUserId, viewingUserLogin, onBack, onProject
             </div>
           </div>
 
-          {/* Right Section - Epic Rank Badge */}
-          <div className="relative group/rank flex-shrink-0">
-            {/* Outer Glow - Multi-layer */}
-            <div className="absolute inset-0 rounded-[28px] blur-2xl group-hover/rank:blur-3xl transition-all duration-700 opacity-80 bg-gradient-to-br from-[#c9983a]/50 via-[#d4af37]/35 to-transparent" />
-            <div className="absolute inset-0 rounded-[28px] blur-xl group-hover/rank:scale-110 transition-transform duration-700 bg-gradient-to-br from-[#ffd700]/30 to-transparent" />
+          {/* Right Section - rank trophy.
 
-            {/* Main Badge */}
-            <div className="relative rounded-[28px] border-[3.5px] border-white/50 shadow-[0_15px_60px_rgba(201,152,58,0.5),inset_0_2px_4px_rgba(255,255,255,0.5),0_0_60px_rgba(255,215,0,0.2)] p-10 min-w-[200px] text-center group-hover/rank:scale-105 group-hover/rank:shadow-[0_20px_80px_rgba(201,152,58,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)] transition-all duration-500 bg-gradient-to-br from-[#c9983a]/40 via-[#d4af37]/30 to-[#c9983a]/25">
-              {/* Decorative Elements */}
-              <div className="absolute top-4 left-4 w-4 h-4 rounded-full bg-white/50 shadow-[0_0_12px_rgba(255,255,255,0.8)] animate-pulse" />
-              <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-[#c9983a]/70 shadow-[0_0_10px_rgba(201,152,58,0.9)]" />
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white/40" />
-
-              {/* Rank Number */}
-              <div className="relative mb-3">
-                {isLoadingProfile ? (
-                  <SkeletonLoader variant="text" width="120px" height="64px" className="mx-auto" />
-                ) : profileData?.rank?.position ? (
-                  <div className={`text-[64px] font-black bg-gradient-to-b bg-clip-text text-transparent leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.2)] ${
-                    theme === 'dark' ? 'from-white via-[#f5efe5] to-[#c9983a]' : 'from-[#1a1410] via-[#2d2820] to-[#c9983a]'
-                  }`} style={{ letterSpacing: '-0.02em' }}>
-                    {profileData.rank.position}
-                    <span className="text-[36px] align-super">
-                      {profileData.rank.position === 1 ? 'st' :
-                        profileData.rank.position === 2 ? 'nd' :
-                          profileData.rank.position === 3 ? 'rd' : 'th'}
-                    </span>
-                  </div>
-                ) : (
-                  <div>
-                    <div className={`text-[40px] font-black leading-none ${theme === 'dark' ? 'text-[#e8dfd0]' : 'text-gray-400'}`}>
-                      Unranked
-                    </div>
-                    <div className={`mt-1.5 text-[12px] font-semibold ${theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
-                      this season
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Divider */}
-              {!isLoadingProfile && (
-                <div className="h-[3px] w-20 mx-auto bg-gradient-to-r from-transparent via-[#c9983a]/80 to-transparent mb-4 rounded-full shadow-[0_2px_8px_rgba(201,152,58,0.4)]" />
-              )}
-
-              {/* Badge Label */}
-              {isLoadingProfile ? (
-                <SkeletonLoader variant="default" width="140px" height="36px" className="mx-auto rounded-[10px]" />
-              ) : (
-                <>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-white/[0.3] border-2 border-[#c9983a]/50 shadow-[0_3px_12px_rgba(201,152,58,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)]">
-                    {getRankIcon(profileData?.rank?.tier_name || 'Unranked')}
-                    <span className="text-[13px] font-black text-[#c9983a] uppercase tracking-[0.15em]">
-                      {profileData?.rank?.tier_name || 'Unranked'}
-                    </span>
-                  </div>
-
-                  {/* All-time, whenever it says something the seasonal line
-                      does not. Most important in exactly the case that reads
-                      worst without it: unranked this season, but ranked
-                      all-time. */}
-                  {profileData?.rank?.all_time?.position ? (
-                    <div className={`mt-2.5 text-[12px] font-semibold ${theme === 'dark' ? 'text-[#b8a898]' : 'text-[#7a6b5a]'}`}>
-                      <span className="opacity-70">All time · </span>
-                      <span className="text-[#c9983a] font-bold">
-                        {profileData.rank.all_time.tier_name}
-                      </span>
-                      <span className="opacity-70">
-                        {' '}#{profileData.rank.all_time.position}
-                      </span>
-                    </div>
-                  ) : null}
-                </>
-              )}
-
-              {/* Shine Effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent rounded-[28px] opacity-0 group-hover/rank:opacity-100 transition-opacity duration-700" />
-
-              {/* Rotating Glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ffd700]/10 to-transparent rounded-[28px] animate-pulse" />
-            </div>
+              Extracted to RankBadgeCard so it can be rendered in isolation and
+              asserted on. The markup that used to sit inline here set the tier
+              name in gold on a gold card and the all-time line in grey on gold,
+              and sized itself to its content so "Unranked" and "1000th" produced
+              different boxes. Both are fixed in the component; the ratios and the
+              fixed dimensions are documented there. */}
+          <div className="flex-shrink-0">
+            <RankBadgeCard
+              isLoading={isLoadingProfile}
+              position={profileData?.rank?.position}
+              tierName={profileData?.rank?.tier_name}
+              allTime={
+                profileData?.rank?.all_time
+                  ? {
+                      position: profileData.rank.all_time.position,
+                      tierName: profileData.rank.all_time.tier_name,
+                    }
+                  : null
+              }
+              icon={getRankIcon(profileData?.rank?.tier_name || 'Unranked')}
+            />
           </div>
         </div>
       </div>
