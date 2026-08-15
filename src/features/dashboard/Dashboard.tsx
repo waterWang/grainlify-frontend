@@ -897,9 +897,15 @@ export function Dashboard() {
 
             {/* User Profile Dropdown - Shows profile when authenticated, Sign In when not */}
             <UserProfileDropdown onPageChange={handleNavigation} showMobileNav={!!showMobileNav} onLogout={handleLogout} />
-            {/* mobile nav open button  */}
+            {/* Mobile nav open button.
+                Sized 46x46 to match the notification and profile controls
+                beside it, rather than being the bare 24px icon it was: a 24px
+                target is well under the 44x44 minimum, and this is the control
+                a phone user reaches for most on this page. The surrounding bar
+                already sizes to 46px children, so this adds no height. */}
              <button
-            className={`lg:hidden transition-colors ml-auto mr-[8px] ${showMobileNav? 'hidden' : 'block'} ${
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            className={`lg:hidden transition-colors ml-auto w-[46px] h-[46px] items-center justify-center ${showMobileNav? 'hidden' : 'flex'} ${
               theme === 'dark' ? 'text-[#e8dfd0]' : 'text-[#2d2820]'
             }`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

@@ -141,7 +141,10 @@ export function DiscoverHero({
             <button
               onClick={onGoToBilling}
               disabled={!onGoToBilling}
-              className={`flex-shrink-0 px-5 py-2.5 rounded-[12px] bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white font-semibold text-[13.5px] shadow-[0_4px_14px_rgba(162,121,44,0.35)] hover:shadow-[0_6px_20px_rgba(162,121,44,0.45)] transition-all inline-flex items-center justify-center gap-1.5 border border-white/10 ${
+              // min-h-[44px] rather than more padding: the button is already
+              // the right shape, it was just 42px tall - two short of the
+              // 44x44 minimum, on the primary call to action of the page.
+              className={`flex-shrink-0 px-5 py-2.5 min-h-[44px] rounded-[12px] bg-gradient-to-br from-[#c9983a] to-[#a67c2e] text-white font-semibold text-[13.5px] shadow-[0_4px_14px_rgba(162,121,44,0.35)] hover:shadow-[0_6px_20px_rgba(162,121,44,0.45)] transition-all inline-flex items-center justify-center gap-1.5 border border-white/10 ${
                 !onGoToBilling ? "opacity-70 cursor-default" : ""
               }`}
             >
