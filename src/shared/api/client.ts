@@ -1064,6 +1064,19 @@ export const submitSupportRequest = (payload: {
 }) =>
   apiRequest<{ ok: boolean; support_id: string; delivered: string[] }>("/support-requests", {
     method: "POST",
+    // requiresAuth is what actually attaches the token. Without it apiRequest
+    // defaults to false and never sets the Authorization header, so the
+    // endpoint - which reads the JWT itself rather than sitting behind auth
+    // middleware, because anonymous reports are legitimate - saw no
+    // credentials and recorded every report as anonymous. All 8 support rows
+    // in production had a null user_id, including three submitted from
+    // auth-gated /dashboard pages.
+    //
+    // Safe in both directions: with no token stored the header is simply
+    // omitted and anonymous reporting still works, and the endpoint treats a
+    // bad or expired token as anonymous rather than returning 401, so the
+    // token-clearing branch in apiRequest cannot fire here.
+    requiresAuth: true,
     body: JSON.stringify(payload),
   });
 
