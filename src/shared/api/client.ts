@@ -2443,3 +2443,24 @@ export const decideHackathonAppeal = (
     method: "POST",
     body: JSON.stringify({ upheld, reason, bucket: bucket ?? "" }),
   });
+
+export interface MySupportRequest {
+  id: string;
+  category: string;
+  message: string;
+  page_url?: string;
+  status: string;
+  created_at: string;
+  delivered_to_team: boolean;
+  has_screenshot: boolean;
+}
+
+/**
+ * The caller's own support reports. Authenticated: anonymous reports are
+ * legitimate to SEND, but there is nobody to show a history to, and the server
+ * scopes the list by the verified token rather than any parameter.
+ */
+export const getMySupportRequests = () =>
+  apiRequest<{ support_requests: MySupportRequest[]; total: number }>("/support-requests/mine", {
+    requiresAuth: true,
+  });

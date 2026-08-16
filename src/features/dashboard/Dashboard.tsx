@@ -22,7 +22,9 @@ import {
   ClipboardCheck,
   LifeBuoy,
 } from "lucide-react";
-import { useSupport, SUPPORT_TRIGGER_LABEL } from "../../shared/components/supportContext";
+import { SUPPORT_TRIGGER_LABEL } from "../../shared/components/supportContext";
+import { RailButton } from "./components/RailButton";
+import { SupportPage } from "../support/pages/SupportPage";
 import { useThemeToggleAnimation } from "../../shared/hooks/useThemeToggleAnimation";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import grainlifyLogo from "../../assets/grainlify_log.svg";
@@ -135,7 +137,6 @@ export function Dashboard() {
     top: number;
     left: number;
   } | null>(null);
-  const { open: openSupport } = useSupport();
   const [activeRole, setActiveRole] = useState<
     "contributor" | "maintainer" | "admin"
   >("contributor");
@@ -641,84 +642,33 @@ export function Dashboard() {
 
             {/* Main Navigation */}
             <nav className="space-y-2 mb-auto px-[8px]">
-              {navItems.map((item) => {
-                const isActive = currentPage === item.id;
-                const Icon = item.icon as any;
-                return (
-                  <button
-                    key={item.id}
-                    data-tour-id={item.id}
-                    onClick={() => handleNavigation(item.id)}
-                    onMouseEnter={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setHoveredNavItem({
-                        label: item.label,
-                        top: rect.top + rect.height / 2,
-                        left: rect.right,
-                      });
-                    }}
-                    onMouseLeave={() => setHoveredNavItem(null)}
-                    className={`group relative w-full flex items-center justify-center px-0 h-[49px] rounded-[12px] backdrop-blur-[40px] transition-all duration-300 ${
-                      isActive
-                        ? "bg-[#c9983a] shadow-[inset_0px_0px_4px_0px_rgba(255,255,255,0.25)] border-[0.5px] border-[rgba(245,239,235,0.16)]"
-                        : darkTheme
-                          ? "bg-[#2d2820] shadow-[0px_6px_6.5px_-1px_rgba(0,0,0,0.36),0px_0px_4.2px_0px_rgba(0,0,0,0.69)] hover:scale-[1.01]"
-                          : "bg-[#d4c5b0] shadow-[0px_6px_6.5px_-1px_rgba(0,0,0,0.36),0px_0px_4.2px_0px_rgba(0,0,0,0.69)] hover:scale-[1.01]"
-                    }`}
-                  >
-                    {!isActive && (
-                      <div
-                        className={`absolute inset-0 pointer-events-none rounded-[12px] ${
-                          darkTheme
-                            ? "shadow-[inset_1px_-1px_1px_0px_rgba(0,0,0,0.5),inset_-2px_2px_1px_-1px_rgba(255,255,255,0.11)]"
-                            : "shadow-[inset_1px_-1px_1px_0px_rgba(0,0,0,0.15),inset_-2px_2px_1px_-1px_rgba(255,255,255,0.35)]"
-                        }`}
-                      />
-                    )}
-                    <Icon
-                      className={`w-6 h-6 transition-colors ${
-                        isActive
-                          ? "text-white"
-                          : darkTheme
-                            ? "text-[#e8c77f]"
-                            : "text-[#a2792c]"
-                      }`}
-                    />
-                  </button>
-                );
-              })}
-
-              {/* Support.
-                  In the rail rather than floating bottom-right, because that
-                  corner is where pages put their primary action - it covered a
-                  Save button on four settings tabs and the Accept button on
-                  terms, reported three times. Nothing competes for space here,
-                  and the rail is already persistent across every dashboard
-                  route. The panel itself is a Modal portaled to document.body;
-                  it cannot be anchored inside this element, whose
-                  backdrop-blur establishes a containing block for fixed
-                  descendants. */}
-              <button
-                type="button"
-                onClick={() => openSupport()}
-                aria-label={SUPPORT_TRIGGER_LABEL}
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setHoveredNavItem({
-                    label: "Get help",
-                    top: rect.top + rect.height / 2,
-                    left: rect.right,
-                  });
-                }}
-                onMouseLeave={() => setHoveredNavItem(null)}
-                className="group relative w-full flex items-center justify-center px-0 h-[49px] rounded-[12px] backdrop-blur-[40px] transition-all duration-300 hover:bg-white/[0.1]"
-              >
-                <LifeBuoy
-                  className={`w-5 h-5 transition-colors ${
-                    darkTheme ? "text-[#e8c77f]" : "text-[#a2792c]"
-                  }`}
+              {navItems.map((item) => (
+                <RailButton
+                  key={item.id}
+                  tourId={item.id}
+                  icon={item.icon as any}
+                  label={item.label}
+                  isActive={currentPage === item.id}
+                  onClick={() => handleNavigation(item.id)}
+                  onHover={setHoveredNavItem}
+                  darkTheme={darkTheme}
                 />
-              </button>
+              ))}
+
+              {/* Support is a route, not an overlay - it is in the rail
+                  alongside the others and behaves like them, including its
+                  active state. The modal still exists for /signin and /signup,
+                  where there is no dashboard to navigate to and the person who
+                  cannot sign in is the one most likely to need help. */}
+              <RailButton
+                icon={LifeBuoy}
+                label="Get help"
+                ariaLabel={SUPPORT_TRIGGER_LABEL}
+                isActive={currentPage === "support"}
+                onClick={() => handleNavigation("support")}
+                onHover={setHoveredNavItem}
+                darkTheme={darkTheme}
+              />
             </nav>
           </div>
         </div>
@@ -1119,6 +1069,7 @@ export function Dashboard() {
                   ))}
                 {currentPage === "leaderboard" && <LeaderboardPage />}
                 {currentPage === "blog" && <BlogPage />}
+                {currentPage === "support" && <SupportPage />}
                 {currentPage === "settings" && (
                   <SettingsPage />
                 )}

@@ -4,6 +4,14 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <!-- The commit this build came from, injected by Vite from the
+           platform's build environment. It exists so "is it deployed" is a
+           fetch and a string comparison rather than somebody loading the page
+           and believing it - work that was never committed, work merged but
+           not deployed, and work actually live otherwise look identical from
+           outside. Reads "unknown" when the platform supplied nothing, which
+           is a failed check rather than a passing one. -->
+      <meta name="grainlify:commit" content="%VITE_BUILD_COMMIT%" />
       <link rel="icon" type="image/x-icon" href="/favicon.ico" />
       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       <!-- Warms the connection to hosts every page hits almost immediately on load,
