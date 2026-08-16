@@ -213,8 +213,14 @@ export function ModalInput({
 
   const inputClasses = `w-full px-4 py-3 rounded-[14px] backdrop-blur-[30px] border focus:outline-none transition-all text-[14px] ${isError
     ? theme === 'dark'
+      // Dark's placeholder measures 6.05 and is left alone. Light's was
+      // red-700 at 50% alpha, which composited to 3.64 on the error input's
+      // own tint. Full-strength red-800 measures 4.66 and stays obviously a
+      // placeholder rather than typed text - it is red, and the entered value
+      // is near-black ink. Distinguishing them by hue instead of by dimming is
+      // what makes it legible; dimming for hierarchy is what broke it.
       ? 'bg-red-500/10 border-red-500/40 text-[#f5f5f5] placeholder-red-300/50 focus:border-red-500/60'
-      : 'bg-red-500/5 border-red-500/40 text-[#2d2820] placeholder-red-700/50 focus:border-red-500/60'
+      : 'bg-red-500/5 border-red-500/40 text-[#2d2820] placeholder-red-800 focus:border-red-500/60'
     : theme === 'dark'
       ? 'bg-white/[0.08] border-white/15 text-[#f5f5f5] placeholder-[#d4d4d4] focus:bg-white/[0.12] focus:border-[#c9983a]/30'
       : 'bg-white/[0.15] border-white/25 text-[#2d2820] placeholder-[var(--brand-ink-muted)] focus:bg-white/[0.2] focus:border-[#c9983a]/30'
@@ -258,7 +264,12 @@ export function ModalInput({
         />
       )}
       {isError && (
-        <p className={`text-[12px] mt-1.5 transition-colors ${theme === 'dark' ? 'text-red-400' : 'text-red-600'
+        // Validation errors are the text a person most needs to read, and both
+        // themes failed: red-600 measured 2.82 in light, red-400 measured 4.36
+        // in dark - close enough to pass a glance and still below AA.
+        // red-800 measures 4.94 and red-300 measures 6.56, both against the
+        // panel these actually sit on.
+        <p className={`text-[12px] mt-1.5 transition-colors ${theme === 'dark' ? 'text-red-300' : 'text-red-800'
           }`}>
           {error}
         </p>
