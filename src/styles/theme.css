@@ -407,3 +407,18 @@ body.modal-open aside {
    nobody could see. The gradient wash is static, and carries the look on its
    own. If you want motion here, animate something small and unblurred.
    --------------------------------------------------------------------------- */
+
+/* Fixed height for the project cards in the Discover grid.
+ *
+ * CSS grid rows size to their tallest item, and each row sizes independently,
+ * so one card with three tags made its entire row taller than the row above -
+ * cards of visibly different sizes in the same grid. Fixing the card rather
+ * than the grid means every container that shows one inherits it.
+ *
+ * Tall enough for the icon row, a two-line title, a two-line description, the
+ * stats row and one line of labels. The labels are capped at two plus "+N" in
+ * DiscoverProjectCard so content cannot push past this.
+ */
+:root {
+  --discover-card-height: 288px;
+}

@@ -33,11 +33,23 @@ export function DiscoverProjectCard({
   const [avatarError, setAvatarError] = useState(false);
   const showAvatarImage = project.icon.startsWith("http") && !avatarError;
 
+  // At most this many labels are drawn; the rest collapse into "+N". Two
+  // keeps the row on one line at the narrowest column this grid produces.
+  const MAX_VISIBLE_LABELS = 2;
+  const allLabels = [
+    ...(project.ecosystem_name ? [{ key: 'eco', text: project.ecosystem_name, kind: 'ecosystem' as const }] : []),
+    ...project.tags.map((t, i) => ({ key: `tag-${i}-${t}`, text: t, kind: 'tag' as const })),
+  ];
+  const visibleLabels = allLabels.slice(0, MAX_VISIBLE_LABELS);
+  const hiddenLabels = allLabels.slice(MAX_VISIBLE_LABELS).map((l) => l.text);
+  const hiddenLabelCount = hiddenLabels.length;
+
   return (
     <motion.div
       variants={variants}
       onClick={onClick}
-      className={`flex flex-col h-full backdrop-blur-[30px] rounded-[16px] border p-6 transition-all cursor-pointer motion-safe:hover:-translate-y-1 active:scale-[0.98] ${
+      data-testid="discover-project-card"
+      className={`flex flex-col h-[var(--discover-card-height)] backdrop-blur-[30px] rounded-[16px] border p-6 transition-all cursor-pointer motion-safe:hover:-translate-y-1 active:scale-[0.98] ${
         isDark
           ? "bg-white/[0.08] border-white/15 shadow-[0_4px_16px_rgba(0,0,0,0.24)] hover:bg-white/[0.12] hover:shadow-[0_8px_24px_rgba(201,152,58,0.15)]"
           : "bg-white/[0.15] border-white/25 shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:bg-white/[0.2] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
@@ -100,30 +112,47 @@ export function DiscoverProjectCard({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mt-auto">
-        {project.ecosystem_name && (
+      {/* One line of labels, never more.
+          Grid rows size to their tallest item and each row sizes
+          independently, so a card carrying three tags made its whole row
+          taller than the row above it - visible as cards of different sizes
+          in the same grid. Capping the labels here fixes the card rather than
+          the grid, which is the level the problem lives at: any container
+          showing these cards inherits the fix, and no container has to know
+          how many tags a project happens to have.
+
+          The overflow becomes "+N", so a project with more labels reads as
+          having more rather than silently losing them. */}
+      <div className="flex flex-nowrap items-center gap-2 mt-auto overflow-hidden">
+        {visibleLabels.map((label) => (
           <span
-            className={`px-3 py-1.5 rounded-full border text-[12px] font-semibold ${
-              isDark
-                ? "bg-white/10 border-white/25 text-[#e8dfd0]"
-                : "bg-white/20 border-white/30 text-[#2d2820]"
+            key={label.key}
+            title={label.text}
+            className={`shrink-0 max-w-[10rem] truncate px-3 py-1.5 rounded-full border text-[12px] font-semibold ${
+              label.kind === 'ecosystem'
+                ? isDark
+                  ? 'bg-white/10 border-white/25 text-[#e8dfd0]'
+                  : 'bg-white/20 border-white/30 text-[#2d2820]'
+                : isDark
+                  ? 'bg-[#c9983a]/15 border-[#c9983a]/30 text-[#f5c563] shadow-[0_2px_8px_rgba(201,152,58,0.15)]'
+                  : 'bg-[#c9983a]/20 border-[#c9983a]/35 text-[#8b6f3a] shadow-[0_2px_8px_rgba(201,152,58,0.15)]'
             }`}
           >
-            {project.ecosystem_name}
-          </span>
-        )}
-        {project.tags.map((tag, idx) => (
-          <span
-            key={idx}
-            className={`px-3 py-1.5 rounded-full border text-[12px] font-semibold shadow-[0_2px_8px_rgba(201,152,58,0.15)] ${
-              isDark
-                ? "bg-[#c9983a]/15 border-[#c9983a]/30 text-[#f5c563]"
-                : "bg-[#c9983a]/20 border-[#c9983a]/35 text-[#8b6f3a]"
-            }`}
-          >
-            {tag}
+            {label.text}
           </span>
         ))}
+        {hiddenLabelCount > 0 && (
+          <span
+            title={hiddenLabels.join(', ')}
+            className={`shrink-0 px-3 py-1.5 rounded-full border text-[12px] font-semibold ${
+              isDark
+                ? 'bg-white/[0.06] border-white/20 text-[#b8a898]'
+                : 'bg-white/30 border-white/40 text-[#6b5c4a]'
+            }`}
+          >
+            +{hiddenLabelCount}
+          </span>
+        )}
       </div>
     </motion.div>
   );

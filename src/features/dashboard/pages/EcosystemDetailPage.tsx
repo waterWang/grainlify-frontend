@@ -234,7 +234,16 @@ export function EcosystemDetailPage({ ecosystemId, ecosystemName, initialDescrip
   const isDark = theme === 'dark';
 
   return (
-    <div className="h-full overflow-y-auto px-4 md:px-0">
+    // No h-full / overflow-y-auto here.
+    //
+    // This page was the only dashboard page wrapping itself in
+    // `h-full overflow-y-auto`. That makes the page its own scroll container
+    // sized to its parent, and the dashboard's main column does not set a
+    // height for it to fill - so the container collapsed to the viewport and
+    // everything past the fold became unreachable. Every other page in the
+    // rail is a plain block and scrolls with the document; this one now
+    // matches them.
+    <div className="px-4 md:px-0">
       {/* Breadcrumb Navigation */}
       <div className="mb-4 md:mb-6 flex items-center gap-1.5 md:gap-2 ml-0 md:ml-12 overflow-x-auto scrollbar-hide">
         <button

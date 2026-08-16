@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, FolderGit2, Star, Users, GitPullRequest, Crown, Trophy, Medal, Sparkles, Award, Circle, Eye, Pencil } from 'lucide-react';
+import { RankBadgeCard, RANK_CARD_SIZE } from '../components/RankBadgeCard';
+import { ArrowLeft, FolderGit2, Star, Users, GitPullRequest, Pencil } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { useAuth } from '../../../shared/contexts/AuthContext';
@@ -42,32 +43,6 @@ function formatTimeAgo(dateString: string | null | undefined): string {
   return formatDistanceToNow(date, { addSuffix: true });
 }
 
-// Same tier -> icon mapping as ProfilePage.tsx's own (unexported, file-local)
-// getRankIcon - rank tiers are a shared concept (handlers.GetRankTier on the
-// backend is already generic between user and org ranks) but this rendering
-// has no shared component to import, so it's mirrored here rather than
-// invented fresh.
-function getRankIcon(tierName: string) {
-  const iconClass = 'w-5 h-5 text-white drop-shadow-md';
-  switch (tierName.toLowerCase()) {
-    case 'conqueror':
-      return <Crown className={iconClass} />;
-    case 'ace':
-      return <Trophy className={iconClass} />;
-    case 'crown':
-      return <Medal className={iconClass} />;
-    case 'diamond':
-      return <Sparkles className={iconClass} />;
-    case 'gold':
-      return <Award className={iconClass} />;
-    case 'silver':
-      return <Circle className={iconClass} />;
-    case 'bronze':
-      return <Eye className={iconClass} />;
-    default:
-      return <Award className={iconClass} />;
-  }
-}
 
 function StarRow({ value, size = 'w-4 h-4' }: { value: number; size?: string }) {
   return (
@@ -339,10 +314,20 @@ export function OrgProfilePage({ viewingOrgLogin, onBack, onProjectClick }: OrgP
           glow/shine, ~56px rank number, decorative dots), not a compact
           tile, since this should read as the same "epic" badge a user gets
           on their own profile. */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex flex-col gap-4 flex-1">
+      {/* The left column is pinned to the badge's height so the two sides
+          line up exactly, rather than the badge stretching to match whatever
+          the rows happen to add up to - which is what produced the tall
+          rectangle. The rows share that height between them, so neither the
+          title row nor the stats row can push the pair out of alignment.
+
+          lg only: stacked on narrow screens there is nothing to align to. */}
+      <div
+        className="flex flex-col lg:flex-row gap-4 lg:items-stretch"
+        style={{ ['--rank-card-size' as string]: `${RANK_CARD_SIZE}px` }}
+      >
+        <div className="flex flex-col gap-4 flex-1 min-w-0 lg:h-[var(--rank-card-size)]">
           {/* Header (first row), with an ambient Spotlight glow behind it */}
-          <div className={`relative overflow-hidden ${cardClass}`}>
+          <div className={`relative overflow-hidden lg:flex-1 lg:min-h-0 ${cardClass}`}>
             <Spotlight />
             <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
               <div className="flex items-center gap-5 flex-1 min-w-0">
@@ -392,7 +377,7 @@ export function OrgProfilePage({ viewingOrgLogin, onBack, onProjectClick }: OrgP
           </div>
 
           {/* Stats (second row) - one row, not split into sub-rows */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:flex-1 lg:min-h-0">
             {statTiles.map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
@@ -417,56 +402,19 @@ export function OrgProfilePage({ viewingOrgLogin, onBack, onProjectClick }: OrgP
           </div>
         </div>
 
-        {/* Big rank badge - verbatim port of ProfilePage.tsx's rank badge,
-            stretched (h-full, via the flex row's default stretch
-            alignment) to span the combined height of the header + stats
-            column beside it. */}
-        <div className="relative group/rank flex-shrink-0 lg:w-[240px]">
-          <div className="absolute inset-0 rounded-[28px] blur-2xl group-hover/rank:blur-3xl transition-all duration-700 opacity-80 bg-gradient-to-br from-[#c9983a]/50 via-[#d4af37]/35 to-transparent" />
-          <div className="absolute inset-0 rounded-[28px] blur-xl group-hover/rank:scale-110 transition-transform duration-700 bg-gradient-to-br from-[#ffd700]/30 to-transparent" />
-
-          <div className="relative h-full flex flex-col justify-center rounded-[28px] border-[3.5px] border-white/50 shadow-[0_15px_60px_rgba(201,152,58,0.5),inset_0_2px_4px_rgba(255,255,255,0.5),0_0_60px_rgba(255,215,0,0.2)] p-8 text-center group-hover/rank:scale-105 group-hover/rank:shadow-[0_20px_80px_rgba(201,152,58,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)] transition-all duration-500 bg-gradient-to-br from-[#c9983a]/40 via-[#d4af37]/30 to-[#c9983a]/25">
-            <div className="absolute top-4 left-4 w-4 h-4 rounded-full bg-white/50 shadow-[0_0_12px_rgba(255,255,255,0.8)] animate-pulse" />
-            <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-[#c9983a]/70 shadow-[0_0_10px_rgba(201,152,58,0.9)]" />
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white/40" />
-
-            <div className="relative mb-3">
-              {isLoadingSummary ? (
-                <SkeletonLoader variant="text" width="120px" height="64px" className="mx-auto" />
-              ) : summary?.rank_position ? (
-                <div className={`text-[56px] font-black bg-gradient-to-b bg-clip-text text-transparent leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.2)] ${
-                  isDark ? 'from-white via-[#f5efe5] to-[#c9983a]' : 'from-[#1a1410] via-[#2d2820] to-[#c9983a]'
-                }`} style={{ letterSpacing: '-0.02em' }}>
-                  {summary.rank_position}
-                  <span className="text-[30px] align-super">
-                    {summary.rank_position === 1 ? 'st' : summary.rank_position === 2 ? 'nd' : summary.rank_position === 3 ? 'rd' : 'th'}
-                  </span>
-                </div>
-              ) : (
-                <div className={`text-[42px] font-black leading-none ${isDark ? 'text-[#e8dfd0]' : 'text-gray-400'}`}>
-                  Unranked
-                </div>
-              )}
-            </div>
-
-            {!isLoadingSummary && (
-              <div className="h-[3px] w-16 mx-auto bg-gradient-to-r from-transparent via-[#c9983a]/80 to-transparent mb-4 rounded-full shadow-[0_2px_8px_rgba(201,152,58,0.4)]" />
-            )}
-
-            {isLoadingSummary ? (
-              <SkeletonLoader variant="default" width="130px" height="34px" className="mx-auto" />
-            ) : (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[10px] bg-white/[0.3] border-2 border-[#c9983a]/50 shadow-[0_3px_12px_rgba(201,152,58,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)]">
-                {getRankIcon(summary?.rank_tier_name || 'Bronze')}
-                <span className="text-[12px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
-                  {summary?.rank_tier_name || 'Bronze'}
-                </span>
-              </div>
-            )}
-
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent rounded-[28px] opacity-0 group-hover/rank:opacity-100 transition-opacity duration-700" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ffd700]/10 to-transparent rounded-[28px] animate-pulse" />
-          </div>
+        {/* The SAME badge the contributor profile renders, not a port of it.
+            This was a verbatim copy of ProfilePage's markup, and it drifted
+            exactly as copies do: stretched by the flex row to whatever the
+            column beside it happened to be, so it rendered as a tall
+            rectangle instead of the square badge people see on their own
+            profile. RankBadgeCard is a fixed RANK_CARD_SIZE square and owns
+            its own loading and unranked states. */}
+        <div className="flex-shrink-0">
+          <RankBadgeCard
+            isLoading={isLoadingSummary}
+            position={summary?.rank_position}
+            tierName={summary?.rank_tier_name}
+          />
         </div>
       </div>
 
