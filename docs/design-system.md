@@ -1,5 +1,7 @@
 # Dashboard design system
 
+*Last updated: 16 August 2026*
+
 How the Aceternity-derived visual language is applied across the product. Read
 the hard constraint first; the tier table is the easy part.
 
@@ -144,6 +146,63 @@ comment in `brand.css`.
 
 Enforced by `brandTokens.test.ts`.
 
+### Gold as text: three tokens, three grounds
+
+Gold-as-a-surface and gold-as-text are different problems, and gold-as-text on
+a *warm panel* is a third one. All three values are measured, not chosen.
+
+| Token | Light value | Use it for |
+| --- | --- | --- |
+| `--brand-gold` | `#c9983a` | Gold **surfaces**. Fails as text at every body size (2.48 on a near-white page). |
+| `--brand-gold-text` | `#7d5c20` | Gold **text on a near-white page**. Measures 5.54 there. |
+| `--brand-gold-text-deep` | `#5c4214` | Gold **text on the warm panels** — modals, glass cards. |
+
+`--brand-gold-text` is not a safe default for everything. It was calibrated
+against a near-white page; on a modal panel (sampled at `rgb(212,197,176)`) the
+same value measures **3.63** and fails. `--brand-gold-text-deep` measures 5.53
+there.
+
+Not `#6b4e18`, which gives 4.55. Clearing a 4.5 threshold by 0.05 is the kind
+of miss that survives review because it looks fine, and this palette has
+already shipped one at 4.36.
+
+In dark mode both flip to values that already pass; the rule is to change what
+fails, not everything nearby.
+
+### Measuring contrast: resolve colours, don't parse them
+
+**Any check that reads a Tailwind palette class must resolve the colour through
+a canvas, not parse the string.**
+
+Tailwind v4 emits `oklch()`. A regex that reads those three numbers as sRGB
+returns a confident, completely wrong ratio — it reported **11.03** for a pair
+that actually measured **2.43**, and **1.04** for one that measured **4.71**.
+It flattered one theme and condemned the other, and either number could have
+sent somebody to fix the wrong thing.
+
+```js
+// Let the browser do the conversion; the input format stops mattering.
+const c = document.createElement('canvas'); c.width = c.height = 1
+const x = c.getContext('2d')
+x.fillStyle = getComputedStyle(el).color
+x.fillRect(0, 0, 1, 1)
+const [r, g, b] = x.getImageData(0, 0, 1, 1).data
+```
+
+Two further rules learned the hard way:
+
+- **Sample the painted pixel for the background.** Hide the glyphs, screenshot,
+  read the pixel back. Tailwind compiles gradients to
+  `var(--tw-gradient-stops)`, so a style-walker finds no colour at all, and
+  translucent surfaces composite with whatever is behind them.
+- **A check must be able to prove it measured the right element.** A selector
+  that matched a different `<span>` once returned a plausible ratio and
+  reported PASS for something it never touched. Assert the sampled element
+  carries the class you expect before reporting a number.
+
+The generated brand assets (`scripts/social-cards/`) are the exception: they
+read hex from `brand.css`, which contains no `oklch`, and compare hex to hex.
+
 ---
 
 ## Tiers
@@ -194,6 +253,36 @@ rather than piecemeal.
 | `theme.css` shadcn tokens | `--primary` is white in dark mode, `--muted-foreground` is pure white, `--border` is solid gold | Defined, wrong, and read by nothing. See `brand.css` header |
 | `AdminPage` | Renders "Admin Page - Content to be implemented" | A placeholder reachable from the admin view |
 | GrainHack card (Discover) | Titled "Join the GrainHack", button navigates to the Open-Source Week page; the sidebar lists both as separate destinations | Copy was fixed; the routing conflation was not |
+
+## Modals render through a portal
+
+`Modal` calls `createPortal(..., document.body)`. This is load-bearing, not
+tidiness.
+
+`position: fixed` is viewport-relative **only while no ancestor establishes a
+containing block**, and `transform`, `filter`, `backdrop-filter`,
+`perspective`, `will-change` and `contain` all establish one. This app paints
+glass everywhere — AdminPage alone wraps its sections in eleven
+`backdrop-blur-[40px]` cards — so a modal rendered inside one resolved `fixed`
+against that card rather than the screen.
+
+Measured on an 800px viewport, scrolled down:
+
+| | backdrop | dialog panel |
+| --- | --- | --- |
+| inside a blurred ancestor | 1364px tall at y=250 | y=782 — **18px visible, 281px below the fold** |
+| through the portal | 800px at y=0 | y=251, fully visible |
+
+The CSS was already correct, which is what made this worth measuring. Offsets,
+`z-index` or `top`/`left` would have moved the symptom around *inside the wrong
+containing block* and looked fixed at whatever scroll position they were tested
+at — and would have fixed one modal, when seventeen components render this one.
+
+**If you add a `backdrop-blur`, `transform` or `filter` to a container, check
+nothing inside it relies on `position: fixed`.** The failure is silent and
+scroll-dependent.
+
+---
 
 ## Components ruled out
 
