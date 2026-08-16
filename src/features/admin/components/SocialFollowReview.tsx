@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, ShieldOff, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldOff, Loader2, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { Modal, ModalFooter, ModalButton, ModalInput } from '../../../shared/components/ui/Modal';
 import {
   getAdminSocialFollowSubmissions,
   getSocialFollowReasonCodes,
+  getSocialFollowProofs,
   approveSocialFollowSubmission,
   bulkApproveSocialFollowSubmissions,
   rejectSocialFollowSubmission,
   revokeSocialFollowSubmission,
   type SocialFollowSubmission,
   type SocialFollowReasonCode,
+  type SocialFollowProofs,
 } from '../../../shared/api/client';
 
 type Decision = 'reject' | 'revoke';
@@ -56,6 +58,41 @@ export function SocialFollowReview() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmingBulk, setConfirmingBulk] = useState(false);
   const [isBulkRunning, setIsBulkRunning] = useState(false);
+
+  // One row open at a time. The point of collapsing is that a reviewer can see
+  // the whole queue at once; letting several expand would give that back a row
+  // at a time until the page looked like it did before.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Proofs are cached per submission, so collapsing and reopening a row does
+  // not refetch ~775kB of base64.
+  const [proofs, setProofs] = useState<Record<string, SocialFollowProofs>>({});
+  const [loadingProofsFor, setLoadingProofsFor] = useState<string | null>(null);
+  const [proofsError, setProofsError] = useState<Record<string, string>>({});
+
+  const toggleExpanded = async (id: string) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (proofs[id] || loadingProofsFor === id) return;
+    setLoadingProofsFor(id);
+    setProofsError((prev) => ({ ...prev, [id]: '' }));
+    try {
+      const res = await getSocialFollowProofs(id);
+      setProofs((prev) => ({ ...prev, [id]: res }));
+    } catch (error) {
+      // Kept on the row rather than raised as a toast: the failure belongs to
+      // one submission, and a reviewer needs to know THIS proof did not load
+      // rather than that something somewhere did not.
+      setProofsError((prev) => ({
+        ...prev,
+        [id]: error instanceof Error ? error.message : 'Could not load the proofs.',
+      }));
+    } finally {
+      setLoadingProofsFor(null);
+    }
+  };
 
   const dark = theme === 'dark';
   const strong = dark ? 'text-[#f5efe5]' : 'text-[#2d2820]';
@@ -316,24 +353,43 @@ export function SocialFollowReview() {
         submissions.map((s) => (
           <div
             key={s.id}
-            className={`rounded-[16px] border p-5 transition-colors ${
+            className={`rounded-[16px] border transition-colors ${
               dark ? 'bg-white/[0.04] border-white/10' : 'bg-white/[0.15] border-white/25'
-            }`}
+            } ${expandedId === s.id ? 'p-5' : 'px-4 py-2.5'}`}
           >
-            <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-              <div className="flex items-start gap-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
                 {s.status === 'pending' && (
                   <input
                     type="checkbox"
                     checked={selected.has(s.id)}
                     onChange={() => toggleOne(s.id)}
                     aria-label={`Select ${who(s)}'s submission`}
-                    className="w-4 h-4 mt-1 rounded accent-[#a2792c] cursor-pointer shrink-0"
+                    className="w-4 h-4 rounded accent-[#a2792c] cursor-pointer shrink-0"
                   />
                 )}
-                <div>
-                <p className={`text-[15px] font-semibold ${strong}`}>{who(s)}</p>
-                <p className={`text-[12px] ${muted}`}>Submitted {new Date(s.created_at).toLocaleString()}</p>
+                {/* The whole identity block is the disclosure control, so the
+                    target is the row rather than a chevron somebody has to
+                    aim at. Actions stay outside it - a click meant for
+                    Approve must never toggle the row instead. */}
+                <button
+                  type="button"
+                  onClick={() => void toggleExpanded(s.id)}
+                  aria-expanded={expandedId === s.id}
+                  aria-label={`${expandedId === s.id ? 'Hide' : 'Show'} ${who(s)}'s follow proofs`}
+                  className="flex items-center gap-3 min-h-[44px] min-w-0 text-left"
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 transition-transform ${muted} ${expandedId === s.id ? 'rotate-180' : ''}`}
+                  />
+                  {s.avatar_url ? (
+                    <img src={s.avatar_url} alt="" className="w-7 h-7 rounded-full shrink-0 object-cover" />
+                  ) : (
+                    <span className={`w-7 h-7 rounded-full shrink-0 ${dark ? 'bg-white/10' : 'bg-black/10'}`} />
+                  )}
+                  <span className="min-w-0">
+                <p className={`text-[15px] font-semibold truncate ${strong}`}>{who(s)}</p>
+                <p className={`text-[12px] ${muted}`}>Submitted {new Date(s.created_at).toLocaleDateString()}</p>
                 {(s.reason_label || s.decision_reason) && (
                   <p className={`text-[12px] mt-1 ${muted}`}>
                     <span className="capitalize">{s.status}</span>:{' '}
@@ -352,7 +408,8 @@ export function SocialFollowReview() {
                     {new Date(s.decided_at).toLocaleString()}
                   </p>
                 )}
-                </div>
+                  </span>
+                </button>
               </div>
               {/* Every variant measured, not just the one on screen at the
                   time. In light all three failed on their own wash (1.55-2.49);
@@ -363,37 +420,14 @@ export function SocialFollowReview() {
                   `revoked` shares the red branch with `rejected`, so it is
                   covered by the same values rather than falling through to
                   something unmeasured. */}
-              <span className={`text-[12px] font-medium px-2.5 py-1 rounded-full capitalize ${
-                s.status === 'approved'
-                  ? dark
-                    ? 'bg-green-500/15 text-green-500'
-                    : 'bg-green-500/15 text-green-800'
-                  : s.status === 'pending'
-                    ? dark
-                      ? 'bg-amber-500/15 text-amber-500'
-                      : 'bg-amber-500/15 text-amber-800'
-                    : dark
-                      ? 'bg-red-500/15 text-red-400'
-                      : 'bg-red-500/15 text-red-800'
-              }`}>
-                {s.status}
-              </span>
-            </div>
-
-            {/* Side by side, always both. */}
-            <div className="flex gap-3 flex-col sm:flex-row">
-              {shot(s.linkedin_screenshot, 'LinkedIn')}
-              {shot(s.x_screenshot, 'X')}
-            </div>
-
-            <div className="flex items-center gap-2 mt-4 flex-wrap">
+              <div className="flex items-center gap-2 shrink-0">
               {s.status === 'pending' && (
                 <>
                   <button
                     type="button"
                     disabled={actioningId === s.id}
                     onClick={() => handleApprove(s)}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-green-500/15 hover:bg-green-500/25 disabled:opacity-50 transition-colors ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-semibold bg-green-500/15 hover:bg-green-500/25 disabled:opacity-50 transition-colors ${
                       dark ? 'text-green-400' : 'text-green-800'
                     }`}
                   >
@@ -407,7 +441,7 @@ export function SocialFollowReview() {
                       setReason('');
                       setReasonCode('');
                     }}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 transition-colors ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-semibold bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 transition-colors ${
                       dark ? 'text-red-400' : 'text-red-800'
                     }`}
                   >
@@ -427,14 +461,63 @@ export function SocialFollowReview() {
                     setReason('');
                     setReasonCode('');
                   }}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-semibold bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 transition-colors ${
                     dark ? 'text-red-400' : 'text-red-800'
                   }`}
                 >
                   <ShieldOff className="w-4 h-4" /> Revoke eligibility
                 </button>
               )}
+              <span className={`text-[12px] font-medium px-2.5 py-1 rounded-full capitalize ${
+                s.status === 'approved'
+                  ? dark
+                    ? 'bg-green-500/15 text-green-500'
+                    : 'bg-green-500/15 text-green-800'
+                  : s.status === 'pending'
+                    ? dark
+                      ? 'bg-amber-500/15 text-amber-500'
+                      : 'bg-amber-500/15 text-amber-800'
+                    : dark
+                      ? 'bg-red-500/15 text-red-400'
+                      : 'bg-red-500/15 text-red-800'
+              }`}>
+                {s.status}
+              </span>
+              </div>
             </div>
+
+            {/* Proofs, only once the row is open.
+                Both platforms together, never one - a decision covers both,
+                and judging one without the other in view is half a decision.
+                Collapsed by default because 22 pending submissions rendering
+                two screenshots each fit two rows on a screen. */}
+            {expandedId === s.id && (
+              <div className="mt-4">
+                {loadingProofsFor === s.id ? (
+                  <div className="flex items-center gap-2 py-8 justify-center">
+                    <Loader2 className={`w-5 h-5 animate-spin ${dark ? 'text-[#c9983a]' : 'text-[#a2792c]'}`} />
+                    <span className={`text-[13px] ${muted}`}>Loading proofs…</span>
+                  </div>
+                ) : proofsError[s.id] ? (
+                  <div className="flex items-center gap-3 py-6 justify-center flex-wrap">
+                    <span className={`text-[13px] ${dark ? 'text-red-400' : 'text-red-800'}`}>{proofsError[s.id]}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setProofsError((p) => ({ ...p, [s.id]: '' })); setExpandedId(null); void toggleExpanded(s.id); }}
+                      className={`min-h-[44px] px-3 rounded-[10px] text-[13px] font-medium ${dark ? 'bg-white/[0.08] text-[#d4c5b0]' : 'bg-black/[0.04] text-[#4a3d2a]'}`}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : proofs[s.id] ? (
+                  <div className="flex gap-3 flex-col sm:flex-row">
+                    {shot(proofs[s.id].linkedin_screenshot, 'LinkedIn')}
+                    {shot(proofs[s.id].x_screenshot, 'X')}
+                  </div>
+                ) : null}
+              </div>
+            )}
+
           </div>
         ))
       )}

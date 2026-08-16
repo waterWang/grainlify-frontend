@@ -1071,10 +1071,9 @@ export interface SocialFollowSubmission {
   id: string;
   user_id: string;
   github_login?: string;
-  /** Both screenshots, so a reviewer sees them side by side and makes one
-   *  decision rather than judging one platform without the other in view. */
-  linkedin_screenshot: string;
-  x_screenshot: string;
+  /** Shown on the collapsed row so a submission is identifiable without
+   *  expanding it. */
+  avatar_url?: string;
   status: "pending" | "approved" | "rejected" | "revoked";
   decision_reason?: string | null;
   /** Machine-readable rejection reason, stored ALONGSIDE the free-text note
@@ -1164,6 +1163,29 @@ export const bulkApproveSocialFollowSubmissions = (ids: string[]) =>
   apiRequest<SocialFollowBulkResult>(
     "/admin/social-follow/submissions/bulk-approve",
     { requiresAuth: true, method: "POST", body: JSON.stringify({ ids }) }
+  );
+
+/** Both screenshots for one submission, fetched when a row is expanded.
+ *
+ *  They are not in the list response: at ~775kB of base64 per row, sending
+ *  them with every row made a page of ten a 7.7MB payload that grew with the
+ *  queue. A reviewer opens a handful of rows per session, so these are
+ *  fetched a handful of times instead of fifty.
+ *
+ *  Both platforms come back together. A decision covers both, and there is
+ *  deliberately no way to ask for one - judging one platform without the
+ *  other in view is half a decision, which is what the atomic submission
+ *  model exists to prevent. */
+export interface SocialFollowProofs {
+  id: string;
+  linkedin_screenshot: string;
+  x_screenshot: string;
+}
+
+export const getSocialFollowProofs = (id: string) =>
+  apiRequest<SocialFollowProofs>(
+    `/admin/social-follow/submissions/${id}/proofs`,
+    { requiresAuth: true }
   );
 
 export const approveSocialFollowSubmission = (id: string) =>

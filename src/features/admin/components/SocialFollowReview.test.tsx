@@ -5,6 +5,7 @@ import { SocialFollowReview } from './SocialFollowReview'
 
 const mockGetAdminSocialFollowSubmissions = vi.fn()
 const mockGetSocialFollowReasonCodes = vi.fn()
+const mockGetSocialFollowProofs = vi.fn()
 const mockApproveSocialFollowSubmission = vi.fn()
 const mockBulkApproveSocialFollowSubmissions = vi.fn()
 const mockRejectSocialFollowSubmission = vi.fn()
@@ -21,6 +22,7 @@ vi.mock('sonner', () => ({
 vi.mock('../../../shared/api/client', () => ({
   getAdminSocialFollowSubmissions: (...args: unknown[]) => mockGetAdminSocialFollowSubmissions(...args),
   getSocialFollowReasonCodes: (...args: unknown[]) => mockGetSocialFollowReasonCodes(...args),
+  getSocialFollowProofs: (...args: unknown[]) => mockGetSocialFollowProofs(...args),
   approveSocialFollowSubmission: (...args: unknown[]) => mockApproveSocialFollowSubmission(...args),
   bulkApproveSocialFollowSubmissions: (...args: unknown[]) => mockBulkApproveSocialFollowSubmissions(...args),
   rejectSocialFollowSubmission: (...args: unknown[]) => mockRejectSocialFollowSubmission(...args),
@@ -41,8 +43,7 @@ const PENDING = {
   id: 'sub-1',
   user_id: 'user-1',
   github_login: 'octocat',
-  linkedin_screenshot: 'data:image/png;base64,linkedin',
-  x_screenshot: 'data:image/png;base64,xproof',
+  avatar_url: 'https://avatars.example/octocat.png',
   status: 'pending' as const,
   created_at: new Date().toISOString(),
 }
@@ -62,6 +63,11 @@ describe('SocialFollowReview', () => {
     toastError.mockReset()
     mockGetAdminSocialFollowSubmissions.mockResolvedValue(page([PENDING]))
     mockGetSocialFollowReasonCodes.mockResolvedValue({ reason_codes: REASON_CODES })
+    mockGetSocialFollowProofs.mockResolvedValue({
+      id: 'sub-1',
+      linkedin_screenshot: 'data:image/png;base64,linkedin',
+      x_screenshot: 'data:image/png;base64,xproof',
+    })
     mockBulkApproveSocialFollowSubmissions.mockResolvedValue({
       approved: [{ id: 'sub-1' }],
       skipped: [],
@@ -75,20 +81,48 @@ describe('SocialFollowReview', () => {
     mockRevokeSocialFollowSubmission.mockResolvedValue({ ok: true })
   })
 
-  it('shows both screenshots so one decision covers both platforms', async () => {
+  it('shows no proofs until a row is expanded, then both at once', async () => {
+    const user = userEvent.setup()
     renderWithProviders(<SocialFollowReview />)
     await waitFor(() =>
       expect(mockGetAdminSocialFollowSubmissions).toHaveBeenCalledWith('pending', { offset: 0 }),
     )
+    expect(await screen.findByText('octocat')).toBeInTheDocument()
+
+    // Collapsed by default, and the proofs are not merely hidden - they have
+    // not been fetched. That is the payload fix: at ~775kB a row, sending
+    // them with the list made a page of ten a 7.7MB response.
+    expect(screen.queryByAltText('LinkedIn follow proof')).not.toBeInTheDocument()
+    expect(mockGetSocialFollowProofs).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: /show octocat's follow proofs/i }))
 
     // Judging one platform without the other in view is half a decision -
-    // which is exactly what the atomic submission model removes.
+    // which is what the atomic submission model removes. Expanding brings
+    // back both together, or neither.
     expect(await screen.findByAltText('LinkedIn follow proof')).toHaveAttribute(
       'src',
       'data:image/png;base64,linkedin',
     )
     expect(screen.getByAltText('X follow proof')).toHaveAttribute('src', 'data:image/png;base64,xproof')
-    expect(screen.getByText('octocat')).toBeInTheDocument()
+    expect(mockGetSocialFollowProofs).toHaveBeenCalledWith('sub-1')
+  })
+
+  it('fetches a submission\'s proofs once, however often the row is toggled', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<SocialFollowReview />)
+    await screen.findByText('octocat')
+    const toggle = () => screen.getByRole('button', { name: /octocat's follow proofs/i })
+
+    await user.click(toggle())
+    await screen.findByText('octocat')
+    await user.click(toggle())
+    await user.click(toggle())
+    await screen.findByText('octocat')
+
+    // Cached. Refetching would pull ~775kB back over the wire for a row the
+    // reviewer has already looked at.
+    expect(mockGetSocialFollowProofs).toHaveBeenCalledTimes(1)
   })
 
   it('approving applies to the whole submission', async () => {
@@ -172,7 +206,7 @@ describe('SocialFollowReview', () => {
     it('hides the controls entirely when everything fits on one page', async () => {
       mockGetAdminSocialFollowSubmissions.mockResolvedValue(page([PENDING], { total: 1, limit: 10 }))
       renderWithProviders(<SocialFollowReview />)
-      await screen.findByAltText('LinkedIn follow proof')
+      await screen.findByText('octocat')
 
       expect(screen.queryByRole('button', { name: /next/i })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /previous/i })).not.toBeInTheDocument()
@@ -207,7 +241,7 @@ describe('SocialFollowReview', () => {
         page([PENDING], { total: 21, limit: 10, offset: 20 }),
       )
       renderWithProviders(<SocialFollowReview />)
-      await screen.findByAltText('LinkedIn follow proof')
+      await screen.findByText('octocat')
 
       expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
     })
@@ -279,7 +313,7 @@ describe('SocialFollowReview', () => {
       failed_count: 0,
     })
     renderWithProviders(<SocialFollowReview />)
-    await screen.findByAltText('LinkedIn follow proof')
+    await screen.findByText('octocat')
 
     expect(screen.queryByText(/Decided/)).not.toBeInTheDocument()
   })
@@ -385,7 +419,7 @@ describe('SocialFollowReview', () => {
     it('offers no bulk control on a queue with nothing pending', async () => {
       mockGetAdminSocialFollowSubmissions.mockResolvedValue(page([APPROVED]))
       renderWithProviders(<SocialFollowReview />)
-      await screen.findByAltText('LinkedIn follow proof')
+      await screen.findByText('octocat')
 
       expect(screen.queryByLabelText(/select all on this page/i)).not.toBeInTheDocument()
     })
