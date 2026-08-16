@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
+import { SupportContext } from '../shared/components/supportContext'
 import { render, type RenderOptions } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider } from '../shared/contexts/ThemeContext'
@@ -25,7 +26,17 @@ export function renderWithProviders(
     const body = withAuth ? <AuthProvider>{children}</AuthProvider> : <>{children}</>
     return (
       <MemoryRouter initialEntries={[route]}>
-        <ThemeProvider>{body}</ThemeProvider>
+        {/* The support trigger now lives in the sidebar rail and the
+            public-route chrome, so most components under test render one, and
+            useSupport throws outside a provider by design. The context is
+            supplied directly rather than by mounting the real SupportProvider:
+            a unit test does not need the panel, and importing it would pull
+            its icons into the eight test files that replace lucide-react
+            wholesale. Opening the panel is covered by SupportWidget.test.tsx
+            and the e2e suite. */}
+        <ThemeProvider>
+          <SupportContext.Provider value={{ open: () => {} }}>{body}</SupportContext.Provider>
+        </ThemeProvider>
       </MemoryRouter>
     )
   }

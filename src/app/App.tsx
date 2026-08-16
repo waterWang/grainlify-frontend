@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from "../shared/contexts/AuthContext";
 import { ThemeProvider, useTheme } from "../shared/contexts/ThemeContext";
 import { LandingPage } from "../features/landing";
 import Toast from "../shared/components/Toast";
-import { SupportWidget } from "../shared/components/SupportWidget";
+import { SupportProvider } from "../shared/components/SupportWidget";
 import { captureReferralCodeFromURL } from "../shared/api/client";
 
 // Code-split from the landing page's bundle: an anonymous visitor hitting "/"
@@ -57,6 +57,7 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
+          <SupportProvider>
           <div className="overflow-x-hidden">
             <Suspense fallback={<RouteFallback />}>
               <Routes>
@@ -75,8 +76,8 @@ export default function App() {
               </Routes>
             </Suspense>
             <Toast />
-            <SupportWidget />
           </div>
+          </SupportProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

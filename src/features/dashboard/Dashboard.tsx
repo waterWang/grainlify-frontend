@@ -19,8 +19,10 @@ import {
   Menu,
   Flag,
   Ticket,
-  ClipboardCheck
+  ClipboardCheck,
+  LifeBuoy,
 } from "lucide-react";
+import { useSupport, SUPPORT_TRIGGER_LABEL } from "../../shared/components/supportContext";
 import { useThemeToggleAnimation } from "../../shared/hooks/useThemeToggleAnimation";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import grainlifyLogo from "../../assets/grainlify_log.svg";
@@ -133,6 +135,7 @@ export function Dashboard() {
     top: number;
     left: number;
   } | null>(null);
+  const { open: openSupport } = useSupport();
   const [activeRole, setActiveRole] = useState<
     "contributor" | "maintainer" | "admin"
   >("contributor");
@@ -684,6 +687,38 @@ export function Dashboard() {
                   </button>
                 );
               })}
+
+              {/* Support.
+                  In the rail rather than floating bottom-right, because that
+                  corner is where pages put their primary action - it covered a
+                  Save button on four settings tabs and the Accept button on
+                  terms, reported three times. Nothing competes for space here,
+                  and the rail is already persistent across every dashboard
+                  route. The panel itself is a Modal portaled to document.body;
+                  it cannot be anchored inside this element, whose
+                  backdrop-blur establishes a containing block for fixed
+                  descendants. */}
+              <button
+                type="button"
+                onClick={() => openSupport()}
+                aria-label={SUPPORT_TRIGGER_LABEL}
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredNavItem({
+                    label: "Get help",
+                    top: rect.top + rect.height / 2,
+                    left: rect.right,
+                  });
+                }}
+                onMouseLeave={() => setHoveredNavItem(null)}
+                className="group relative w-full flex items-center justify-center px-0 h-[49px] rounded-[12px] backdrop-blur-[40px] transition-all duration-300 hover:bg-white/[0.1]"
+              >
+                <LifeBuoy
+                  className={`w-5 h-5 transition-colors ${
+                    darkTheme ? "text-[#e8c77f]" : "text-[#a2792c]"
+                  }`}
+                />
+              </button>
             </nav>
           </div>
         </div>

@@ -7,7 +7,13 @@ interface AuthFixtures {
 }
 
 async function mockAuth(page: Page) {
-  await page.route('**/me', async (route) => {
+  // Matched on the exact pathname, not '**/me'. That glob also matches
+  // /points/me, /redemptions/me, /referrals/me, /social-follow/me and four
+  // others, so every one of them was answered with the USER object. A
+  // component expecting a list then threw on .map, React unmounted the whole
+  // tree, and the page rendered blank - which reads as "this page has no
+  // content" rather than "the mock is wrong".
+  await page.route((url) => url.pathname === '/me', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -18,6 +24,29 @@ async function mockAuth(page: Page) {
       }),
     })
   })
+  // The other /me endpoints. Each returns the envelope its caller destructures
+  // - an empty array where an object is expected crashes the component just as
+  // surely as no response at all, and the page then renders blank while the
+  // test reports a pass.
+  const meShapes: Record<string, unknown> = {
+    '/points/me': { balance: 0, lifetime_points: 0 },
+    '/redemptions/me': { redemptions: [] },
+    '/referrals/me': { referral_code: 'E2ETEST', referrals: [], total_referrals: 0 },
+    '/social-follow/me': { status: 'none' },
+    '/issue-applications/me': { issue_applications: [] },
+    '/hackathon-applications/me': { applications: [] },
+    '/hackathon-assignments/me': { assignments: [] },
+    '/hackathon-issue-applications/me': { applications: [] },
+  }
+  for (const [path, shape] of Object.entries(meShapes)) {
+    await page.route((url) => url.pathname === path, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(shape) })
+    })
+  }
+  await page.route((url) => url.pathname === '/notifications/unread-count', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ count: 0 }) })
+  })
+
   await page.route('**/stats/landing', async (route) => {
     await route.fulfill({
       status: 200,
@@ -31,7 +60,10 @@ async function mockAuth(page: Page) {
 }
 
 async function mockBrowse(page: Page) {
-  await page.route('**/projects*', async (route) => {
+  // Exact pathname again: '**/projects*' also matches /profile/projects,
+  // which returns a bare array. Answering it with { projects: [...] } made
+  // PayoutTab's projects.map throw and blanked the page.
+  await page.route((url) => url.pathname === '/projects', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -52,6 +84,34 @@ async function mockBrowse(page: Page) {
       }),
     })
   })
+  // Array-shaped endpoints, returned as arrays.
+  for (const path of ['/profile/projects-led', '/contributors', '/leaderboard']) {
+    await page.route((url) => url.pathname === path, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+    })
+  }
+
+  // Populated, not empty. The payout tab renders an empty state when a
+  // contributor has no projects - no rows, no Save button, and therefore
+  // nothing for a layout check to collide with. The reported bug lives on
+  // the populated page, so an empty fixture tests the one state the report
+  // was not about.
+  await page.route((url) => url.pathname === '/profile/projects', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        ['alpha', 'beta', 'gamma'].map((n, i) => ({
+          id: `proj-${i}`,
+          github_full_name: `grainlify/${n}`,
+          status: 'active',
+          ecosystem_name: 'Stellar',
+          language: 'TypeScript',
+        })),
+      ),
+    })
+  })
+
   await page.route('**/ecosystems', async (route) => {
     await route.fulfill({
       status: 200,
@@ -142,7 +202,10 @@ async function mockOrgProfile(page: Page) {
   // Backs the org page's inline repo grid (getPublicProjects, filtered
   // client-side to this org) - includes a repo from a different org to
   // prove that filter actually excludes it.
-  await page.route('**/projects*', async (route) => {
+  //
+  // Exact pathname: as a glob this also matched /profile/projects, and being
+  // registered last it took precedence over the handler meant for it.
+  await page.route((url) => url.pathname === '/projects', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

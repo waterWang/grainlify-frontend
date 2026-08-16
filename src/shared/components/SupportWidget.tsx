@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
+import { SupportContext } from './supportContext';
+
+export { useSupport, SUPPORT_TRIGGER_LABEL } from './supportContext';
 import { Bug, CheckCircle2, IdCard, Lightbulb, LifeBuoy, Loader2, MessageCircle, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal, ModalButton, ModalFooter, ModalInput } from './ui/Modal';
@@ -70,7 +73,29 @@ const CATEGORIES: CategoryOption[] = [
 // Global, rendered once (mounted in App.tsx next to <Toast />) so it's
 // available on the landing page and every dashboard tab alike - support isn't
 // limited to signed-in users.
-export function SupportWidget() {
+// Support is one panel with several triggers.
+//
+// It used to be a single component that rendered its own button at
+// `fixed bottom-5 right-5`. That corner is where applications put primary
+// actions, so the button sat on top of whatever a page ended with - reported
+// three times, on three different pages, each time "fixed" by padding that
+// page. The position was the bug; padding around it was a fix we kept having
+// to reapply.
+//
+// Now the trigger lives in chrome that exists for navigation and competes with
+// nothing: the dashboard's icon rail, and the landing Navbar for the routes
+// that have no rail. Both call open() from this context, so there is one panel
+// and one piece of state however many places can reach it.
+//
+// The panel is a Modal, which portals to document.body. That is load-bearing
+// rather than incidental: the rail carries backdrop-blur-[90px], and a
+// backdrop-filter establishes a containing block for position: fixed
+// descendants - a panel rendered inside the rail would be trapped by it and
+// clipped to a 65px column. The same trap was hit once already and fixed the
+// same way (#996).
+
+
+export function SupportProvider({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -155,25 +180,8 @@ export function SupportWidget() {
   };
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        aria-label="Get help or report a problem"
-        className={`fixed bottom-5 right-5 z-[9000] flex items-center justify-center gap-2 w-12 h-12 sm:w-auto sm:px-4 sm:h-12 rounded-full backdrop-blur-[40px] border shadow-[0px_6px_16px_0px_rgba(0,0,0,0.25),0px_0px_4px_0px_rgba(0,0,0,0.4)] hover:scale-105 active:scale-95 transition-transform ${
-          // Light mode reads --brand-gold-text rather than the UI gold. On the
-          // translucent white pill this button actually sits on, #a67c2e
-          // measured 3.42 - the token exists because gold-as-text is a
-          // different problem from gold-as-surface. Dark mode's #e8c77f
-          // measures 8.75 and is left alone.
-          isDark
-            ? 'bg-[#2d2820]/[0.75] border-white/10 text-[#e8c77f]'
-            : 'bg-white/[0.75] border-white/40 text-[var(--brand-gold-text)]'
-        }`}
-      >
-        <LifeBuoy className="w-5 h-5 shrink-0" />
-        <span className="hidden sm:inline text-[13px] font-semibold whitespace-nowrap">Get help</span>
-      </button>
+    <SupportContext.Provider value={{ open: () => setIsOpen(true) }}>
+      {children}
 
       <Modal
         isOpen={isOpen}
@@ -310,6 +318,6 @@ export function SupportWidget() {
           </form>
         )}
       </Modal>
-    </>
+    </SupportContext.Provider>
   );
 }

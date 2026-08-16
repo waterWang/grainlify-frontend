@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider } from '../contexts/ThemeContext'
-import { SupportWidget } from './SupportWidget'
+import { SupportProvider } from './SupportWidget'
+import { SupportLink } from './SupportLink'
+import { SUPPORT_TRIGGER_LABEL } from './supportContext'
 
 const submitSupportRequest = vi.fn()
 vi.mock('../api/client', () => ({
@@ -24,7 +26,7 @@ vi.mock('sonner', () => ({ toast: { error: (m: string) => toastError(m) } }))
 function renderWidget() {
   return render(
     <ThemeProvider>
-      <SupportWidget />
+      <SupportProvider><SupportLink /></SupportProvider>
     </ThemeProvider>,
   )
 }
@@ -153,4 +155,12 @@ describe('SupportWidget', () => {
     expect(submitSupportRequest).not.toHaveBeenCalled()
     expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/tell us what you need/i))
   })
+})
+
+// The accessible name is shared by all three triggers - the rail button, the
+// Navbar entry and the auth-page link - and has already been renamed once, to
+// resolve a duplicate-label collision. Pinning the literal means a rename is a
+// deliberate act rather than a side effect of editing one of the three.
+it('keeps the accessible name every trigger is found by', () => {
+  expect(SUPPORT_TRIGGER_LABEL).toBe('Get help or report a problem')
 })
