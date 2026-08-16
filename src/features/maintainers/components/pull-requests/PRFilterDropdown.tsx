@@ -7,11 +7,14 @@ interface PRFilterDropdownProps {
   isOpen: boolean;
   onToggle: () => void;
   onClose: () => void;
+  /** Number of currently active filters (status filter, search...), shown as a
+   * small count badge on the trigger button. Hidden when 0/undefined. */
+  activeCount?: number;
 }
 
 const filterOptions: PRFilterType[] = ['All states', 'Open', 'Merged', 'Closed', 'Draft'];
 
-export function PRFilterDropdown({ value, onChange, isOpen, onToggle, onClose }: PRFilterDropdownProps) {
+export function PRFilterDropdown({ value, onChange, isOpen, onToggle, onClose, activeCount }: PRFilterDropdownProps) {
   return (
     <GlassDropdown
       value={value}
@@ -20,6 +23,7 @@ export function PRFilterDropdown({ value, onChange, isOpen, onToggle, onClose }:
       isOpen={isOpen}
       onToggle={onToggle}
       onClose={onClose}
+      badgeCount={activeCount}
     />
   );
 }

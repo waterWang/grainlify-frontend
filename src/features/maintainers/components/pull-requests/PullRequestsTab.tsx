@@ -198,6 +198,7 @@ export function PullRequestsTab({ selectedProjects, onRefresh: _onRefresh, isLoa
           isOpen={isFilterDropdownOpen}
           onToggle={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
           onClose={() => setIsFilterDropdownOpen(false)}
+          activeCount={(filter !== 'All states' ? 1 : 0) + (searchQuery !== '' ? 1 : 0)}
         />
 
         {/* Clear Filters Button */}

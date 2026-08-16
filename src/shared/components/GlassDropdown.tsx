@@ -8,6 +8,9 @@ interface GlassDropdownProps<T extends string> {
   isOpen: boolean;
   onToggle: () => void;
   onClose: () => void;
+  /** Number of currently active filters, shown as a small count badge on the
+   * trigger button. Hidden when 0/undefined. */
+  badgeCount?: number;
 }
 
 export function GlassDropdown<T extends string>({ 
@@ -16,10 +19,12 @@ export function GlassDropdown<T extends string>({
   options, 
   isOpen, 
   onToggle, 
-  onClose 
+  onClose,
+  badgeCount,
 }: GlassDropdownProps<T>) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const showBadge = typeof badgeCount === 'number' && badgeCount > 0;
 
   const handleSelect = (option: T) => {
     onChange(option);
@@ -30,7 +35,7 @@ export function GlassDropdown<T extends string>({
     <div className="relative">
       {/* Dropdown Button */}
       <button 
-        className={`flex items-center gap-2 px-5 py-3 rounded-[14px] backdrop-blur-[25px] border transition-all ${
+        className={`relative flex items-center gap-2 px-5 py-3 rounded-[14px] backdrop-blur-[25px] border transition-all ${
           isDark
             ? 'bg-white/[0.08] border-white/15 hover:bg-white/[0.12] hover:border-[#e8c571]/30'
             : 'bg-white/[0.15] border-white/25 hover:bg-white/[0.2] hover:border-[#c9983a]/30'
@@ -45,6 +50,14 @@ export function GlassDropdown<T extends string>({
         <ChevronDown className={`w-4 h-4 transition-transform ${
           isDark ? 'text-[#b8a898]' : 'text-[#7a6b5a]'
         } ${isOpen ? 'rotate-180' : ''}`} />
+        {showBadge && (
+          <span
+            className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 bg-gradient-to-br from-[#e8c571] to-[#c9983a] rounded-full text-[12px] font-bold text-white flex items-center justify-center"
+            data-testid="filter-count-badge"
+          >
+            {badgeCount}
+          </span>
+        )}
       </button>
       
       {/* Dropdown Menu */}
