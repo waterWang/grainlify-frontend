@@ -1078,14 +1078,44 @@ export interface SocialFollowSubmission {
   status: "pending" | "approved" | "rejected" | "revoked";
   decision_reason?: string | null;
   decided_at?: string | null;
+  /** Who decided. Recorded on the row and in social_follow_decisions since the
+   *  feature shipped, but not readable from the list until now - so the review
+   *  page could show a decision with no author. Approval grants founding-pool
+   *  eligibility, so the decision needs a name against it. */
+  decided_by?: string | null;
+  decided_by_login?: string;
   created_at: string;
 }
 
-export const getAdminSocialFollowSubmissions = (status: string = "pending") =>
-  apiRequest<{ submissions: SocialFollowSubmission[] }>(
-    `/admin/social-follow/submissions?status=${encodeURIComponent(status)}`,
+/** One page of the review queue.
+ *
+ *  `total` and `has_more` describe the whole filtered queue, not the page.
+ *  Both matter: an action offered over "everything on screen" has to be able
+ *  to say how much is NOT on screen, or the offer is misleading. */
+export interface SocialFollowSubmissionPage {
+  submissions: SocialFollowSubmission[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+/** Paged deliberately. Every row carries both screenshots as base64 data URLs
+ *  - around 787kB each - so the unpaginated version of this returned 17MB for
+ *  22 pending rows and grew with the queue. The server clamps `limit`, so a
+ *  caller cannot ask for the whole queue back. */
+export const getAdminSocialFollowSubmissions = (
+  status: string = "pending",
+  { limit, offset }: { limit?: number; offset?: number } = {}
+) => {
+  const params = new URLSearchParams({ status });
+  if (limit !== undefined) params.set("limit", String(limit));
+  if (offset !== undefined) params.set("offset", String(offset));
+  return apiRequest<SocialFollowSubmissionPage>(
+    `/admin/social-follow/submissions?${params.toString()}`,
     { requiresAuth: true }
   );
+};
 
 export const approveSocialFollowSubmission = (id: string) =>
   apiRequest<{ ok: boolean }>(`/admin/social-follow/submissions/${id}/approve`, {

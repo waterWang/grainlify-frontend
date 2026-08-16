@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, ShieldOff, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldOff, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { Modal, ModalFooter, ModalButton, ModalInput } from '../../../shared/components/ui/Modal';
@@ -19,6 +19,11 @@ type Decision = 'reject' | 'revoke';
  *  screenshots are shown side by side because judging one without the other
  *  in view is making half a decision — and a half decision is exactly what
  *  the atomic submission model exists to prevent.
+ *
+ *  Paged. Each row carries both screenshots inline as base64, so the
+ *  unpaginated queue was a 17MB response that grew with the backlog. The page
+ *  also bounds what a reviewer can act on at once, which is what any
+ *  future "select all on this page" has to mean to be worth anything.
  */
 export function SocialFollowReview() {
   const { theme } = useTheme();
@@ -26,6 +31,12 @@ export function SocialFollowReview() {
   const [isLoading, setIsLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'pending' | 'approved' | 'all'>('pending');
+  const [offset, setOffset] = useState(0);
+  const [page, setPage] = useState<{ total: number; limit: number; hasMore: boolean }>({
+    total: 0,
+    limit: 0,
+    hasMore: false,
+  });
   // Rejection and revocation both require a reason, so both go through the
   // same prompt rather than one being a bare button.
   const [deciding, setDeciding] = useState<{ submission: SocialFollowSubmission; decision: Decision } | null>(null);
@@ -35,11 +46,18 @@ export function SocialFollowReview() {
   const strong = dark ? 'text-[#f5efe5]' : 'text-[#2d2820]';
   const muted = dark ? 'text-[#b8a898]' : 'text-[#7a6b5a]';
 
-  const fetchSubmissions = async (status: typeof filter = filter) => {
+  const fetchSubmissions = async (status: typeof filter = filter, at: number = offset) => {
     setIsLoading(true);
     try {
-      const res = await getAdminSocialFollowSubmissions(status);
+      const res = await getAdminSocialFollowSubmissions(status, { offset: at });
       setSubmissions(res.submissions);
+      setPage({ total: res.total, limit: res.limit, hasMore: res.has_more });
+      // A decision can empty the last page. Stepping back rather than showing
+      // "Nothing here" on page 3 of a queue that still has rows.
+      if (res.submissions.length === 0 && at > 0) {
+        const back = Math.max(0, at - res.limit);
+        setOffset(back);
+      }
     } catch (error) {
       console.error('Failed to fetch social-follow submissions:', error);
       toast.error('Failed to load submissions.');
@@ -48,10 +66,17 @@ export function SocialFollowReview() {
     }
   };
 
+  // Changing the filter returns to the first page: keeping an offset across a
+  // filter change lands on an arbitrary slice of a different queue.
+  const changeFilter = (next: typeof filter) => {
+    setFilter(next);
+    setOffset(0);
+  };
+
   useEffect(() => {
-    fetchSubmissions(filter);
+    fetchSubmissions(filter, offset);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, offset]);
 
   const who = (s: SocialFollowSubmission) => s.github_login || s.user_id;
 
@@ -60,7 +85,7 @@ export function SocialFollowReview() {
     try {
       await approveSocialFollowSubmission(submission.id);
       toast.success(`${who(submission)} is now eligible.`);
-      await fetchSubmissions();
+      await fetchSubmissions(filter, offset);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to approve.');
     } finally {
@@ -82,7 +107,7 @@ export function SocialFollowReview() {
       }
       setDeciding(null);
       setReason('');
-      await fetchSubmissions();
+      await fetchSubmissions(filter, offset);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to record the decision.');
     } finally {
@@ -112,7 +137,7 @@ export function SocialFollowReview() {
           <button
             key={f}
             type="button"
-            onClick={() => setFilter(f)}
+            onClick={() => changeFilter(f)}
             className={`px-4 py-2 rounded-[12px] text-[13px] font-medium capitalize transition-colors ${
               filter === f
                 ? 'bg-[#a2792c] text-white'
@@ -147,6 +172,15 @@ export function SocialFollowReview() {
                 {s.decision_reason && (
                   <p className={`text-[12px] mt-1 ${muted}`}>
                     <span className="capitalize">{s.status}</span>: {s.decision_reason}
+                  </p>
+                )}
+                {/* Approval grants founding-pool eligibility, so a decision
+                    shouldn't appear without a name against it. Recorded since
+                    the feature shipped; it just wasn't readable from here. */}
+                {s.decided_at && (
+                  <p className={`text-[12px] mt-0.5 ${muted}`}>
+                    {s.decided_by_login ? `Decided by ${s.decided_by_login}` : 'Decided'} on{' '}
+                    {new Date(s.decided_at).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -210,6 +244,41 @@ export function SocialFollowReview() {
             </div>
           </div>
         ))
+      )}
+
+      {/* Always rendered when there is more than one page, including while
+          loading, so the control doesn't disappear under the cursor on every
+          refetch. */}
+      {(page.total > page.limit || offset > 0) && (
+        <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
+          <p className={`text-[13px] ${muted}`}>
+            {page.total === 0
+              ? 'No submissions'
+              : `Showing ${offset + 1}–${offset + submissions.length} of ${page.total}`}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={offset === 0 || isLoading}
+              onClick={() => setOffset(Math.max(0, offset - page.limit))}
+              className={`inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-[12px] text-[13px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                dark ? 'bg-white/[0.06] text-[#d4c5b0] hover:bg-white/[0.1]' : 'bg-black/[0.04] text-[#4a3d2a] hover:bg-black/[0.07]'
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+            <button
+              type="button"
+              disabled={!page.hasMore || isLoading}
+              onClick={() => setOffset(offset + page.limit)}
+              className={`inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-[12px] text-[13px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                dark ? 'bg-white/[0.06] text-[#d4c5b0] hover:bg-white/[0.1]' : 'bg-black/[0.04] text-[#4a3d2a] hover:bg-black/[0.07]'
+              }`}
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
 
       <Modal
