@@ -12,6 +12,7 @@
 // 5.46 but is dimmer than what shipped - a visible change nobody asked for is
 // not part of a contrast fix.
 import React, { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronDown, Check } from 'lucide-react';
 import * as Select from '@radix-ui/react-select';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -62,7 +63,28 @@ export function Modal({
 
   if (!isOpen) return null;
 
-  return (
+  // Rendered into document.body rather than where it sits in the JSX.
+  //
+  // `position: fixed` is viewport-relative ONLY while no ancestor establishes
+  // a containing block, and `transform`, `filter`, `backdrop-filter`,
+  // `perspective`, `will-change` and `contain` all establish one. This app
+  // paints glass everywhere: AdminPage alone wraps its sections in eleven
+  // `backdrop-blur-[40px]` cards, and any modal inside one resolves `fixed`
+  // against that card instead of the screen.
+  //
+  // Measured before this change, on an 800px viewport scrolled down: the
+  // backdrop rendered 1364px tall starting at y=250, and the dialog panel
+  // landed at y=782 - 18 pixels of a 299px panel on screen, the other 281
+  // below the fold. The same component outside a blurred ancestor rendered at
+  // y=251, fully visible.
+  //
+  // Worth being explicit about why this is a portal and not a positioning
+  // tweak: the CSS here was already correct. Nudging offsets, z-index or
+  // `top`/`left` would have moved the symptom around inside the wrong
+  // containing block and looked like a fix at one scroll position. A portal
+  // removes the wrong ancestor from the equation entirely, and fixes every
+  // modal in the app at once rather than the one somebody happened to notice.
+  return createPortal(
     <div
       className={`fixed inset-0 ${dimBackdrop ? 'bg-black/50 backdrop-blur-sm' : 'bg-transparent'} flex items-center justify-center z-[10000] animate-in fade-in duration-200`}
       onClick={onClose}
@@ -116,7 +138,8 @@ export function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
