@@ -5,10 +5,13 @@ import { useTheme } from '../../../shared/contexts/ThemeContext';
 import { Modal, ModalFooter, ModalButton, ModalInput } from '../../../shared/components/ui/Modal';
 import {
   getAdminSocialFollowSubmissions,
+  getSocialFollowReasonCodes,
   approveSocialFollowSubmission,
+  bulkApproveSocialFollowSubmissions,
   rejectSocialFollowSubmission,
   revokeSocialFollowSubmission,
   type SocialFollowSubmission,
+  type SocialFollowReasonCode,
 } from '../../../shared/api/client';
 
 type Decision = 'reject' | 'revoke';
@@ -41,10 +44,26 @@ export function SocialFollowReview() {
   // same prompt rather than one being a bare button.
   const [deciding, setDeciding] = useState<{ submission: SocialFollowSubmission; decision: Decision } | null>(null);
   const [reason, setReason] = useState('');
+  // Rejection picks a code; revocation stays free text. The codes are fetched
+  // rather than listed here so their wording lives in one place - the same
+  // list resolves the label the contributor reads and the text of the email.
+  const [reasonCodes, setReasonCodes] = useState<SocialFollowReasonCode[]>([]);
+  const [reasonCode, setReasonCode] = useState('');
+
+  // Selection is per-page and per-id. Ids rather than indices, so a refetch
+  // that reorders or shortens the page cannot silently move a tick from one
+  // person's submission to another's.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmingBulk, setConfirmingBulk] = useState(false);
+  const [isBulkRunning, setIsBulkRunning] = useState(false);
 
   const dark = theme === 'dark';
   const strong = dark ? 'text-[#f5efe5]' : 'text-[#2d2820]';
-  const muted = dark ? 'text-[#b8a898]' : 'text-[#7a6b5a]';
+  // Light mode reads --brand-ink-muted rather than the literal #7a6b5a, which
+  // measures 3.90-4.07 against the glass in this component. Same change the
+  // shared modal primitives got, measured on these surfaces rather than
+  // assumed from that one.
+  const muted = dark ? 'text-[#b8a898]' : 'text-[var(--brand-ink-muted)]';
 
   const fetchSubmissions = async (status: typeof filter = filter, at: number = offset) => {
     setIsLoading(true);
@@ -78,6 +97,26 @@ export function SocialFollowReview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, offset]);
 
+  useEffect(() => {
+    getSocialFollowReasonCodes()
+      .then((res) => setReasonCodes(res.reason_codes))
+      .catch(() => {
+        // Non-fatal: the picker falls back to a note-only rejection, which the
+        // API still accepts. Better than blocking review entirely.
+        toast.error('Could not load rejection reasons. You can still reject with a note.');
+      });
+  }, []);
+
+  // Any change to what is on screen clears the selection.
+  //
+  // A tick means "I have looked at this submission". After a filter change or
+  // a page turn the rows are different ones, so carrying ticks across would
+  // mean approving something the reviewer never saw - which is the exact thing
+  // the page-scoped selection exists to prevent.
+  useEffect(() => {
+    setSelected(new Set());
+  }, [filter, offset]);
+
   const who = (s: SocialFollowSubmission) => s.github_login || s.user_id;
 
   const handleApprove = async (submission: SocialFollowSubmission) => {
@@ -93,13 +132,26 @@ export function SocialFollowReview() {
     }
   };
 
+  const chosenReason = reasonCodes.find((r) => r.code === reasonCode);
+  // "Other" names no problem, so it needs the note. Every other code already
+  // says what was wrong and the note is optional detail.
+  const decisionReady =
+    deciding?.decision === 'revoke'
+      ? reason.trim().length > 0
+      : reasonCodes.length === 0
+        ? reason.trim().length > 0 // codes unavailable: fall back to note-only
+        : reasonCode !== '' && (!chosenReason?.needs_note || reason.trim().length > 0);
+
   const submitDecision = async () => {
-    if (!deciding || !reason.trim()) return;
+    if (!deciding || !decisionReady) return;
     const { submission, decision } = deciding;
     setActioningId(submission.id);
     try {
       if (decision === 'reject') {
-        await rejectSocialFollowSubmission(submission.id, reason.trim());
+        await rejectSocialFollowSubmission(submission.id, {
+          reasonCode,
+          note: reason.trim(),
+        });
         toast.success(`Rejected ${who(submission)}'s proof.`);
       } else {
         await revokeSocialFollowSubmission(submission.id, reason.trim());
@@ -107,11 +159,76 @@ export function SocialFollowReview() {
       }
       setDeciding(null);
       setReason('');
+      setReasonCode('');
       await fetchSubmissions(filter, offset);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to record the decision.');
     } finally {
       setActioningId(null);
+    }
+  };
+
+  // --- selection ------------------------------------------------------------
+
+  const selectablePending = submissions.filter((s) => s.status === 'pending');
+  const allOnPageSelected =
+    selectablePending.length > 0 && selectablePending.every((s) => selected.has(s.id));
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Selects the pending rows ON THIS PAGE only, never the queue.
+  //
+  // The label says "on this page" and that has to be literally true: approving
+  // grants Founding Contributor Pool eligibility, so a control that quietly
+  // reached past what the reviewer can see would be handing out eligibility
+  // for proof nobody looked at. The server refuses a selection larger than a
+  // page for the same reason, so this cannot be worked around by other means.
+  const toggleAllOnPage = () => {
+    setSelected(allOnPageSelected ? new Set() : new Set(selectablePending.map((s) => s.id)));
+  };
+
+  const runBulkApprove = async () => {
+    const ids = selectablePending.filter((s) => selected.has(s.id)).map((s) => s.id);
+    if (ids.length === 0) return;
+    setIsBulkRunning(true);
+    try {
+      const res = await bulkApproveSocialFollowSubmissions(ids);
+
+      // Report all three facts, never a bare "Done". A skip is the queue
+      // having moved under the reviewer and needs no action; a failure is
+      // something that went wrong and is worth retrying. Saying "20 approved"
+      // when three were not is the exact lie this reporting exists to avoid.
+      const parts = [`${res.approved_count} approved`];
+      if (res.skipped_count > 0) parts.push(`${res.skipped_count} skipped`);
+      if (res.failed_count > 0) parts.push(`${res.failed_count} failed`);
+      const summary = parts.join(', ');
+
+      if (res.failed_count > 0) {
+        toast.error(summary + ' — the failures are still selected, so you can retry them.');
+      } else if (res.skipped_count > 0) {
+        toast(summary + ' — skipped ones had already been decided.');
+      } else {
+        toast.success(summary + '.');
+      }
+
+      // Failures stay ticked so a retry is one click; everything decided or
+      // skipped is cleared, because there is nothing left to do to it.
+      setSelected(new Set(res.failed.map((f) => f.id)));
+      setConfirmingBulk(false);
+      await fetchSubmissions(filter, offset);
+    } catch (error) {
+      // The whole request failed, so nothing was approved and the selection is
+      // left exactly as it was.
+      toast.error(error instanceof Error ? error.message : 'Bulk approval failed. Nothing was changed.');
+    } finally {
+      setIsBulkRunning(false);
     }
   };
 
@@ -151,6 +268,44 @@ export function SocialFollowReview() {
         ))}
       </div>
 
+      {/* Selection bar. Only for the pending queue: approving is the only bulk
+          action, and it only applies to undecided rows. */}
+      {filter === 'pending' && selectablePending.length > 0 && (
+        <div
+          className={`flex items-center justify-between gap-3 flex-wrap rounded-[14px] border px-4 py-3 ${
+            dark ? 'bg-white/[0.04] border-white/10' : 'bg-white/[0.15] border-white/25'
+          }`}
+        >
+          <label className={`flex items-center gap-2.5 min-h-[44px] cursor-pointer text-[13px] font-medium ${strong}`}>
+            <input
+              type="checkbox"
+              checked={allOnPageSelected}
+              onChange={toggleAllOnPage}
+              className="w-4 h-4 rounded accent-[#a2792c] cursor-pointer"
+            />
+            {/* Says "on this page" because that is exactly what it does. The
+                server refuses a selection larger than a page, so the label
+                cannot quietly become untrue. */}
+            Select all on this page
+            <span className={muted}>
+              ({selectablePending.length} pending here{page.total > selectablePending.length ? ` of ${page.total}` : ''})
+            </span>
+          </label>
+
+          <button
+            type="button"
+            disabled={selected.size === 0 || isBulkRunning}
+            onClick={() => setConfirmingBulk(true)}
+            className={`inline-flex items-center gap-2 min-h-[44px] px-4 rounded-[12px] text-[13px] font-semibold bg-green-500/15 hover:bg-green-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ${
+              dark ? 'text-green-400' : 'text-green-800'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Approve selected{selected.size > 0 ? ` (${selected.size})` : ''}
+          </button>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className={`w-6 h-6 animate-spin ${dark ? 'text-[#c9983a]' : 'text-[#a2792c]'}`} />
@@ -166,12 +321,26 @@ export function SocialFollowReview() {
             }`}
           >
             <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-              <div>
+              <div className="flex items-start gap-3">
+                {s.status === 'pending' && (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(s.id)}
+                    onChange={() => toggleOne(s.id)}
+                    aria-label={`Select ${who(s)}'s submission`}
+                    className="w-4 h-4 mt-1 rounded accent-[#a2792c] cursor-pointer shrink-0"
+                  />
+                )}
+                <div>
                 <p className={`text-[15px] font-semibold ${strong}`}>{who(s)}</p>
                 <p className={`text-[12px] ${muted}`}>Submitted {new Date(s.created_at).toLocaleString()}</p>
-                {s.decision_reason && (
+                {(s.reason_label || s.decision_reason) && (
                   <p className={`text-[12px] mt-1 ${muted}`}>
-                    <span className="capitalize">{s.status}</span>: {s.decision_reason}
+                    <span className="capitalize">{s.status}</span>:{' '}
+                    {/* Label first, note second - the same shape the
+                        contributor sees, resolved by the backend so this
+                        doesn't keep its own copy of what a code means. */}
+                    {[s.reason_label, s.decision_reason].filter(Boolean).join(' — ')}
                   </p>
                 )}
                 {/* Approval grants founding-pool eligibility, so a decision
@@ -183,6 +352,7 @@ export function SocialFollowReview() {
                     {new Date(s.decided_at).toLocaleString()}
                   </p>
                 )}
+                </div>
               </div>
               <span className={`text-[12px] font-medium px-2.5 py-1 rounded-full capitalize ${
                 s.status === 'approved'
@@ -208,7 +378,9 @@ export function SocialFollowReview() {
                     type="button"
                     disabled={actioningId === s.id}
                     onClick={() => handleApprove(s)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-green-500/15 text-green-500 hover:bg-green-500/25 disabled:opacity-50 transition-colors"
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-green-500/15 hover:bg-green-500/25 disabled:opacity-50 transition-colors ${
+                      dark ? 'text-green-400' : 'text-green-800'
+                    }`}
                   >
                     <CheckCircle2 className="w-4 h-4" /> Approve both
                   </button>
@@ -218,8 +390,11 @@ export function SocialFollowReview() {
                     onClick={() => {
                       setDeciding({ submission: s, decision: 'reject' });
                       setReason('');
+                      setReasonCode('');
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 text-red-500 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 transition-colors ${
+                      dark ? 'text-red-400' : 'text-red-800'
+                    }`}
                   >
                     <XCircle className="w-4 h-4" /> Reject
                   </button>
@@ -235,8 +410,11 @@ export function SocialFollowReview() {
                   onClick={() => {
                     setDeciding({ submission: s, decision: 'revoke' });
                     setReason('');
+                    setReasonCode('');
                   }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 text-red-500 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-semibold bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 transition-colors ${
+                    dark ? 'text-red-400' : 'text-red-800'
+                  }`}
                 >
                   <ShieldOff className="w-4 h-4" /> Revoke eligibility
                 </button>
@@ -282,6 +460,36 @@ export function SocialFollowReview() {
       )}
 
       <Modal
+        isOpen={confirmingBulk}
+        onClose={() => setConfirmingBulk(false)}
+        title="Approve selected submissions"
+      >
+        <p className={`text-[13px] ${muted}`}>
+          {/* The count is the point of the confirmation: it is the last place
+              a reviewer can notice they ticked more than they meant to. */}
+          This approves <strong className={strong}>{selected.size}</strong>{' '}
+          {selected.size === 1 ? 'submission' : 'submissions'} and grants each of them Founding
+          Contributor Pool eligibility. Each person is notified.
+        </p>
+        <p className={`text-[13px] mt-2 ${muted}`}>
+          Only the rows you ticked on this page are affected. Anything already decided since the
+          page loaded is skipped rather than overwritten, and you'll be told how many.
+        </p>
+        <ModalFooter>
+          <ModalButton variant="secondary" onClick={() => setConfirmingBulk(false)}>
+            Cancel
+          </ModalButton>
+          <ModalButton variant="primary" onClick={runBulkApprove} disabled={isBulkRunning}>
+            {isBulkRunning ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              `Approve ${selected.size}`
+            )}
+          </ModalButton>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
         isOpen={deciding !== null}
         onClose={() => setDeciding(null)}
         title={deciding?.decision === 'revoke' ? 'Revoke eligibility' : 'Reject this proof'}
@@ -291,16 +499,62 @@ export function SocialFollowReview() {
             ? 'This withdraws eligibility for the Founding Contributor Pool. The submission and both screenshots are kept — only the status changes. The reason is shown to the contributor.'
             : 'The reason is shown to the contributor so they can fix the problem and submit again.'}
         </p>
-        <ModalInput
-          value={reason}
-          onChange={setReason}
-          placeholder={
-            deciding?.decision === 'revoke'
-              ? 'e.g. no longer following on LinkedIn'
-              : 'e.g. the screenshot does not show your account following'
-          }
-          autoFocus
-        />
+
+        {/* Rejections pick a category so they can be counted; revocations stay
+            free text, since they are rare and each one is its own story. */}
+        {deciding?.decision === 'reject' && reasonCodes.length > 0 && (
+          <fieldset className="mt-3">
+            <legend className={`block text-[13px] font-medium mb-2 ${strong}`}>Reason</legend>
+            <div className="flex flex-col gap-1.5">
+              {reasonCodes.map((r) => (
+                <label
+                  key={r.code}
+                  className={`flex items-center gap-2.5 min-h-[44px] px-3 rounded-[12px] cursor-pointer text-[13px] transition-colors ${
+                    reasonCode === r.code
+                      ? dark
+                        ? 'bg-[#c9983a]/20 text-[#f5efe5]'
+                        : 'bg-[#c9983a]/20 text-[#4a3d2a]'
+                      : dark
+                        ? 'text-[#d4c5b0] hover:bg-white/[0.06]'
+                        : 'text-[#4a3d2a] hover:bg-black/[0.04]'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="reason-code"
+                    value={r.code}
+                    checked={reasonCode === r.code}
+                    onChange={() => setReasonCode(r.code)}
+                    className="w-4 h-4 accent-[#a2792c] cursor-pointer"
+                  />
+                  {r.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+
+        <div className="mt-3">
+          <ModalInput
+            label={
+              deciding?.decision === 'reject' && reasonCodes.length > 0
+                ? chosenReason?.needs_note
+                  ? 'What was wrong?'
+                  : 'Note (optional)'
+                : undefined
+            }
+            value={reason}
+            onChange={setReason}
+            placeholder={
+              deciding?.decision === 'revoke'
+                ? 'e.g. no longer following on LinkedIn'
+                : chosenReason?.needs_note
+                  ? 'Required — the contributor reads this'
+                  : 'Anything else they should know'
+            }
+            autoFocus={deciding?.decision === 'revoke'}
+          />
+        </div>
         <ModalFooter>
           <ModalButton variant="secondary" onClick={() => setDeciding(null)}>
             Cancel
@@ -308,7 +562,7 @@ export function SocialFollowReview() {
           {/* Named distinctly from the row buttons behind the modal: two
               controls with the same accessible name on screen at once is
               ambiguous to anyone navigating by label. */}
-          <ModalButton variant="primary" onClick={submitDecision} disabled={!reason.trim()}>
+          <ModalButton variant="primary" onClick={submitDecision} disabled={!decisionReady}>
             {deciding?.decision === 'revoke' ? 'Confirm revocation' : 'Confirm rejection'}
           </ModalButton>
         </ModalFooter>

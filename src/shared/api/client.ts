@@ -1077,6 +1077,16 @@ export interface SocialFollowSubmission {
   x_screenshot: string;
   status: "pending" | "approved" | "rejected" | "revoked";
   decision_reason?: string | null;
+  /** Machine-readable rejection reason, stored ALONGSIDE the free-text note
+   *  rather than replacing it - decisions made before codes existed still
+   *  carry only a note, and those are the only record of why those people
+   *  were turned down. */
+  reason_code?: string | null;
+  /** The code's label, resolved server-side. The frontend never maps codes to
+   *  words itself: that would be a second copy of a rule the backend already
+   *  owns, and the admin queue, the contributor's page and the notification
+   *  would be free to disagree about what a code means. */
+  reason_label?: string;
   decided_at?: string | null;
   /** Who decided. Recorded on the row and in social_follow_decisions since the
    *  feature shipped, but not readable from the list until now - so the review
@@ -1117,6 +1127,45 @@ export const getAdminSocialFollowSubmissions = (
   );
 };
 
+/** A rejection reason offered in the picker. Fetched rather than hardcoded, so
+ *  the codes and their wording live in exactly one place. */
+export interface SocialFollowReasonCode {
+  code: string;
+  label: string;
+  /** Only "other" sets this. It names no problem on its own, so without a note
+   *  the contributor is told their proof failed for "Other" - which reads as
+   *  an answer while saying nothing. */
+  needs_note: boolean;
+}
+
+export const getSocialFollowReasonCodes = () =>
+  apiRequest<{ reason_codes: SocialFollowReasonCode[] }>(
+    "/admin/social-follow/reason-codes",
+    { requiresAuth: true }
+  );
+
+/** Per-row outcome of a bulk approval.
+ *
+ *  Three lists, not two. `skipped` is the queue having moved under the
+ *  reviewer - already decided, or gone - and needs no action. `failed` is
+ *  something actually going wrong. Collapsing them would send somebody hunting
+ *  a bug that isn't there, and reporting only a total would be the "done" that
+ *  wasn't. */
+export interface SocialFollowBulkResult {
+  approved: { id: string }[];
+  skipped: { id: string; reason: "not_pending" | "not_found"; current_status?: string }[];
+  failed: { id: string }[];
+  approved_count: number;
+  skipped_count: number;
+  failed_count: number;
+}
+
+export const bulkApproveSocialFollowSubmissions = (ids: string[]) =>
+  apiRequest<SocialFollowBulkResult>(
+    "/admin/social-follow/submissions/bulk-approve",
+    { requiresAuth: true, method: "POST", body: JSON.stringify({ ids }) }
+  );
+
 export const approveSocialFollowSubmission = (id: string) =>
   apiRequest<{ ok: boolean }>(`/admin/social-follow/submissions/${id}/approve`, {
     requiresAuth: true,
@@ -1124,11 +1173,16 @@ export const approveSocialFollowSubmission = (id: string) =>
   });
 
 /** A reason is required by the API and shown to the contributor. */
-export const rejectSocialFollowSubmission = (id: string, reason: string) =>
+/** `reason_code` is the category; `reason` is the free-text note stored
+ *  alongside it. The note is required only for "other". */
+export const rejectSocialFollowSubmission = (
+  id: string,
+  { reasonCode, note }: { reasonCode: string; note?: string }
+) =>
   apiRequest<{ ok: boolean }>(`/admin/social-follow/submissions/${id}/reject`, {
     requiresAuth: true,
     method: "POST",
-    body: JSON.stringify({ reason }),
+    body: JSON.stringify({ reason_code: reasonCode, reason: note ?? "" }),
   });
 
 /** Withdraws an approval that has already been granted. Eligibility is
