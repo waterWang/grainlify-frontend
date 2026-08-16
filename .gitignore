@@ -139,3 +139,16 @@ precache-manifest.*.js
 
 .vercel
 .env*
+
+# Installer/archive binaries. Nothing in this repo should ship one, and a
+# single stray download is large enough to matter: a 218MB .dmg sitting in
+# src/assets already broke a `vercel --prod` deploy with "File size limit
+# exceeded" before .vercelignore was added. .vercelignore keeps such a file out
+# of a deploy; this keeps it out of a commit, where it would be permanent.
+*.dmg
+*.pkg
+*.exe
+*.msi
+*.deb
+*.rpm
+*.app.zip
