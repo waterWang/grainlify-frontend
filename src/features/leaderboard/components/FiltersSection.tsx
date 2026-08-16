@@ -90,8 +90,8 @@ export function FiltersSection({
 
   return (
     <div
-      className={`bg-white/[0.12] rounded-[20px] border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.06)] p-5 transition-all duration-700 delay-900 relative z-50 ${
-        isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      className={`bg-white/[0.12] rounded-[20px] border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.06)] p-5 transition-opacity duration-150 relative z-50 ${
+        isLoaded ? "opacity-100" : "opacity-0"
       }`}
     >
       <div className="flex items-center justify-end flex-wrap gap-4">

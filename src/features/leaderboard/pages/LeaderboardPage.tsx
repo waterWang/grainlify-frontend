@@ -174,10 +174,30 @@ export function LeaderboardPage() {
   // in a list, and decoration drifting across a table you are scanning is
   // working against the one thing the page is for. It also cost real frames -
   // see the measurements in the commit that removed it.
+  // isLoaded gates the entrance, so it must mean "the data is here", not "a
+  // timer expired". It used to be `setTimeout(..., 100)` fired on mount,
+  // which is why the table appeared on a fixed schedule no matter when the
+  // response landed.
+  //
+  // Measured before this change, with production's API latency (550-800ms
+  // TTFB) injected: rows entered the DOM at 815ms and the first one became
+  // visible at 1937ms - 1122ms of blank background where the table already
+  // existed at opacity 0. Every row was readable only at 4796ms, 3981ms after
+  // the data arrived.
+  //
+  // The control that settles it: at a 100ms API the same "data in DOM ->
+  // fully readable" figure was 3987ms, six milliseconds from the 600ms run.
+  // The delay had nothing to do with the network, so making the API faster
+  // would not have moved it.
+  //
+  // The argument was already written directly above this, about the petals
+  // that used to fall down the page: "decoration drifting across a table you
+  // are scanning is working against the one thing the page is for". A
+  // staggered entrance on the rows themselves is that, with the table as the
+  // decoration.
   useEffect(() => {
-    const t = setTimeout(() => setIsLoaded(true), 100);
-    return () => clearTimeout(t);
-  }, []);
+    if (!isLoading) setIsLoaded(true);
+  }, [isLoading]);
 
   // Ensure we have at least 3 items for the podium (pad with empty data if needed)
   const contributorTopThree: LeaderData[] = [

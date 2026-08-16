@@ -17,8 +17,8 @@ export function ProjectsTable({ data, activeFilter, isLoaded }: ProjectsTablePro
   const { theme } = useTheme();
 
   return (
-    <div className={`bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-700 delay-1000 ${
-      isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+    <div className={`bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden transition-opacity duration-150 ${
+      isLoaded ? 'opacity-100' : 'opacity-0'
     }`}>
       {/* Table Header */}
       <div className="grid grid-cols-12 gap-4 px-8 py-4 border-b border-white/10 bg-white/[0.08]">
@@ -44,7 +44,6 @@ export function ProjectsTable({ data, activeFilter, isLoaded }: ProjectsTablePro
             key={project.rank}
             className="grid grid-cols-12 gap-4 px-8 py-2.5 hover:bg-white/[0.08] transition-all duration-300 cursor-pointer group"
             style={{
-              animation: isLoaded ? `slideInLeft 0.5s ease-out ${1.1 + index * 0.1}s both` : 'none',
             }}
           >
             {/* Rank */}

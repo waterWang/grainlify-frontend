@@ -27,8 +27,15 @@ export function ContributorsTable({
 
   return (
     <div
-      className={`bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-700 delay-1000 ${
-        isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      // A 150ms fade, with no delay and no translate.
+      //
+      // Was `duration-700 delay-1000` plus an 8px rise. The delay alone put
+      // 1000ms between the data arriving and the table becoming visible, and
+      // the translate meant the rows were still moving while somebody was
+      // trying to read them. A fade this short is under the threshold where
+      // an entrance costs legibility, which is the only bar it has to clear.
+      className={`bg-white/[0.12] rounded-[24px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden transition-opacity duration-150 ${
+        isLoaded ? "opacity-100" : "opacity-0"
       }`}
     >
       {/* Table Header */}
@@ -65,11 +72,17 @@ export function ContributorsTable({
             key={leader.rank}
             onClick={() => handleRowClick(leader)}
             className="grid grid-cols-12 gap-4 px-8 py-2.5 hover:bg-white/[0.08] transition-all duration-300 cursor-pointer group"
-            style={{
-              animation: isLoaded
-                ? `slideInLeft 0.5s ease-out ${1.1 + index * 0.1}s both`
-                : "none",
-            }}
+            // No per-row entrance. It was `slideInLeft 0.5s ease-out` with a
+            // 1.1s base delay and 100ms of stagger per row, so on a 25-row
+            // page the last row finished 4.1s after mount and the list was
+            // unreadable until then. `both` held every row at the animation's
+            // start state during its delay, which is what made the background
+            // look empty: the rows were there, at opacity 0, waiting their
+            // turn.
+            //
+            // A stagger is a way of drawing the eye across items in sequence.
+            // This is a ranked table people open to find one name in, and
+            // sequence is exactly what they do not want to be forced through.
           >
             {/* Rank */}
             <div className="col-span-1 flex items-center">

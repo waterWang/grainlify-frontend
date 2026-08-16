@@ -30,7 +30,7 @@ export function LeaderboardHero({ leaderboardType, isLoaded, activeWindow, child
     <GlassCard
       tone="solid"
       className={`min-h-[450px] rounded-[28px] overflow-hidden transition-all duration-1000 ${
-        isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        isLoaded ? 'opacity-100' : 'opacity-0'
       }`}
     >
       {/* Tier B background: a static grid and two static washes.
@@ -84,8 +84,8 @@ export function LeaderboardHero({ leaderboardType, isLoaded, activeWindow, child
 
       <div className="relative z-10 p-10">
         {/* Title Section with Entrance Animation */}
-        <div className={`text-center mb-10 transition-all duration-1000 delay-200 ${
-          isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+        <div className={`text-center mb-10 transition-opacity duration-150 ${
+          isLoaded ? 'opacity-100' : 'opacity-0 -translate-y-4'
         }`}>
           <div className="relative inline-block mb-3">
             <h1 className={`text-[44px] font-bold drop-shadow-sm relative z-10 transition-colors ${
@@ -128,7 +128,7 @@ export function LeaderboardHero({ leaderboardType, isLoaded, activeWindow, child
             than 'solid' to keep it distinguishable from the hero behind it. */}
         <GlassCard
           tone="raised"
-          className={`p-8 max-w-3xl mx-auto transition-all duration-1000 delay-500 ${
+          className={`p-8 max-w-3xl mx-auto transition-opacity duration-150 ${
             isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
         >

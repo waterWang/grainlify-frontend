@@ -40,8 +40,8 @@ export function ProjectsPodium({ topThree, isLoaded }: ProjectsPodiumProps) {
   return (
     <div className="flex items-end justify-center gap-2 sm:gap-4 mt-8">
       {/* 2nd Place */}
-      <div className={`flex flex-col items-center transition-all duration-700 delay-700 ${
-        isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+      <div className={`flex flex-col items-center transition-opacity duration-150 ${
+        isLoaded ? 'opacity-100' : 'opacity-0'
       }`}>
         <div className="bg-gradient-to-br from-white/[0.25] to-white/[0.15] border-2 border-white/40 rounded-[18px] p-3 sm:p-5 md:p-6 w-[96px] sm:w-[130px] md:w-[150px] shadow-[0_6px_24px_rgba(0,0,0,0.1)] mb-3 hover:shadow-[inset_0_0_28px_rgba(0,0,0,0.15)] transition-all duration-300 group">
           <div className="relative">
@@ -69,8 +69,8 @@ export function ProjectsPodium({ topThree, isLoaded }: ProjectsPodiumProps) {
       </div>
 
       {/* 1st Place */}
-      <div className={`flex flex-col items-center -mt-8 transition-all duration-700 delay-600 ${
-        isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+      <div className={`flex flex-col items-center -mt-8 transition-opacity duration-150 ${
+        isLoaded ? 'opacity-100' : 'opacity-0'
       }`}>
         <div className="relative bg-gradient-to-br from-[#c9983a]/30 to-[#d4af37]/20 border-2 border-[#c9983a]/60 rounded-[20px] p-3.5 sm:p-6 md:p-7 w-[112px] sm:w-[148px] md:w-[170px] shadow-[0_8px_32px_rgba(201,152,58,0.35)] mb-3 hover:shadow-[inset_0_0_40px_rgba(201,152,58,0.5)] transition-all duration-300 group">
           <div className="absolute inset-0 bg-gradient-to-br from-[#c9983a]/10 to-transparent rounded-[20px]" />
@@ -102,8 +102,8 @@ export function ProjectsPodium({ topThree, isLoaded }: ProjectsPodiumProps) {
       </div>
 
       {/* 3rd Place */}
-      <div className={`flex flex-col items-center transition-all duration-700 delay-800 ${
-        isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+      <div className={`flex flex-col items-center transition-opacity duration-150 ${
+        isLoaded ? 'opacity-100' : 'opacity-0'
       }`}>
         <div className="bg-gradient-to-br from-white/[0.25] to-white/[0.15] border-2 border-white/40 rounded-[18px] p-3 sm:p-5 md:p-6 w-[96px] sm:w-[130px] md:w-[150px] shadow-[0_6px_24px_rgba(0,0,0,0.1)] mb-3 hover:shadow-[inset_0_0_28px_rgba(0,0,0,0.15)] transition-all duration-300 group">
           <div className="relative">
