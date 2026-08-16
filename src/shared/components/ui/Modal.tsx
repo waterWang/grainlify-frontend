@@ -226,7 +226,12 @@ export function ModalInput({
         <label className={`block text-[13px] font-medium mb-2 transition-colors ${theme === 'dark' ? 'text-[#d4d4d4]' : 'text-[var(--brand-ink-muted)]'
           }`}>
           {label}
-          {required && <span className="text-[#c9983a] ml-1">*</span>}
+          {/* The UI gold measured 1.54 on the light modal panel - the worst
+              pair in this file, on every required field in every modal.
+              --brand-gold-text-deep is the panel-calibrated gold: 5.53 light,
+              4.82 dark. Still gold, so the marker stays a marker rather than
+              blending into the label beside it. */}
+          {required && <span className="text-[var(--brand-gold-text-deep)] ml-1">*</span>}
         </label>
       )}
       {rows ? (

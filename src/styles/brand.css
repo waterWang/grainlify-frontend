@@ -60,6 +60,17 @@
      were the biggest user of it. Dark enough to pass (5.83), still legibly
      gold. In dark mode the bright value is already fine and is kept. */
   --brand-gold-text: #7d5c20;
+  /* Gold as text on the WARM PANEL surfaces, which is a third problem again.
+     --brand-gold-text was calibrated against a near-white page, where it
+     measures 5.54. On a modal panel - translucent beige glass, sampled at
+     rgb(212,197,176) - the same value measures only 3.63, because the ground
+     is much darker than the page it was chosen for. A token that passes on
+     one surface and fails on another is not a safe default; this is the
+     darker companion for the panels, measured at 5.53 there.
+     Deliberately not 4.55, which #6b4e18 gives: a value that clears the
+     threshold by 0.05 is the kind of miss that survives review because it
+     looks fine, and this palette has already shipped one at 4.36. */
+  --brand-gold-text-deep: #5c4214;
   /* Text placed ON a gold surface. White measured 2.61 on --brand-gold, which
      failed in BOTH themes - the one failure the two shared. Ink on the same
      gold is 5.60, so the surface keeps the brand colour and only the text
@@ -123,6 +134,11 @@
   /* Gold on dark ground already passes as text; the light-mode darkening
      would be unreadable here, so it flips back to the bright value. */
   --brand-gold-text: #d4af37;
+  /* Dark mode's panels are dark, so gold-as-text has the opposite problem and
+     the ordinary UI gold is already fine: #c9983a measures 4.82 on the dark
+     modal panel. Kept rather than darkened - the rule is to change what
+     fails. */
+  --brand-gold-text-deep: #c9983a;
   /* The gold surface is the same in both themes, so the text on it is too. */
   --brand-gold-on: #2d2820;
   --brand-gold-on-muted: #4a4038;
