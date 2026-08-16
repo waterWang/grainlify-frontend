@@ -308,7 +308,14 @@ export function ModalSelect({
         >
           <Select.Value placeholder="Select an option" />
           <Select.Icon>
-            <ChevronDown className={`w-4 h-4 text-amber-500 transition-transform duration-200 group-data-[state=open]:rotate-180`} />
+            {/* The chevron is the affordance - it is what tells somebody this
+                is a control rather than a label. At 1.38 in light it announced
+                nothing. Reads --brand-gold-text-deep there (6.03, against a
+                3.0 non-text threshold); dark's amber already measured 4.64 and
+                is unchanged. */}
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 group-data-[state=open]:rotate-180 ${
+              theme === 'dark' ? 'text-amber-500' : 'text-[var(--brand-gold-text-deep)]'
+            }`} />
           </Select.Icon>
         </Select.Trigger>
 

@@ -354,12 +354,27 @@ export function SocialFollowReview() {
                 )}
                 </div>
               </div>
+              {/* Every variant measured, not just the one on screen at the
+                  time. In light all three failed on their own wash (1.55-2.49);
+                  in dark only red did, at 3.79 - green and amber measured 5.76
+                  and 5.79 there and are left alone. Measuring `pending` alone
+                  would have declared dark fine and shipped the red failure.
+
+                  `revoked` shares the red branch with `rejected`, so it is
+                  covered by the same values rather than falling through to
+                  something unmeasured. */}
               <span className={`text-[12px] font-medium px-2.5 py-1 rounded-full capitalize ${
                 s.status === 'approved'
-                  ? 'bg-green-500/15 text-green-500'
+                  ? dark
+                    ? 'bg-green-500/15 text-green-500'
+                    : 'bg-green-500/15 text-green-800'
                   : s.status === 'pending'
-                    ? 'bg-amber-500/15 text-amber-500'
-                    : 'bg-red-500/15 text-red-500'
+                    ? dark
+                      ? 'bg-amber-500/15 text-amber-500'
+                      : 'bg-amber-500/15 text-amber-800'
+                    : dark
+                      ? 'bg-red-500/15 text-red-400'
+                      : 'bg-red-500/15 text-red-800'
               }`}>
                 {s.status}
               </span>
